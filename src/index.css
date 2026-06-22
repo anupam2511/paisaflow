@@ -6,7 +6,7 @@
 @theme {
   --font-sans: 'Outfit', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Outfit', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-  --color-yellow-500: #f2df4a;
+  --color-yellow-500: #f4ca3e;
 }
 
 :root {

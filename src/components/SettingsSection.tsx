@@ -32,9 +32,10 @@ import { motion } from 'motion/react';
 interface SettingsSectionProps {
   data: FinanceData;
   setFinanceData: React.Dispatch<React.SetStateAction<FinanceData>>;
+  userEmail: string | null;
 }
 
-export default function SettingsSection({ data, setFinanceData }: SettingsSectionProps) {
+export default function SettingsSection({ data, setFinanceData, userEmail }: SettingsSectionProps) {
   const { preferences, investments = [], expenses = [], budgets = [] } = data;
 
   // Local state for settings elements
@@ -826,132 +827,134 @@ export default function SettingsSection({ data, setFinanceData }: SettingsSectio
         </div>
 
         {/* 1-CLICK GITHUB SYNC & VERCEL CD CONTROLLER */}
-        <div id="settings-github-sync-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm animate-fade-in">
-          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-50 dark:border-slate-800/60 mb-5">
-            <GitBranch className="w-5.5 h-5.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-            <div>
-              <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100">1-Click GitHub Publisher</h2>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">Instantly push workspace changes directly to trigger your Vercel/Netlify hosting.</p>
+        {userEmail === 'anupam2511@gmail.com' && (
+          <div id="settings-github-sync-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm animate-fade-in">
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-50 dark:border-slate-800/60 mb-5">
+              <GitBranch className="w-5.5 h-5.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+              <div>
+                <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100">1-Click GitHub Publisher</h2>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">Instantly push workspace changes directly to trigger your Vercel/Netlify hosting.</p>
+              </div>
             </div>
+
+            <form onSubmit={handleGitHubSync} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">GitHub Owner / User</label>
+                  <input
+                    type="text"
+                    value={gitOwner}
+                    onChange={(e) => setGitOwner(e.target.value)}
+                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
+                    placeholder="e.g., anupam2511"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Repository Name</label>
+                  <input
+                    type="text"
+                    value={gitRepo}
+                    onChange={(e) => setGitRepo(e.target.value)}
+                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
+                    placeholder="e.g., paisaflow"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Deployment Target Branch</label>
+                <input
+                  type="text"
+                  value={gitBranch}
+                  onChange={(e) => setGitBranch(e.target.value)}
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
+                  placeholder="e.g., main"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Commit Description</label>
+                <input
+                  type="text"
+                  value={gitCommitMsg}
+                  onChange={(e) => setGitCommitMsg(e.target.value)}
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold text-slate-700 dark:text-slate-300"
+                  placeholder="Describe current system updates"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">GitHub Personal Access Token (PAT)</label>
+                  <a
+                    href="https://github.com/settings/tokens/new?scopes=repo&description=PaisaFlow%201-Click%2520Sync"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[9px] text-indigo-600 dark:text-indigo-400 font-extrabold hover:underline"
+                  >
+                    Create token with 'repo' scope →
+                  </a>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showToken ? 'text' : 'password'}
+                    value={gitToken}
+                    onChange={(e) => setGitToken(e.target.value)}
+                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 pr-10 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-mono text-slate-800 dark:text-slate-100 font-bold"
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowToken(!showToken)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 dark:text-slate-650 hover:text-slate-700 dark:hover:text-slate-300 transition"
+                  >
+                    {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[9px] text-slate-400 mt-1.5 leading-relaxed font-semibold">
+                  PAT token is safely restricted to local storage within your browser. It is transmitted securely to trigger commits.
+                </p>
+              </div>
+
+              {syncMessage && (
+                <div className={`p-3.5 rounded-2xl flex items-start gap-2.5 border text-xs leading-relaxed font-semibold ${
+                  syncStatus === 'syncing' 
+                    ? 'bg-blue-50/60 border-blue-100 text-blue-700 dark:bg-blue-950/20 dark:border-blue-900/40 dark:text-blue-300' 
+                    : syncStatus === 'success'
+                    ? 'bg-emerald-50/60 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-300'
+                    : 'bg-rose-50/60 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/40 dark:text-rose-450'
+                }`}>
+                  {syncStatus === 'syncing' ? (
+                    <RefreshCw className="w-4.5 h-4.5 shrink-0 animate-spin text-blue-500" />
+                  ) : syncStatus === 'success' ? (
+                    <GitBranch className="w-4.5 h-4.5 shrink-0 text-emerald-500" />
+                  ) : (
+                    <AlertCircle className="w-4.5 h-4.5 shrink-0 text-rose-500" />
+                  )}
+                  <span>{syncMessage}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={syncStatus === 'syncing'}
+                className={`w-full text-xs font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition transform active:scale-[0.99] cursor-pointer ${
+                  syncStatus === 'syncing'
+                    ? 'bg-slate-150 text-slate-450 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                    : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/15 text-white'
+                }`}
+              >
+                <RefreshCw className={`w-4 h-4 shrink-0 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+                <span>{syncStatus === 'syncing' ? 'Publishing Workspace...' : 'Push & Publish Changes to GitHub'}</span>
+              </button>
+            </form>
           </div>
-
-          <form onSubmit={handleGitHubSync} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">GitHub Owner / User</label>
-                <input
-                  type="text"
-                  value={gitOwner}
-                  onChange={(e) => setGitOwner(e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
-                  placeholder="e.g., anupam2511"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Repository Name</label>
-                <input
-                  type="text"
-                  value={gitRepo}
-                  onChange={(e) => setGitRepo(e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
-                  placeholder="e.g., paisaflow"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Deployment Target Branch</label>
-              <input
-                type="text"
-                value={gitBranch}
-                onChange={(e) => setGitBranch(e.target.value)}
-                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
-                placeholder="e.g., main"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Commit Description</label>
-              <input
-                type="text"
-                value={gitCommitMsg}
-                onChange={(e) => setGitCommitMsg(e.target.value)}
-                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold text-slate-700 dark:text-slate-300"
-                placeholder="Describe current system updates"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">GitHub Personal Access Token (PAT)</label>
-                <a
-                  href="https://github.com/settings/tokens/new?scopes=repo&description=PaisaFlow%201-Click%2520Sync"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[9px] text-indigo-600 dark:text-indigo-400 font-extrabold hover:underline"
-                >
-                  Create token with 'repo' scope →
-                </a>
-              </div>
-              <div className="relative">
-                <input
-                  type={showToken ? 'text' : 'password'}
-                  value={gitToken}
-                  onChange={(e) => setGitToken(e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 pr-10 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-mono text-slate-800 dark:text-slate-100 font-bold"
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowToken(!showToken)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 dark:text-slate-650 hover:text-slate-700 dark:hover:text-slate-300 transition"
-                >
-                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-[9px] text-slate-400 mt-1.5 leading-relaxed font-semibold">
-                PAT token is safely restricted to local storage within your browser. It is transmitted securely to trigger commits.
-              </p>
-            </div>
-
-            {syncMessage && (
-              <div className={`p-3.5 rounded-2xl flex items-start gap-2.5 border text-xs leading-relaxed font-semibold ${
-                syncStatus === 'syncing' 
-                  ? 'bg-blue-50/60 border-blue-100 text-blue-700 dark:bg-blue-950/20 dark:border-blue-900/40 dark:text-blue-300' 
-                  : syncStatus === 'success'
-                  ? 'bg-emerald-50/60 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-300'
-                  : 'bg-rose-50/60 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/40 dark:text-rose-450'
-              }`}>
-                {syncStatus === 'syncing' ? (
-                  <RefreshCw className="w-4.5 h-4.5 shrink-0 animate-spin text-blue-500" />
-                ) : syncStatus === 'success' ? (
-                  <GitBranch className="w-4.5 h-4.5 shrink-0 text-emerald-500" />
-                ) : (
-                  <AlertCircle className="w-4.5 h-4.5 shrink-0 text-rose-500" />
-                )}
-                <span>{syncMessage}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={syncStatus === 'syncing'}
-              className={`w-full text-xs font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition transform active:scale-[0.99] cursor-pointer ${
-                syncStatus === 'syncing'
-                  ? 'bg-slate-150 text-slate-450 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
-                  : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/15 text-white'
-              }`}
-            >
-              <RefreshCw className={`w-4 h-4 shrink-0 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-              <span>{syncStatus === 'syncing' ? 'Publishing Workspace...' : 'Push & Publish Changes to GitHub'}</span>
-            </button>
-          </form>
-        </div>
+        )}
 
       </div>
 

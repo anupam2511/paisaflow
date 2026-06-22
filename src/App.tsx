@@ -8,6 +8,8 @@ import { FinanceData } from './types';
 import { INITIAL_FINANCE_DATA } from './data/mockData';
 import { formatCurrency } from './utils/formatters';
 import { processAutoDebits } from './utils/billing';
+import { auth, signOutUser, getUserFinanceData, saveUserFinanceData } from './utils/firebase';
+import { onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 
 // Component Imports
 import Dashboard from './components/Dashboard';
@@ -52,35 +54,70 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<string | null>(() => {
-    return localStorage.getItem('paisaflow_active_user') || null;
-  });
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [financeData, setFinanceData] = useState<FinanceData>(() => {
-    const activeUser = localStorage.getItem('paisaflow_active_user') || null;
-    if (activeUser) {
-      const userKey = `personal_finance_dashboard_data_user_${activeUser.toLowerCase()}`;
-      try {
-        const persisted = localStorage.getItem(userKey);
-        if (persisted) {
-          const parsed = JSON.parse(persisted);
-          if (!parsed.investments) {
-            parsed.investments = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.investments || []));
-          }
-          if (!parsed.emis) {
-            parsed.emis = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.emis || []));
-          }
-          if (!parsed.preferences) {
-            parsed.preferences = { ...INITIAL_FINANCE_DATA.preferences };
-          }
-          return parsed;
-        }
-      } catch (e) {
-        console.warn('Local storage read failure', e);
-      }
-    }
     return JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
   });
+
+  // Handle Firebase Auth listening
+  useEffect(() => {
+    // Process redirect result if returning from Google Auth flow
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log("Redirect sign-in success:", result.user.email);
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect sign-in handler error:", error);
+      });
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUser(user.uid);
+        setUserEmail(user.email);
+        setUserDisplayName(user.displayName);
+        localStorage.setItem('paisaflow_active_user', user.uid);
+
+        // Load secure data from Firestore
+        try {
+          const dbData = await getUserFinanceData(user.uid);
+          if (dbData) {
+            setFinanceData(dbData);
+          } else {
+            // Check legacy local storage fallback
+            const legacyKey = `personal_finance_dashboard_data_user_${user.uid.toLowerCase()}`;
+            const legacyDataStr = localStorage.getItem(legacyKey);
+            if (legacyDataStr) {
+              const parsed = JSON.parse(legacyDataStr);
+              setFinanceData(parsed);
+              // Save to Firestore so it is stored safely in the cloud
+              await saveUserFinanceData(user.uid, parsed);
+            } else {
+              // Create brand new account dataset from INITIAL_FINANCE_DATA
+              const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
+              setFinanceData(freshClone);
+              await saveUserFinanceData(user.uid, freshClone);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load user data from Firestore", error);
+        }
+      } else {
+        setCurrentUser(null);
+        setUserEmail(null);
+        setUserDisplayName(null);
+        localStorage.removeItem('paisaflow_active_user');
+      }
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [resetMessage, setResetMessage] = useState('');
@@ -118,44 +155,22 @@ export default function App() {
     try {
       const userKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
       localStorage.setItem(userKey, JSON.stringify(financeData));
+      
+      // Mirror to Firestore securely
+      saveUserFinanceData(currentUser, financeData).catch(err => {
+        console.error('Firestore duplex Sync error:', err);
+      });
     } catch (e) {
       console.error('Storage sync error:', e);
     }
   }, [financeData, currentUser]);
 
-  const handleLoginSuccess = (username: string) => {
-    localStorage.setItem('paisaflow_active_user', username);
-    setCurrentUser(username);
-
-    const userKey = `personal_finance_dashboard_data_user_${username.toLowerCase()}`;
-    const persisted = localStorage.getItem(userKey);
-    if (persisted) {
-       try {
-         const parsed = JSON.parse(persisted);
-         if (!parsed.investments) {
-           parsed.investments = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.investments || []));
-         }
-         if (!parsed.emis) {
-           parsed.emis = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.emis || []));
-         }
-         if (!parsed.preferences) {
-           parsed.preferences = { ...INITIAL_FINANCE_DATA.preferences };
-         }
-         setFinanceData(parsed);
-         return;
-       } catch (e) {
-         console.error('Login load failed', e);
-       }
-     }
-    // Start brand representation of credentials with prefilled seed cloned
-    const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
-    setFinanceData(freshClone);
-    localStorage.setItem(userKey, JSON.stringify(freshClone));
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('paisaflow_active_user');
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    try {
+      await signOutUser();
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -167,7 +182,7 @@ export default function App() {
       '200': '#faf18f',
       '300': '#f7e864',
       '400': '#f4e44f',
-      '500': '#f2df4a',
+      '500': '#f4ca3e',
       '600': '#d3be2d',
       '700': '#ae9a1a',
       '800': '#8a780b',
@@ -387,6 +402,7 @@ export default function App() {
           <SettingsSection 
             data={financeData} 
             setFinanceData={setFinanceData} 
+            userEmail={userEmail}
           />
         );
       default:
@@ -405,8 +421,21 @@ export default function App() {
     setIsMobileMenuOpen(false);
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#030712] flex flex-col justify-center items-center">
+        <div className="w-16 h-16 bg-indigo-600 rounded-2.5xl flex items-center justify-center shadow-xl shadow-indigo-600/15 animate-bounce text-white font-bold text-3xl">
+          ₹
+        </div>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black mt-5 uppercase tracking-widest animate-pulse">
+          Verifying Encrypted Space...
+        </p>
+      </div>
+    );
+  }
+
   if (!currentUser) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    return <LoginScreen />;
   }
 
   return (
@@ -471,7 +500,7 @@ export default function App() {
           {/* Bottom actions */}
           <div className="p-3 border-t border-slate-100 dark:border-slate-800/85 space-y-1.5 shrink-0">
             <div className="px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl mb-1 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800">
-              <span className="truncate">User: {currentUser}</span>
+              <span className="truncate" title={userEmail || currentUser || ""}>User: {userDisplayName || userEmail || currentUser}</span>
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0"></span>
             </div>
             <button
@@ -548,7 +577,7 @@ export default function App() {
           <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5 shrink-0">
             {!isCollapsed && (
               <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-xl mb-1 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-800 animate-fade-in">
-                <span className="truncate">Active: {currentUser}</span>
+                <span className="truncate" title={userEmail || currentUser || ""}>Active: {userDisplayName || userEmail || currentUser}</span>
                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0"></span>
               </div>
             )}
