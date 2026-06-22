@@ -17,15 +17,7 @@ import {
   enableIndexedDbPersistence 
 } from "firebase/firestore";
 
-// Read Firebase config retrieved during the setup phase
-const firebaseConfig = {
-  apiKey: "AIzaSyDdOHaq-VBapNBnxrpc-yRO6UR_uGpZMIU",
-  authDomain: "plated-complex-qhnbb.firebaseapp.com",
-  projectId: "plated-complex-qhnbb",
-  storageBucket: "plated-complex-qhnbb.firebasestorage.app",
-  messagingSenderId: "446624167546",
-  appId: "1:446624167546:web:69b0c55a747b37dc63edc3"
-};
+import firebaseConfig from "../../firebase-applet-config.json";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -35,7 +27,7 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Initialize Firestore
-export const db = getFirestore(app);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Enable offline persistence for better user experience
 try {
