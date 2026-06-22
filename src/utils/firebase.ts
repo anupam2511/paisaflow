@@ -17,17 +17,32 @@ import {
   enableIndexedDbPersistence 
 } from "firebase/firestore";
 
-import firebaseConfig from "../../firebase-applet-config.json";
+import firebaseAppletConfig from "../../firebase-applet-config.json";
+
+// Allow overriding via environment variables (for custom production hosting like Vercel/Netlify)
+const metaEnv = (import.meta as any).env || {};
+
+const activeFirebaseConfig = {
+  apiKey: metaEnv.VITE_FIREBASE_API_KEY || firebaseAppletConfig.apiKey,
+  authDomain: metaEnv.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig.authDomain,
+  projectId: metaEnv.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig.projectId,
+  storageBucket: metaEnv.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig.storageBucket,
+  messagingSenderId: metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig.messagingSenderId,
+  appId: metaEnv.VITE_FIREBASE_APP_ID || firebaseAppletConfig.appId,
+  measurementId: metaEnv.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig.measurementId,
+};
+
+const databaseId = metaEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID || (firebaseAppletConfig as any).firestoreDatabaseId;
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(activeFirebaseConfig);
 
 // Initialize Authentication
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Initialize Firestore
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app, databaseId);
 
 // Enable offline persistence for better user experience
 try {
