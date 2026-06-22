@@ -1,0 +1,6 @@
+{
+  "name": "PaisaFlow",
+  "description": "An interactive, visual personal finance dashboard for tracking accounts, credit cards, incomes, category budgets, recurring subscriptions, and custom savings goals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
