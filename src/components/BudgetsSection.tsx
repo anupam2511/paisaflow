@@ -240,17 +240,17 @@ export default function BudgetsSection({ data, setFinanceData }: BudgetsSectionP
             
             // Dynamic color flags based on progress alerts
             let barColorClass = 'bg-emerald-500';
-            let textColorClass = 'text-emerald-700 bg-emerald-50';
-            let outlineClass = 'border-slate-100';
+            let textColorClass = 'text-emerald-700 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-900/40 dark:text-emerald-400';
+            let outlineClass = 'border-slate-100 dark:border-slate-800';
 
             if (isOver) {
               barColorClass = 'bg-rose-500';
-              textColorClass = 'text-rose-700 bg-rose-50 border-rose-100';
-              outlineClass = 'border-rose-100 bg-rose-50/10';
+              textColorClass = 'text-rose-700 bg-rose-50 border-rose-100 dark:bg-rose-950/40 dark:border-rose-900/40 dark:text-rose-400';
+              outlineClass = 'border-rose-100 dark:border-rose-900/30 bg-rose-50/10 dark:bg-rose-950/10';
             } else if (isWarn) {
               barColorClass = 'bg-amber-500';
-              textColorClass = 'text-amber-700 bg-amber-50 border-amber-100';
-              outlineClass = 'border-amber-100';
+              textColorClass = 'text-amber-700 bg-amber-50 border-amber-100 dark:bg-amber-950/40 dark:border-amber-900/40 dark:text-amber-400';
+              outlineClass = 'border-amber-100 dark:border-amber-900/20';
             }
 
             return (

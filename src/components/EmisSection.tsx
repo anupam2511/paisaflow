@@ -59,6 +59,8 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
   const [selectedCardFilter, setSelectedCardFilter] = useState<string>('all');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
 
+
+
   // Core KPI Calculations
   const activeEmis = emis.filter(e => e.isActive);
   const averageEmiPerMonth = activeEmis.reduce((sum, e) => sum + e.amount, 0);
@@ -98,10 +100,40 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
 
   // Quick Action: Increment paid installments by 1
   const handleQuickPayIncrement = (emiId: string) => {
+    let affectedEmiName = '';
+    let affectedAmount = 0;
+    let affectedAccountName = '';
+
     setFinanceData(prev => {
+      const targetEmi = (prev.emis || []).find(e => e.id === emiId);
+      if (!targetEmi) return prev;
+
+      const nextPaidCount = Math.min(targetEmi.totalTenure, targetEmi.installmentsPaid + 1);
+      if (nextPaidCount === targetEmi.installmentsPaid) {
+        return prev;
+      }
+
+      affectedEmiName = targetEmi.name;
+      affectedAmount = targetEmi.amount;
+
+      const matchedAcc = prev.accounts.find(a => a.id === targetEmi.accountId);
+      affectedAccountName = matchedAcc ? matchedAcc.name : 'Selected Account';
+
+      // Deduct from bank or add to credit card outstanding amount
+      const updatedAccounts = prev.accounts.map(a => {
+        if (a.id === targetEmi.accountId) {
+          if (a.type === 'bank') {
+            return { ...a, balance: a.balance - targetEmi.amount }; // bank balance reduces
+          } else {
+            return { ...a, balance: a.balance + targetEmi.amount }; // outstanding debt on cards increases
+          }
+        }
+        return a;
+      });
+
+      // Update the EMI installments paid and active status
       const updatedEmis = (prev.emis || []).map(emi => {
         if (emi.id === emiId) {
-          const nextPaidCount = Math.min(emi.totalTenure, emi.installmentsPaid + 1);
           const completedNow = nextPaidCount === emi.totalTenure;
           return {
             ...emi,
@@ -111,14 +143,33 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
         }
         return emi;
       });
+
+      // Create standard expense item to log historical ledger footprints
+      const todayString = new Date().toISOString().split('T')[0];
+      const newExpense = {
+        id: `exp-emi-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        description: `EMI Pay: ${targetEmi.name} (${nextPaidCount}/${targetEmi.totalTenure})`,
+        amount: targetEmi.amount,
+        category: targetEmi.category || 'EMI / Loans',
+        date: todayString,
+        accountId: targetEmi.accountId,
+        isRecurring: false
+      };
+
       return {
         ...prev,
-        emis: updatedEmis
+        accounts: updatedAccounts,
+        emis: updatedEmis,
+        expenses: [newExpense, ...prev.expenses]
       };
     });
 
-    setOk('Logged +1 Paid Installment successfully!');
-    setTimeout(() => setOk(''), 3000);
+    if (affectedEmiName) {
+      setOk(`Logged +1 Paid for "${affectedEmiName}" & created ${formatCurrency(affectedAmount, preferences)} expense against "${affectedAccountName}".`);
+    } else {
+      setOk('Logged +1 Paid Installment successfully!');
+    }
+    setTimeout(() => setOk(''), 5000);
   };
 
   // Safe Mode: Initiates Edit Fill
@@ -130,13 +181,30 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
     setAccountId(emi.accountId);
     setTotalTenure(emi.totalTenure.toString());
     setInstallmentsPaid(emi.installmentsPaid.toString());
-    setStartDate(emi.startDate);
+    
+    // Normalize date format (YYYY-MM-DD or YYYY-MM) to YYYY-MM for month selector
+    if (emi.startDate && emi.startDate.length > 7) {
+      setStartDate(emi.startDate.substring(0, 7));
+    } else {
+      setStartDate(emi.startDate || '2026-01');
+    }
+
     setInterestRate(emi.interestRate !== undefined ? emi.interestRate.toString() : '0');
     setNotes(emi.notes || '');
     setIsActive(emi.isActive);
     setShowAddForm(true);
     setErr('');
     setOk('');
+
+    // Smooth scroll user up to the active edit form
+    setTimeout(() => {
+      const formEl = document.getElementById('emi-form-container');
+      if (formEl) {
+        formEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 80);
   };
 
   // Reset form helper
@@ -295,7 +363,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
 
       {/* ADD / EDIT FORM BOX */}
       {showAddForm && (
-        <form onSubmit={handleSaveEmi} className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 space-y-4 max-w-4xl">
+        <form id="emi-form-container" onSubmit={handleSaveEmi} className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 space-y-4 max-w-4xl">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-indigo-500" />
@@ -385,7 +453,15 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
               <input
                 type="number"
                 value={totalTenure}
-                onChange={(e) => setTotalTenure(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setTotalTenure(val);
+                  const parsedTenure = parseInt(val, 10);
+                  const parsedPaid = parseInt(installmentsPaid, 10);
+                  if (!isNaN(parsedPaid) && !isNaN(parsedTenure) && parsedPaid < parsedTenure) {
+                    setIsActive(true);
+                  }
+                }}
                 placeholder="e.g. 12"
                 min="1"
                 className="w-full text-xs border border-slate-200 rounded-lg p-2.5 bg-slate-50 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800"
@@ -398,7 +474,15 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
               <input
                 type="number"
                 value={installmentsPaid}
-                onChange={(e) => setInstallmentsPaid(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setInstallmentsPaid(val);
+                  const parsedPaid = parseInt(val, 10);
+                  const parsedTenure = parseInt(totalTenure, 10);
+                  if (!isNaN(parsedPaid) && !isNaN(parsedTenure) && parsedPaid < parsedTenure) {
+                    setIsActive(true);
+                  }
+                }}
                 placeholder="e.g. 3"
                 min="0"
                 max={totalTenure}
@@ -718,14 +802,23 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                   const sunkSum = emi.amount * emi.installmentsPaid;
                   const futureSum = emi.amount * remainingInstallments;
 
+                  const isBeingEdited = editingEmiId === emi.id;
+
                   return (
-                    <tr key={emi.id} className="text-xs text-slate-700 hover:bg-slate-50/50 transition-colors group">
+                    <tr 
+                      key={emi.id} 
+                      className={`text-xs text-slate-700 transition-all duration-150 group ${
+                        isBeingEdited 
+                          ? 'bg-indigo-50/60 dark:bg-indigo-950/20 border-l-[3px] border-indigo-500 font-medium' 
+                          : 'hover:bg-slate-50'
+                      }`}
+                    >
                       
                       {/* DESCRIPTOR */}
                       <td className="py-3.5 pl-1">
                         <div className="font-bold text-slate-800 flex items-center gap-1.5">
                           {emi.name}
-                          {!emi.isActive && (
+                          {!emi.isActive && emi.installmentsPaid >= emi.totalTenure && (
                             <span className="text-[8px] bg-slate-100 font-extrabold text-slate-400 px-1.5 py-0.5 rounded font-sans tracking-wide uppercase">
                               Closed
                             </span>
@@ -856,8 +949,6 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
           </div>
         )}
       </div>
-
-      {/* CONFIRM DELETE MODAL BACKDROP */}
       {emiToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl border border-slate-100 transform scale-100 transition-transform">

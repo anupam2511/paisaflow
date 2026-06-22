@@ -22,6 +22,8 @@ import InvestmentsSection from './components/InvestmentsSection';
 import SettingsSection from './components/SettingsSection';
 import LoginScreen from './components/LoginScreen';
 import UserManualPanel from './components/UserManualPanel';
+import ForecastingSection from './components/ForecastingSection';
+import EmergencyFundSection from './components/EmergencyFundSection';
 
 /// Lucide Icons
 import {
@@ -44,7 +46,9 @@ import {
   Menu,
   X,
   CalendarClock,
-  LogOut
+  LogOut,
+  TrendingUp,
+  Percent
 } from 'lucide-react';
 
 export default function App() {
@@ -65,6 +69,9 @@ export default function App() {
           }
           if (!parsed.emis) {
             parsed.emis = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.emis || []));
+          }
+          if (!parsed.preferences) {
+            parsed.preferences = { ...INITIAL_FINANCE_DATA.preferences };
           }
           return parsed;
         }
@@ -123,20 +130,23 @@ export default function App() {
     const userKey = `personal_finance_dashboard_data_user_${username.toLowerCase()}`;
     const persisted = localStorage.getItem(userKey);
     if (persisted) {
-      try {
-        const parsed = JSON.parse(persisted);
-        if (!parsed.investments) {
-          parsed.investments = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.investments || []));
-        }
-        if (!parsed.emis) {
-          parsed.emis = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.emis || []));
-        }
-        setFinanceData(parsed);
-        return;
-      } catch (e) {
-        console.error('Login load failed', e);
-      }
-    }
+       try {
+         const parsed = JSON.parse(persisted);
+         if (!parsed.investments) {
+           parsed.investments = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.investments || []));
+         }
+         if (!parsed.emis) {
+           parsed.emis = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA.emis || []));
+         }
+         if (!parsed.preferences) {
+           parsed.preferences = { ...INITIAL_FINANCE_DATA.preferences };
+         }
+         setFinanceData(parsed);
+         return;
+       } catch (e) {
+         console.error('Login load failed', e);
+       }
+     }
     // Start brand representation of credentials with prefilled seed cloned
     const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
     setFinanceData(freshClone);
@@ -287,6 +297,8 @@ export default function App() {
     { id: 'transactions', label: 'Expense Ledger', icon: ArrowDownRight },
     { id: 'savings', label: 'Savings Milestones', icon: Target },
     { id: 'investments', label: 'Investments Portfolio', icon: Coins },
+    { id: 'forecasting', label: 'Wealth Forecast', icon: TrendingUp },
+    { id: 'emergency', label: 'Emergency Shield', icon: ShieldAlert },
     { id: 'settings', label: 'System Settings', icon: Settings },
   ];
 
@@ -355,6 +367,19 @@ export default function App() {
           <InvestmentsSection 
             data={financeData} 
             setFinanceData={setFinanceData} 
+          />
+        );
+      case 'forecasting':
+        return (
+          <ForecastingSection 
+            data={financeData} 
+          />
+        );
+      case 'emergency':
+        return (
+          <EmergencyFundSection 
+            data={financeData} 
+            setFinanceData={setFinanceData}
           />
         );
       case 'settings':

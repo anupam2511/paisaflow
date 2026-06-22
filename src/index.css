@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-sans: 'Outfit', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Outfit', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   --color-yellow-500: #f2df4a;
 }
 
@@ -44,6 +44,21 @@ body {
   background-color: var(--bg-app);
   color: var(--text-primary);
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom letter-spacing enhancement: when text/numbers are bold, increase character spacing by 15% (0.015em) */
+strong, b, h1, h2, h3, h4, h5, h6, th,
+.font-medium,
+.font-semibold,
+.font-bold,
+.font-extrabold,
+.font-black,
+[class*="font-medium"],
+[class*="font-semibold"],
+[class*="font-bold"],
+[class*="font-extrabold"],
+[class*="font-black"] {
+  letter-spacing: 0.015em !important;
 }
 
 /* CUSTOM TRANSPARENT SECTOR BINDINGS FOR PERFECT DARK THEME SUPPORT */
@@ -176,6 +191,32 @@ body {
   border-color: var(--border-light) !important;
 }
 
+/* Custom smooth selections and row hovers with zero muddy grey */
+::selection {
+  background: rgba(99, 102, 241, 0.25) !important;
+  color: inherit !important;
+}
+
+tr.hover\:bg-slate-50:hover, 
+.hover\:bg-slate-50:hover, 
+.hover\:bg-slate-50\/50:hover {
+  background-color: rgba(99, 102, 241, 0.04) !important;
+}
+
+.dark tr.hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-50\/50:hover {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Also for other slate backgrounds on hover, to eliminate any plain solid dull grey */
+.hover\:bg-slate-100:hover {
+  background-color: rgba(99, 102, 241, 0.06) !important;
+}
+.dark .hover\:bg-slate-100:hover {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
 .dark .hover\:bg-slate-50:hover {
-  background-color: var(--bg-secondary) !important;
+  background-color: rgba(99, 102, 241, 0.08) !important;
 }

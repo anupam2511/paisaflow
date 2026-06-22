@@ -14,6 +14,8 @@ export interface FinancialAccount {
   linkedGroupId?: string;
   isMainCard?: boolean;
   billingCycleStartDay?: number; // e.g. 1-28/31 representing the start day of monthly statement cycle
+  mabRequired?: boolean;         // Has Minimum Average Balance requirement
+  minimumAverageBalance?: number;// Required minimal balance amount
 }
 
 export interface SavingGoal {

@@ -40,6 +40,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
   const [color, setColor] = useState('#0284c7');
   const [balance, setBalance] = useState('');
   const [billingCycleStartDay, setBillingCycleStartDay] = useState<string>('15');
+  const [mabRequired, setMabRequired] = useState(false);
+  const [minimumAverageBalance, setMinimumAverageBalance] = useState('');
 
   // Card-by-Card Statement Cycle Selection tracking
   // Key: accountId, Value: "YYYY-MM"
@@ -171,6 +173,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     setBillingCycleStartDay(acc.billingCycleStartDay ? acc.billingCycleStartDay.toString() : '15');
     setSharedLimitOption(acc.linkedGroupId ? 'link' : 'standalone');
     setIsMainCard(acc.isMainCard || false);
+    setMabRequired(acc.mabRequired || false);
+    setMinimumAverageBalance(acc.minimumAverageBalance ? acc.minimumAverageBalance.toString() : '');
     if (acc.linkedGroupId) {
       const sibling = accounts.find(c => c.type === 'credit_card' && c.linkedGroupId === acc.linkedGroupId && c.id !== acc.id);
       setLinkToCardId(sibling ? sibling.id : '');
@@ -192,6 +196,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     setSharedLimitOption('standalone');
     setLinkToCardId('');
     setIsMainCard(false);
+    setMabRequired(false);
+    setMinimumAverageBalance('');
     setError('');
   };
 
@@ -264,6 +270,12 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
       return;
     }
 
+    const parsedMab = parseFloat(minimumAverageBalance);
+    if (type === 'bank' && mabRequired && (isNaN(parsedMab) || parsedMab < 0)) {
+      setError('Please specify a valid Minimum Average Balance (MAB) required.');
+      return;
+    }
+
     // Always clean descriptor name before storing to eliminate double headers
     const cleanDescriptor = getCleanDescriptor(name, institution);
     const formattedFullName = `${institution.trim()} - ${cleanDescriptor}`;
@@ -296,7 +308,9 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
               limit: limitRequired ? parsedLimit : undefined,
               linkedGroupId: computedGroupId,
               isMainCard: computedGroupId ? isMainCard : undefined,
-              billingCycleStartDay: parsedBillingDay
+              billingCycleStartDay: parsedBillingDay,
+              mabRequired: type === 'bank' ? mabRequired : undefined,
+              minimumAverageBalance: (type === 'bank' && mabRequired) ? parsedMab : undefined
             };
           }
           return acc;
@@ -341,6 +355,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
       setSharedLimitOption('standalone');
       setLinkToCardId('');
       setIsMainCard(false);
+      setMabRequired(false);
+      setMinimumAverageBalance('');
     } else {
       // Register New Account
       const newAccount: FinancialAccount = {
@@ -353,7 +369,9 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
         limit: limitRequired ? parsedLimit : undefined,
         linkedGroupId: computedGroupId,
         isMainCard: computedGroupId ? isMainCard : undefined,
-        billingCycleStartDay: parsedBillingDay
+        billingCycleStartDay: parsedBillingDay,
+        mabRequired: type === 'bank' ? mabRequired : undefined,
+        minimumAverageBalance: (type === 'bank' && mabRequired) ? parsedMab : undefined
       };
 
       setFinanceData(prev => {
@@ -396,6 +414,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
       setSharedLimitOption('standalone');
       setLinkToCardId('');
       setIsMainCard(false);
+      setMabRequired(false);
+      setMinimumAverageBalance('');
     }
 
     setTimeout(() => setSuccess(''), 4000);
@@ -670,6 +690,51 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
               </div>
             </div>
 
+            {/* Bank account specific configuration (MAB) */}
+            {type === 'bank' && (
+              <div className="space-y-4 border border-slate-100 dark:border-slate-800 rounded-xl p-3.5 bg-slate-50/50 dark:bg-slate-900/40">
+                <h4 className="text-[11px] font-black text-slate-700 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wide">
+                  <Building className="w-3.5 h-3.5 text-indigo-500" /> Balance Maintenance
+                </h4>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="mabRequiredCheckbox"
+                    checked={mabRequired}
+                    onChange={(e) => setMabRequired(e.target.checked)}
+                    className="w-3.5 h-3.5 border-slate-300 dark:border-slate-700 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <label htmlFor="mabRequiredCheckbox" className="text-xs font-bold text-slate-650 dark:text-slate-300 cursor-pointer select-none">
+                    Maintain Minimum Average Balance (MAB)
+                  </label>
+                </div>
+
+                {mabRequired && (
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Required Minimum Balance (MAB Amount)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">{preferences.currencySymbol}</span>
+                      <input
+                        type="number"
+                        value={minimumAverageBalance}
+                        onChange={(e) => setMinimumAverageBalance(e.target.value)}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        autoComplete="off"
+                        placeholder="e.g. 5000"
+                        className="w-full text-xs border border-slate-200 dark:border-slate-850 rounded-lg p-2.5 pl-7 bg-white dark:bg-slate-900 focus:outline-none focus:border-indigo-500 font-bold text-slate-850 dark:text-slate-200"
+                      />
+                    </div>
+                    <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1">
+                      PalsaFlow will highlight this bank channel if its current book balance drops lower than this MAB buffer limit.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Credit limit and shared limit configuration */}
             {type === 'credit_card' && (
               <div className="space-y-4 border border-slate-100 dark:border-slate-800 rounded-xl p-3.5 bg-slate-50/50 dark:bg-slate-900/40">
@@ -774,6 +839,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                         type="number"
                         value={limit}
                         onChange={(e) => setLimit(e.target.value)}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        autoComplete="off"
                         placeholder="e.g. 150000"
                         className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 pl-7 bg-white dark:bg-slate-900 focus:outline-none focus:border-indigo-500 font-bold text-slate-800 dark:text-slate-200"
                       />
@@ -828,6 +895,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                     type="number"
                     value={balance}
                     onChange={(e) => setBalance(e.target.value)}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    autoComplete="off"
                     placeholder="e.g. 25000"
                     className="w-full text-xs border border-slate-200 rounded-lg p-2.5 pl-7 bg-slate-50 focus:outline-none focus:border-indigo-500 font-bold text-slate-800"
                   />
@@ -939,6 +1008,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                     type="number"
                     value={transferAmount}
                     onChange={(e) => setTransferAmount(e.target.value)}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    autoComplete="off"
                     placeholder="e.g. 5000"
                     className="w-full text-xs border border-slate-200 rounded-lg p-2.5 pl-7 bg-slate-50 focus:outline-none focus:border-indigo-500 font-extrabold text-slate-800"
                   />
@@ -1044,6 +1115,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                         type="number"
                         value={payCustomAmount}
                         onChange={(e) => setPayCustomAmount(e.target.value)}
+                        onWheel={(e) => e.currentTarget.blur()}
+                        autoComplete="off"
                         placeholder="e.g. 10000"
                         className="w-full text-xs border border-slate-200 rounded-lg p-2.5 pl-7 bg-slate-50 focus:outline-none focus:border-indigo-500 font-extrabold text-slate-800"
                       />
@@ -1201,6 +1274,38 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                   <span className="text-2xl font-black tracking-tight font-mono">
                     {formatCurrency(acc.balance, preferences)}
                   </span>
+
+                  {/* Highlight Minimum Average Balance (MAB) when configured for Bank Accounts */}
+                  {isBank && acc.mabRequired && (
+                    <div className="mt-3 pt-3 border-t border-white/10 text-xs text-left">
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[9px] text-white/70 uppercase font-extrabold tracking-wider">
+                          Minimum Bal (MAB)
+                        </span>
+                        <span className="font-mono text-[9px] font-black bg-white/15 px-2 py-0.5 rounded text-white">
+                          {formatCurrency(acc.minimumAverageBalance || 0, preferences)}
+                        </span>
+                      </div>
+                      
+                      <div className={`rounded-xl p-2.5 flex items-center gap-2 text-[10px] leading-tight font-bold transition-all ${
+                        acc.balance < (acc.minimumAverageBalance || 0)
+                          ? 'bg-rose-500/40 border border-rose-350/30 text-rose-100 animate-pulse'
+                          : 'bg-emerald-500/25 border border-emerald-450/15 text-emerald-100/90'
+                      }`}>
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        {acc.balance < (acc.minimumAverageBalance || 0) ? (
+                          <div className="flex-1">
+                            <span className="block font-extrabold uppercase text-[9.5px]">Below MAB Limit</span>
+                            <span className="text-[8.5px] opacity-75 font-normal tracking-wide">
+                              Top up needed: {formatCurrency((acc.minimumAverageBalance || 0) - acc.balance, preferences)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="flex-1 text-[9.5px]">MAB Maintained</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Limit & percentage for credit cards */}
                   {acc.type === 'credit_card' && (

@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Lock,
   Sun,
-  Palette
+  Palette,
+  ShieldAlert
 } from 'lucide-react';
 
 interface UserManualPanelProps {
@@ -49,6 +50,8 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
         transactions: 'ledger',
         savings: 'savings',
         investments: 'investments',
+        forecasting: 'forecasting',
+        emergency: 'emergency',
         settings: 'settings',
       };
 
@@ -136,14 +139,16 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
     },
     {
       id: 'emis',
-      title: '6. EMI & Installments',
+      title: '6. EMI & Prepayments',
       icon: CalendarClock,
       color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-150',
-      description: 'Amortizing large home loans or credit instalment schedules.',
+      description: 'Amortizing loans and calculating prepayment compound interest savings.',
       steps: [
         'Creating trackers: Register appliances or loan repayments. Detail the target budget category to associate monthly charges with appropriate ledger calculations.',
         'Interest rate parameters: Record active compounding metrics to help analyze real borrowing weights.',
-        'Check-off steps: Clear outstanding loan steps with inline tags to track chronological repayment histories.'
+        'Secured Prepayment Simulator: Use the interactive Secured Debt Optimizer widget to model lump-sum or extra monthly principal repayments.',
+        'Tenure & Interest Savings: Find out instantly how many months of payments you skip and exactly how much interest money is saved by prepaying.',
+        'Foreclosure Rules: Understand the difference between Secured (Home/Car under RBI no-penalty guidelines) and Unsecured loans.'
       ]
     },
     {
@@ -184,8 +189,34 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
       ]
     },
     {
+      id: 'forecasting',
+      title: '10. Wealth Forecast Engine',
+      icon: TrendingUp,
+      color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-150',
+      description: 'Simulating compound growth, inflation, and investment horizons.',
+      steps: [
+        'Simulate Assets: Projects dynamic trajectories for your liquid cash reserves and investment portfolio over a sliding monthly timeline.',
+        'Customizing Sliders: Drag sliders to fine-tune expected inflation indices, monthly wage streams, spending envelopes, and annual percentage returns (ROI).',
+        'Compare Scenarios: Instantly inspect three outcome dimensions: a Balanced Forecast, an Optimistic (+3% ROI), and a Conservative (-3% ROI) outlook.',
+        'Milestone Logs: View year-by-year logs tracking your exact wealth progression directly.'
+      ]
+    },
+    {
+      id: 'emergency',
+      title: '11. Emergency Shield Guard',
+      icon: ShieldAlert,
+      color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-150',
+      description: 'Isolating liquid emergency shields from liquid spending.',
+      steps: [
+        'Horizon Multiplier: Select the number of months (e.g., 3, 6, 9, or 12 months) of vital expenses to keep fully buffered.',
+        'Essentials Aggregation: Dynamically integrates your bills, average monthly expenses, and active loans to discover a realistic cost-of-living index.',
+        'Official Lock: Conceptually allocate a portion of your checking savings directly inside PaisaFlow to partition it away from everyday shopping pools.',
+        'Security Alert: Evaluates real-time cash cushions to declare your official shield safety level (e.g. Critical, Vulnerable, Active).'
+      ]
+    },
+    {
       id: 'settings',
-      title: '10. Customize & Core Reset',
+      title: '12. Customize & Core Reset',
       icon: Settings,
       color: 'text-rose-550 bg-rose-50 dark:bg-rose-950/40 border-rose-150',
       description: 'Customizing app preferences and securing local storage.',

@@ -314,9 +314,8 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pr-1">
               {registeredUsers.map((user) => (
-                <button
+                <div
                   key={user}
-                  type="button"
                   onClick={() => handleSelectPreExisting(user)}
                   className={`p-2 rounded-xl border text-left flex items-center justify-between pointer-events-auto transition duration-150 cursor-pointer ${
                     username.toLowerCase() === user.toLowerCase()
@@ -333,12 +332,12 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   <button
                     type="button"
                     onClick={(e) => handleDeleteRegisteredUser(user, e)}
-                    className="p-1 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-500/20 text-slate-300 rounded transition shrink-0"
+                    className="p-1 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-500/20 text-slate-400 hover:text-rose-600 dark:text-slate-300 rounded transition shrink-0"
                     title="Prune profile account"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
-                </button>
+                </div>
               ))}
             </div>
           </div>

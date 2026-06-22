@@ -26,6 +26,15 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedGoalId, setSelectedGoalId] = useState('');
 
+  const [allocatedEmergency, setAllocatedEmergency] = useState<number>(0);
+  React.useEffect(() => {
+    const activeUser = localStorage.getItem('paisaflow_active_user') || 'default';
+    const persistedValue = localStorage.getItem(`paisaflow_user_${activeUser}_emergency_allocated`);
+    if (persistedValue) {
+      setAllocatedEmergency(parseFloat(persistedValue));
+    }
+  }, []);
+
   // Search/Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
@@ -485,14 +494,47 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
               </select>
             </div>
 
+            {/* LIVE EMERGENCY RESERVE CUSHION NOTE */}
+            {allocatedEmergency > 0 && (
+              (() => {
+                const bankAccounts = accounts.filter(a => a.type === 'bank');
+                const totalBankCash = bankAccounts.reduce((sum, a) => sum + a.balance, 0);
+                const inputAmt = parseFloat(amount) || 0;
+                
+                // Check if target is a bank account
+                const selectedAccount = accounts.find(a => a.id === accountId);
+                const isSpendingFromBank = selectedAccount && selectedAccount.type === 'bank';
+                const postSpendBankCash = isSpendingFromBank ? (totalBankCash - inputAmt) : totalBankCash;
+                const isReservesBreachedAfterSpend = postSpendBankCash < allocatedEmergency;
+                
+                return (
+                  <div className={`p-2.5 rounded-xl border text-[10px] font-sans transition-colors duration-200 ${
+                    isReservesBreachedAfterSpend 
+                      ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/45 text-amber-900 dark:text-amber-305 dark:text-amber-300' 
+                      : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/45 text-emerald-900 dark:text-emerald-305 dark:text-emerald-300'
+                  }`}>
+                    {isReservesBreachedAfterSpend ? (
+                      <span className="font-semibold block leading-relaxed">
+                        ⚠️ Reserve Alert: This expense of {preferences.currencySymbol}{inputAmt.toLocaleString()} will dip your total bank balance ({preferences.currencySymbol}{postSpendBankCash.toLocaleString()}) below your set Emergency Reserve of {preferences.currencySymbol}{allocatedEmergency.toLocaleString()}!
+                      </span>
+                    ) : (
+                      <span className="font-semibold block leading-relaxed">
+                        🛡️ Shield Guard Active: Your set emergency fund of {preferences.currencySymbol}{allocatedEmergency.toLocaleString()} remains completely safe. Remaining free cash cushion: {preferences.currencySymbol}{(postSpendBankCash - allocatedEmergency).toLocaleString()}.
+                      </span>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+
             {errorMsg && (
-              <div className="p-2 bg-rose-50 border border-rose-100 rounded-lg flex items-center gap-1.5 text-[10px] text-rose-600 font-semibold">
+              <div className="p-2.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40 rounded-xl flex items-center gap-1.5 text-[10px] text-rose-600 dark:text-rose-400 font-semibold transition-all">
                 <ShieldAlert className="w-3.5 h-3.5" /> {errorMsg}
               </div>
             )}
             {successMsg && (
-              <div className="p-2.5 bg-teal-50 border border-teal-100 rounded-lg flex items-center gap-1.5 text-[10px] text-teal-700 font-semibold">
-                <CheckCircle className="w-3.5 h-3.5 text-teal-600" /> {successMsg}
+              <div className="p-2.5 bg-teal-50 dark:bg-emerald-950/30 border border-teal-100 dark:border-emerald-900/40 rounded-xl flex items-center gap-1.5 text-[10px] text-teal-700 dark:text-emerald-400 font-semibold transition-all">
+                <CheckCircle className="w-3.5 h-3.5 text-teal-600 dark:text-emerald-400" /> {successMsg}
               </div>
             )}
 

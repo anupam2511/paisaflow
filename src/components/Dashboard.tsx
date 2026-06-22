@@ -28,7 +28,9 @@ import {
   CreditCard,
   Building,
   Coins,
-  CalendarClock
+  CalendarClock,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -50,6 +52,14 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
   const [quickSaveSuccess, setQuickSaveSuccess] = useState<boolean>(false);
 
   // Sync quick save contribution amount based on goal selections and contribution type
+  const [allocatedEmergency, setAllocatedEmergency] = useState<number>(0);
+  useEffect(() => {
+    const activeUser = localStorage.getItem('paisaflow_active_user') || 'default';
+    const persistedValue = localStorage.getItem(`paisaflow_user_${activeUser}_emergency_allocated`);
+    if (persistedValue) {
+      setAllocatedEmergency(parseFloat(persistedValue));
+    }
+  }, []);
   useEffect(() => {
     if (!quickSaveGoalId) {
       setQuickSaveAmount('');
@@ -145,6 +155,12 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
   const largeExpenses = expenses.filter(e => e.amount >= threshold);
   const totalLargeExpenses = largeExpenses.reduce((sum, e) => sum + e.amount, 0);
   const totalStandardExpenses = totalExpenses - totalLargeExpenses;
+
+  // Emergency Shield and Bank Balance calculations
+  const bankAccounts = accounts.filter(a => a.type === 'bank');
+  const totalBankCash = bankAccounts.reduce((sum, a) => sum + a.balance, 0);
+  const isReserveBreached = allocatedEmergency > 0 && totalBankCash < allocatedEmergency;
+  const availableSpendingCash = Math.max(0, totalBankCash - allocatedEmergency);
 
   // Pie chart calculation helper
   let cumulativePercent = 0;
@@ -303,6 +319,58 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
     };
   }).filter(item => item.amount > 0);
 
+  // Export JSON Vault
+  const handleExportJSON = () => {
+    try {
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+        JSON.stringify(data, null, 2)
+      )}`;
+      const downloadAnchor = document.createElement('a');
+      const dateString = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute('href', jsonString);
+      downloadAnchor.setAttribute('download', `paisaflow_backup_${dateString}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch (err) {
+      console.error('Failed to export JSON payload.', err);
+    }
+  };
+
+  // Export Expenses Ledger to CSV
+  const handleExportCSV = () => {
+    try {
+      const expensesList = data.expenses || [];
+      if (expensesList.length === 0) {
+        return;
+      }
+      const headers = ['ID', 'Date', 'Amount', 'Category', 'Description', 'Linked Account ID'];
+      const rows = expensesList.map(exp => [
+        exp.id || '',
+        exp.date || '',
+        exp.amount || 0,
+        `"${(exp.category || '').replace(/"/g, '""')}"`,
+        `"${(exp.description || '').replace(/"/g, '""')}"`,
+        exp.accountId || ''
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const downloadAnchor = document.createElement('a');
+      const dateString = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute('href', url);
+      downloadAnchor.setAttribute('download', `paisaflow_expenses_${dateString}.csv`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export CSV payload.', err);
+    }
+  };
+
   return (
     <div id="dashboard-root" className="space-y-6">
       {/* HEADER SECTION */}
@@ -328,8 +396,74 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
             <Settings className="w-3 h-3" />
             Limit: {formatCurrency(threshold, preferences)}
           </button>
+          <button 
+            onClick={handleExportJSON}
+            className="text-[10px] bg-white dark:bg-slate-900 border border-indigo-150 dark:border-indigo-900/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1.5 cursor-pointer font-sans uppercase tracking-wider shadow-sm shrink-0"
+            title="Download full capital ledger and settings backup in JSON format"
+          >
+            <Download className="w-3 h-3" />
+            JSON Export
+          </button>
+          {expenses.length > 0 && (
+            <button 
+              onClick={handleExportCSV}
+              className="text-[10px] bg-white dark:bg-slate-900 border border-emerald-150 dark:border-emerald-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-extrabold px-2.5 py-1 rounded-full flex items-center gap-1.5 cursor-pointer font-sans uppercase tracking-wider shadow-sm shrink-0"
+              title="Download expenses ledger as standard Excel/CSV spreadsheet"
+            >
+              <FileSpreadsheet className="w-3 h-3" />
+              CSV Ledger
+            </button>
+          )}
         </div>
       </div>
+
+      {/* EMERGENCY RESERVE LOCK STATUS BANNER */}
+      {allocatedEmergency > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-md font-sans transition-all duration-200 ${
+            isReserveBreached 
+              ? 'bg-rose-50 dark:bg-[#25121e] border-rose-250 dark:border-rose-500/40 text-rose-950 dark:text-rose-100' 
+              : 'bg-indigo-50/80 dark:bg-[#131d36] border-indigo-150 dark:border-indigo-500/40 text-indigo-950 dark:text-indigo-100'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className={`p-2 rounded-xl shrink-0 ${
+              isReserveBreached 
+                ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300' 
+                : 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300'
+            }`}>
+              <ShieldAlert className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <span className={`text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md ${
+                isReserveBreached 
+                  ? 'bg-rose-100/90 dark:bg-rose-900/80 text-rose-850 dark:text-rose-200' 
+                  : 'bg-indigo-100/90 dark:bg-indigo-900/80 text-indigo-850 dark:text-indigo-200'
+              }`}>
+                {isReserveBreached ? '⚠️ Core Shield Breached' : '🛡️ Emergency Fund Shield Secured'}
+              </span>
+              <p className="font-semibold mt-1">
+                {isReserveBreached 
+                  ? `Critical Notification: Added expenses have consumed checking assets. You are currently spending ${formatCurrency(allocatedEmergency - totalBankCash, preferences)} deep into your ${formatCurrency(allocatedEmergency, preferences)} emergency reserve allocation!`
+                  : `Your emergency reserve of ${formatCurrency(allocatedEmergency, preferences)} is safely quarantined conceptually within your checking accounts. Safely spendable spending cash: ${formatCurrency(availableSpendingCash, preferences)}.`
+                }
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setCurrentTab('emergency')}
+            className={`px-3 py-1.5 rounded-lg font-bold text-[11px] border cursor-pointer hover:shadow-xs transition shrink-0 ${
+              isReserveBreached 
+                ? 'bg-rose-600 dark:bg-rose-600 border-rose-600 dark:border-rose-500/30 text-white hover:bg-rose-750 dark:hover:bg-rose-550' 
+                : 'bg-white dark:bg-indigo-600 border-indigo-200 dark:border-indigo-500 text-indigo-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-500'
+            }`}
+          >
+            Adjust Shield Reserves &rarr;
+          </button>
+        </motion.div>
+      )}
 
       {/* CORE FINANCIAL SCORECARDS - NEW HIGH-DENSITY, ULTRA-SLEEK COMPACT CARDS */}
       <div id="financial-kpi-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

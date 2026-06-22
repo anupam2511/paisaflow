@@ -18,7 +18,14 @@ import {
   Moon,
   Monitor,
   RotateCcw,
-  Lock
+  Lock,
+  Download,
+  Upload,
+  GitBranch,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Server
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -36,6 +43,67 @@ export default function SettingsSection({ data, setFinanceData }: SettingsSectio
   const [newCategory, setNewCategory] = useState('');
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(preferences.themeMode || 'light');
   const [accentColor, setAccentColor] = useState<'blue' | 'emerald' | 'yellow' | 'rose' | 'violet'>(preferences.accentColor || 'blue');
+
+  // GitHub Live continuous sync engine state
+  const [gitOwner, setGitOwner] = useState(() => localStorage.getItem('pm_git_owner') || 'anupam2511');
+  const [gitRepo, setGitRepo] = useState(() => localStorage.getItem('pm_git_repo') || 'paisaflow');
+  const [gitBranch, setGitBranch] = useState(() => localStorage.getItem('pm_git_branch') || 'main');
+  const [gitToken, setGitToken] = useState(() => localStorage.getItem('pm_git_token') || '');
+  const [showToken, setShowToken] = useState(false);
+  const [gitCommitMsg, setGitCommitMsg] = useState('Sync newest budget structures & configs');
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [syncMessage, setSyncMessage] = useState('');
+
+  const handleGitHubSync = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gitOwner || !gitRepo || !gitToken) {
+      setSyncStatus('error');
+      setSyncMessage('Username (Owner), Repository name, and Token are mandatory fields.');
+      return;
+    }
+
+    setSyncStatus('syncing');
+    setSyncMessage('Preparing workspace files and assembling Git delta tree...');
+
+    try {
+      localStorage.setItem('pm_git_owner', gitOwner);
+      localStorage.setItem('pm_git_repo', gitRepo);
+      localStorage.setItem('pm_git_branch', gitBranch);
+      localStorage.setItem('pm_git_token', gitToken);
+
+      const response = await fetch('/api/github/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          owner: gitOwner,
+          repo: gitRepo,
+          branch: gitBranch,
+          token: gitToken,
+          commitMessage: gitCommitMsg || 'Sync from PaisaFlow workspace'
+        })
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(resData.error || 'Sync request failed.');
+      }
+
+      setSyncStatus('success');
+      setSyncMessage(resData.message || 'Perfectly synchronized and committed to GitHub!');
+      
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setSyncMessage('');
+      }, 7000);
+
+    } catch (err: any) {
+      setSyncStatus('error');
+      setSyncMessage(err.message || 'Connection failure to sync gateway.');
+    }
+  };
 
   // Local state for system reset and purge confirmations
   const [resetStep, setResetStep] = useState<0 | 1 | 2>(0);
@@ -131,6 +199,144 @@ export default function SettingsSection({ data, setFinanceData }: SettingsSectio
   // Notifications
   const [alertOk, setAlertOk] = useState('');
   const [alertErr, setAlertErr] = useState('');
+
+  // Data redundancy/portability handlers
+  const [dragOver, setDragOver] = useState(false);
+  const [importError, setImportError] = useState('');
+
+  // Export to JSON helper
+  const handleExportJSON = () => {
+    try {
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+        JSON.stringify(data, null, 2)
+      )}`;
+      const downloadAnchor = document.createElement('a');
+      const dateString = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute('href', jsonString);
+      downloadAnchor.setAttribute('download', `paisaflow_backup_${dateString}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      
+      setAlertOk('All ledger logs, portfolios, budgets, and parameters backed up successfully!');
+      setTimeout(() => setAlertOk(''), 5000);
+    } catch (err) {
+      setAlertErr('Failed to compile data payload for export.');
+    }
+  };
+
+  // Export Expenses Ledger to CSV helper
+  const handleExportCSV = () => {
+    try {
+      const expensesList = data.expenses || [];
+      if (expensesList.length === 0) {
+        setAlertErr('Expense Ledger is empty. No rows to output.');
+        setTimeout(() => setAlertErr(''), 4000);
+        return;
+      }
+
+      // Safe CSV Column builder
+      const headers = ['ID', 'Date', 'Amount', 'Category', 'Description', 'Linked Account ID'];
+      const rows = expensesList.map(exp => [
+        exp.id || '',
+        exp.date || '',
+        exp.amount || 0,
+        `"${(exp.category || '').replace(/"/g, '""')}"`,
+        `"${(exp.description || '').replace(/"/g, '""')}"`,
+        exp.accountId || ''
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const downloadAnchor = document.createElement('a');
+      const dateString = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute('href', url);
+      downloadAnchor.setAttribute('download', `paisaflow_expenses_${dateString}.csv`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      URL.revokeObjectURL(url);
+
+      setAlertOk('Ledger history exported to standard CSV successfully!');
+      setTimeout(() => setAlertOk(''), 4000);
+    } catch (err) {
+      setAlertErr('Failed to compose CSV payload.');
+    }
+  };
+
+  // Import JSON configuration helper
+  const handleImportFile = (file: File) => {
+    setImportError('');
+    setAlertOk('');
+    setAlertErr('');
+    
+    if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+      setImportError('Please supply a valid JSON configuration backup.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const result = event.target?.result;
+        if (typeof result !== 'string') {
+          setImportError('Could not process upload stream content.');
+          return;
+        }
+
+        const parsed = JSON.parse(result) as Partial<FinanceData>;
+        
+        // Dynamic schema assert elements
+        if (!parsed.accounts || !Array.isArray(parsed.accounts)) {
+          setImportError('Broken schema parameters: Missing ledger accounts array.');
+          return;
+        }
+
+        const fallbackCats = [
+          'Mutual Funds',
+          'Government Schemes',
+          'Gold Investment',
+          'Fixed Deposits',
+          'Stocks & Equities',
+          'Alternative Assets'
+        ];
+
+        const fullyStructuredData: FinanceData = {
+          accounts: parsed.accounts || [],
+          savingGoals: parsed.savingGoals || [],
+          incomes: parsed.incomes || [],
+          expenses: parsed.expenses || [],
+          recurringSpends: parsed.recurringSpends || [],
+          budgets: parsed.budgets || [],
+          preferences: {
+            currencySymbol: parsed.preferences?.currencySymbol || currency,
+            largeExpenseThreshold: parsed.preferences?.largeExpenseThreshold || parseFloat(threshold) || 4000,
+            investmentCategories: parsed.preferences?.investmentCategories || fallbackCats,
+            themeMode: parsed.preferences?.themeMode || themeMode,
+            accentColor: parsed.preferences?.accentColor || accentColor,
+          },
+          investments: parsed.investments || [],
+          emis: parsed.emis || []
+        };
+
+        setFinanceData(fullyStructuredData);
+        
+        // Sync interactive local state properties
+        setCurrency(fullyStructuredData.preferences.currencySymbol);
+        setThreshold(fullyStructuredData.preferences.largeExpenseThreshold.toString());
+        setThemeMode(fullyStructuredData.preferences.themeMode || 'light');
+        setAccentColor(fullyStructuredData.preferences.accentColor || 'blue');
+
+        setAlertOk('Financial history and core parameters loaded of record successfully!');
+        setTimeout(() => setAlertOk(''), 5000);
+      } catch (e) {
+        setImportError('Unable to parse file. Ensure it is a valid backup output.');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // Available categories (ensuring standard + user custom ones are safely retrieved)
   const currentCategories = preferences.investmentCategories || [
@@ -508,11 +714,11 @@ export default function SettingsSection({ data, setFinanceData }: SettingsSectio
               const count = expenses.filter(exp => exp.category.toLowerCase() === b.category.toLowerCase()).length;
               
               return (
-                <div key={b.category} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                <div key={b.category} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                    <span className="font-extrabold text-slate-700">{b.category}</span>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600">
+                    <span className="font-extrabold text-slate-700 dark:text-slate-350">{b.category}</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
                       {count} {count === 1 ? 'expense' : 'expenses'}
                     </span>
                   </div>
@@ -530,6 +736,221 @@ export default function SettingsSection({ data, setFinanceData }: SettingsSectio
             })}
           </div>
 
+        </div>
+
+        {/* EXPORT & IMPORT DATA PORTABILITY HUB */}
+        <div id="settings-data-portability-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-50 dark:border-slate-800/60 mb-5">
+            <Download className="w-5.5 h-5.5 text-indigo-600 dark:text-indigo-400" />
+            <div>
+              <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100">Data Backup & Portability</h2>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">Backup, migrate, or export your ledger transactions seamlessly.</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            
+            {/* Export Section */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Export Backups</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportJSON}
+                  className="py-3 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 cursor-pointer flex flex-col items-center justify-center gap-1.5 transition active:scale-[0.98]"
+                  title="Download full configuration backup"
+                >
+                  <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>Backup JSON</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="py-3 px-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 cursor-pointer flex flex-col items-center justify-center gap-1.5 transition active:scale-[0.98]"
+                  title="Export expenses to CSV format"
+                >
+                  <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-450" />
+                  <span>Ledger CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Import Section */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Restore Backup</label>
+              
+              <div 
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const files = e.dataTransfer.files;
+                  if (files && files.length > 0) {
+                    handleImportFile(files[0]);
+                  }
+                }}
+                className={`relative border-2 border-dashed rounded-2xl p-4 text-center transition flex flex-col items-center justify-center min-h-[120px] ${
+                  dragOver 
+                    ? 'border-indigo-600 bg-indigo-50/30' 
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/20'
+                }`}
+              >
+                <input 
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                      handleImportFile(files[0]);
+                    }
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  id="data-import-input"
+                />
+                <Upload className="w-6 h-6 text-slate-400 dark:text-slate-700 mb-2" />
+                <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">Click or Drag JSON backup here</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Accepts .json backup files compiled by PaisaFlow</span>
+              </div>
+
+              {importError && (
+                <div className="mt-2.5 p-2.5 bg-rose-50/70 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 rounded-xl text-[10px] text-rose-600 dark:text-rose-455 dark:text-rose-400 font-semibold flex items-center gap-1.5 transition">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{importError}</span>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* 1-CLICK GITHUB SYNC & VERCEL CD CONTROLLER */}
+        <div id="settings-github-sync-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2.5 pb-4 border-b border-slate-50 dark:border-slate-800/60 mb-5">
+            <GitBranch className="w-5.5 h-5.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+            <div>
+              <h2 className="text-base font-extrabold text-slate-800 dark:text-slate-100">1-Click GitHub Publisher</h2>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold">Instantly push workspace changes directly to trigger your Vercel/Netlify hosting.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleGitHubSync} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">GitHub Owner / User</label>
+                <input
+                  type="text"
+                  value={gitOwner}
+                  onChange={(e) => setGitOwner(e.target.value)}
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
+                  placeholder="e.g., anupam2511"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Repository Name</label>
+                <input
+                  type="text"
+                  value={gitRepo}
+                  onChange={(e) => setGitRepo(e.target.value)}
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
+                  placeholder="e.g., paisaflow"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Deployment Target Branch</label>
+              <input
+                type="text"
+                value={gitBranch}
+                onChange={(e) => setGitBranch(e.target.value)}
+                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold"
+                placeholder="e.g., main"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Commit Description</label>
+              <input
+                type="text"
+                value={gitCommitMsg}
+                onChange={(e) => setGitCommitMsg(e.target.value)}
+                className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-bold text-slate-700 dark:text-slate-300"
+                placeholder="Describe current system updates"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">GitHub Personal Access Token (PAT)</label>
+                <a
+                  href="https://github.com/settings/tokens/new?scopes=repo&description=PaisaFlow%201-Click%2520Sync"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[9px] text-indigo-600 dark:text-indigo-400 font-extrabold hover:underline"
+                >
+                  Create token with 'repo' scope →
+                </a>
+              </div>
+              <div className="relative">
+                <input
+                  type={showToken ? 'text' : 'password'}
+                  value={gitToken}
+                  onChange={(e) => setGitToken(e.target.value)}
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 pr-10 bg-slate-50/60 dark:bg-slate-900 focus:outline-hidden focus:border-indigo-500 dark:focus:border-indigo-500 font-mono text-slate-800 dark:text-slate-100 font-bold"
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken(!showToken)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 dark:text-slate-650 hover:text-slate-700 dark:hover:text-slate-300 transition"
+                >
+                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[9px] text-slate-400 mt-1.5 leading-relaxed font-semibold">
+                PAT token is safely restricted to local storage within your browser. It is transmitted securely to trigger commits.
+              </p>
+            </div>
+
+            {syncMessage && (
+              <div className={`p-3.5 rounded-2xl flex items-start gap-2.5 border text-xs leading-relaxed font-semibold ${
+                syncStatus === 'syncing' 
+                  ? 'bg-blue-50/60 border-blue-100 text-blue-700 dark:bg-blue-950/20 dark:border-blue-900/40 dark:text-blue-300' 
+                  : syncStatus === 'success'
+                  ? 'bg-emerald-50/60 border-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-300'
+                  : 'bg-rose-50/60 border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/40 dark:text-rose-450'
+              }`}>
+                {syncStatus === 'syncing' ? (
+                  <RefreshCw className="w-4.5 h-4.5 shrink-0 animate-spin text-blue-500" />
+                ) : syncStatus === 'success' ? (
+                  <GitBranch className="w-4.5 h-4.5 shrink-0 text-emerald-500" />
+                ) : (
+                  <AlertCircle className="w-4.5 h-4.5 shrink-0 text-rose-500" />
+                )}
+                <span>{syncMessage}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={syncStatus === 'syncing'}
+              className={`w-full text-xs font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition transform active:scale-[0.99] cursor-pointer ${
+                syncStatus === 'syncing'
+                  ? 'bg-slate-150 text-slate-450 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                  : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/15 text-white'
+              }`}
+            >
+              <RefreshCw className={`w-4 h-4 shrink-0 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+              <span>{syncStatus === 'syncing' ? 'Publishing Workspace...' : 'Push & Publish Changes to GitHub'}</span>
+            </button>
+          </form>
         </div>
 
       </div>
