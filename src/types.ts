@@ -86,6 +86,41 @@ export interface EmiItem {
   notes?: string;
 }
 
+export interface CreditCardEmiInstallment {
+  installmentNumber: number;
+  dueDate: string; // YYYY-MM-DD
+  principalComponent: number;
+  interestComponent: number;
+  gstOnInterest: number;
+  processingFee: number;
+  gstOnProcessingFee: number;
+  offerCharge: number;
+  gstOnOfferCharge: number;
+  totalInstallmentAmount: number;
+  paidStatus: 'paid' | 'unpaid';
+}
+
+export interface CreditCardEmiMaster {
+  id: string;
+  expenseName: string;
+  cardId: string;
+  category?: string; // links to a category budget e.g. Electronics, Shopping, etc.
+  originalAmount: number;
+  financedAmount: number;
+  emiType: 'no_cost' | 'regular';
+  interestRate: number;
+  tenure: number;
+  merchantDiscount: number;
+  processingFee: number;
+  offerCharge: number;
+  gstRate: number; // e.g. 18
+  startDate: string; // YYYY-MM-DD
+  outstandingPrincipal: number;
+  status: 'active' | 'closed' | 'pre_closed';
+  installments: CreditCardEmiInstallment[];
+  notes?: string;
+}
+
 export interface Investment {
   id: string;
   name: string;
@@ -122,4 +157,5 @@ export interface FinanceData {
   preferences: Preferences;
   investments?: Investment[]; // optional for backward compatibility, will initiate standard defaults if undefined
   emis?: EmiItem[]; // Equated Monthly Installments registry
+  ccEmis?: CreditCardEmiMaster[]; // Credit Card EMI management registry
 }

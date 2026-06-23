@@ -102,12 +102,33 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
 
   // EMI Calculations
   const emis = data.emis || [];
+  const ccEmis = data.ccEmis || [];
+
   const activeEmis = emis.filter(e => e.isActive);
-  const totalActiveEmiMonthlyBurden = activeEmis.reduce((sum, e) => sum + e.amount, 0);
-  const totalEmiFutureLiability = activeEmis.reduce((sum, e) => {
+  const activeCcEmis = ccEmis.filter(e => e.status === 'active');
+
+  const standardEmiMonthlyBurden = activeEmis.reduce((sum, e) => sum + e.amount, 0);
+  const ccEmiMonthlyBurden = activeCcEmis.reduce((sum, e) => {
+    const nextUnpaid = e.installments.find(inst => inst.paidStatus === 'unpaid');
+    return sum + (nextUnpaid ? nextUnpaid.totalInstallmentAmount : 0);
+  }, 0);
+
+  const totalActiveEmiMonthlyBurden = standardEmiMonthlyBurden + ccEmiMonthlyBurden;
+
+  const standardFutureLiability = activeEmis.reduce((sum, e) => {
     const remaining = Math.max(0, e.totalTenure - e.installmentsPaid);
     return sum + (e.amount * remaining);
   }, 0);
+  const ccFutureLiability = activeCcEmis.reduce((sum, e) => {
+    const unpaid = e.installments.filter(inst => inst.paidStatus === 'unpaid');
+    return sum + unpaid.reduce((total, inst) => total + inst.totalInstallmentAmount, 0);
+  }, 0);
+
+  const totalEmiFutureLiability = standardFutureLiability + ccFutureLiability;
+
+  // Credit Card EMI vs Loan EMI ratio
+  const ccEmiRatio = totalActiveEmiMonthlyBurden > 0 ? (ccEmiMonthlyBurden / totalActiveEmiMonthlyBurden) * 100 : 0;
+  const loanEmiRatio = totalActiveEmiMonthlyBurden > 0 ? (standardEmiMonthlyBurden / totalActiveEmiMonthlyBurden) * 100 : 0;
   
   const totalOutflow = totalExpenses + totalRecurring + totalActiveEmiMonthlyBurden;
   const netMonthlyFlow = totalIncome - totalOutflow;
@@ -595,18 +616,27 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
         >
           <div className="flex items-center justify-between gap-1.5">
             <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-wider font-sans">
-              {activeEmis.length} Active EMIs
+              {activeEmis.length + activeCcEmis.length} Active EMIs
             </span>
-            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg group-hover:scale-110 transition-transform duration-200 shrink-0">
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg group-hover:scale-110 transition-transform duration-205 shrink-0">
               <CalendarClock className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-4">
+          <div className="mt-2.5">
             <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">EMI Burden</h3>
             <p className="text-lg md:text-xl lg:text-2xl font-black text-slate-900 mt-1 font-mono tracking-tight leading-none">{formatCurrency(totalActiveEmiMonthlyBurden, preferences)}</p>
-            <p className="text-[10px] text-slate-450 font-medium mt-1 truncate">
+            <p className="text-[9.5px] text-slate-450 font-medium mt-1 truncate">
               O/S: <strong className="text-slate-500 font-mono font-bold">{formatCurrency(totalEmiFutureLiability, preferences)}</strong>
             </p>
+            {totalActiveEmiMonthlyBurden > 0 ? (
+              <p className="text-[8.5px] text-indigo-600 font-extrabold tracking-wide uppercase mt-1 leading-none">
+                Ratio: {loanEmiRatio.toFixed(0)}% Loan • {ccEmiRatio.toFixed(0)}% CC
+              </p>
+            ) : (
+              <p className="text-[8.5px] text-slate-400 font-bold uppercase mt-1 leading-none">
+                No active schedules
+              </p>
+            )}
           </div>
         </motion.div>
       </div>
