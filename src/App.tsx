@@ -58,6 +58,7 @@ export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const [financeData, setFinanceData] = useState<FinanceData>(() => {
     return JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
@@ -104,6 +105,7 @@ export default function App() {
               await saveUserFinanceData(user.uid, freshClone);
             }
           }
+          setIsDataLoaded(true);
         } catch (error) {
           console.error("Failed to load user data from Firestore", error);
         }
@@ -111,6 +113,7 @@ export default function App() {
         setCurrentUser(null);
         setUserEmail(null);
         setUserDisplayName(null);
+        setIsDataLoaded(false);
         localStorage.removeItem('paisaflow_active_user');
       }
       setAuthLoading(false);
@@ -133,7 +136,7 @@ export default function App() {
 
   // Automatically check and process auto-debits on login & whenever spends or investments load/change
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !isDataLoaded) return;
 
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -147,11 +150,11 @@ export default function App() {
         return [...prev, ...uniqueNew];
       });
     }
-  }, [currentUser, financeData.recurringSpends, financeData.investments]);
+  }, [currentUser, financeData.recurringSpends, financeData.investments, isDataLoaded]);
 
   // Persist schema modifications instantly per user session
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !isDataLoaded) return;
     try {
       const userKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
       localStorage.setItem(userKey, JSON.stringify(financeData));
@@ -163,7 +166,7 @@ export default function App() {
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [financeData, currentUser]);
+  }, [financeData, currentUser, isDataLoaded]);
 
   const handleLogout = async () => {
     try {
