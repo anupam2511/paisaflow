@@ -5,17 +5,18 @@
 
 import { Preferences } from '../types';
 
-export function formatCurrency(amount: number, preferences: Preferences): string {
+export function formatCurrency(amount: number, preferences: Preferences, decimals?: number): string {
   // Format Indian National Rupees style with proper commas if applicable, else native
   const symbol = preferences.currencySymbol || '₹';
+  const dec = decimals !== undefined ? decimals : 0;
   try {
     const formatted = new Intl.NumberFormat('en-IN', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec
     }).format(amount);
     return `${symbol}${formatted}`;
   } catch (e) {
-    return `${symbol}${amount.toFixed(0)}`;
+    return `${symbol}${amount.toFixed(dec)}`;
   }
 }
 

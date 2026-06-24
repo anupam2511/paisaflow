@@ -700,21 +700,18 @@ export default function RecurringSpendsSection({ data, setFinanceData }: Recurri
                   )}
                 </div>
 
-                <div className="flex justify-between items-end border-t border-slate-50 pt-3 mt-3">
+                <div className="flex justify-between items-end border-t border-slate-50 dark:border-slate-800/40 pt-3 mt-3">
                   <div>
-                    <span className="text-[9px] text-slate-400 font-bold uppercase block leading-3">Schedule Spec</span>
+                    <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase block leading-3">Schedule Spec</span>
                     {sub.isVariableDate ? (
-                      <span className="text-[10px] font-bold text-teal-600 block leading-relaxed">
-                        Variable Date & Account
+                      <span className="text-[10px] font-extrabold text-teal-600 dark:text-teal-400 block leading-relaxed">
+                        Manual check-off
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold text-indigo-600 block leading-relaxed">
-                        {sub.billingMonth ? `${MONTH_NAMES[sub.billingMonth - 1].substring(0, 3)} ` : ''}Day {sub.billingDay}
+                      <span className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 block leading-relaxed">
+                        Next: {sub.nextBillingDate}
                       </span>
                     )}
-                    <span className="text-[9px] text-slate-400 font-semibold block">
-                      {sub.isVariableDate ? 'Manual check-off' : `Next: ${sub.nextBillingDate}`}
-                    </span>
                   </div>
                   <div className="text-right">
                     <span className="text-base font-extrabold text-slate-800">{formatCurrency(sub.amount, preferences)}</span>

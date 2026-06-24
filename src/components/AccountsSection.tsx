@@ -20,7 +20,8 @@ import {
   CheckCircle,
   GripVertical,
   Link,
-  Star
+  Star,
+  X
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -452,7 +453,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     }
 
     if (srcAcc.balance < amt) {
-      setTransferError(`Insufficient capital in ${srcAcc.institution}. Maximum transferrable holds: ${formatCurrency(srcAcc.balance, preferences)}`);
+      setTransferError(`Insufficient capital in ${srcAcc.institution}. Maximum transferrable holds: ${formatCurrency(srcAcc.balance, preferences, 2)}`);
       return;
     }
 
@@ -486,7 +487,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     }));
 
     setTransferAmount('');
-    setTransferSuccess(`Transferred ${formatCurrency(amt, preferences)} from ${srcAcc.institution} to ${destAcc.institution}! Paper audit created.`);
+    setTransferSuccess(`Transferred ${formatCurrency(amt, preferences, 2)} from ${srcAcc.institution} to ${destAcc.institution}! Paper audit created.`);
     setTimeout(() => setTransferSuccess(''), 5000);
   };
 
@@ -525,7 +526,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     }
 
     if (srcAcc.balance < amt) {
-      setPayError(`Insufficient balance in ${srcAcc.institution}. Maximum payment amount: ${formatCurrency(srcAcc.balance, preferences)}`);
+      setPayError(`Insufficient balance in ${srcAcc.institution}. Maximum payment amount: ${formatCurrency(srcAcc.balance, preferences, 2)}`);
       return;
     }
 
@@ -543,7 +544,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     // Create custom expense to preserve paper audit trail
     const ccPayExpense = {
       id: `exp-ccpay-${Date.now()}`,
-      description: `CC Payment: Paid ${formatCurrency(amt, preferences)} to ${cardAcc.name}`,
+      description: `CC Payment: Paid ${formatCurrency(amt, preferences, 2)} to ${cardAcc.name}`,
       amount: amt,
       category: 'Miscellaneous',
       date: new Date().toISOString().split('T')[0],
@@ -558,7 +559,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     }));
 
     setPayCustomAmount('');
-    setPaySuccess(`Successfully paid ${formatCurrency(amt, preferences)} to ${cardAcc.name} using ${srcAcc.institution}! Outstanding card balance updated.`);
+    setPaySuccess(`Successfully paid ${formatCurrency(amt, preferences, 2)} to ${cardAcc.name} using ${srcAcc.institution}! Outstanding card balance updated.`);
     setTimeout(() => setPaySuccess(''), 5000);
   };
 
@@ -979,7 +980,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                 >
                   {bankAccounts.map(b => (
                     <option key={b.id} value={b.id}>
-                      {b.name} ({formatCurrency(b.balance, preferences)})
+                      {b.name} ({formatCurrency(b.balance, preferences, 2)})
                     </option>
                   ))}
                 </select>
@@ -994,7 +995,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                 >
                   {bankAccounts.map(b => (
                     <option key={b.id} value={b.id}>
-                      {b.name} ({formatCurrency(b.balance, preferences)})
+                      {b.name} ({formatCurrency(b.balance, preferences, 2)})
                     </option>
                   ))}
                 </select>
@@ -1061,7 +1062,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                   >
                     {bankAccounts.map(b => (
                       <option key={b.id} value={b.id}>
-                        {b.name} ({formatCurrency(b.balance, preferences)})
+                        {b.name} ({formatCurrency(b.balance, preferences, 2)})
                       </option>
                     ))}
                   </select>
@@ -1076,7 +1077,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                   >
                     {creditCards.map(c => (
                       <option key={c.id} value={c.id}>
-                        {c.name} (O/S: {formatCurrency(c.balance, preferences)})
+                        {c.name} (O/S: {formatCurrency(c.balance, preferences, 2)})
                       </option>
                     ))}
                   </select>
@@ -1092,7 +1093,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                     >
                       <span className="font-bold text-[9px] uppercase opacity-75">Pay Full O/S</span>
                       <span className="font-mono text-xs mt-0.5 font-extrabold truncate max-w-full">
-                        {formatCurrency(accounts.find(a => a.id === payCardId)?.balance || 0, preferences)}
+                        {formatCurrency(accounts.find(a => a.id === payCardId)?.balance || 0, preferences, 2)}
                       </span>
                     </button>
                     <button
@@ -1272,37 +1273,43 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                     {isBank ? 'Current Balance' : 'Outstanding Credit Spent'}
                   </span>
                   <span className="text-2xl font-black tracking-tight font-mono">
-                    {formatCurrency(acc.balance, preferences)}
+                    {formatCurrency(acc.balance, preferences, 2)}
                   </span>
 
                   {/* Highlight Minimum Average Balance (MAB) when configured for Bank Accounts */}
                   {isBank && acc.mabRequired && (
                     <div className="mt-3 pt-3 border-t border-white/10 text-xs text-left">
-                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                      <div className="flex items-center justify-between gap-1 mb-1">
                         <span className="text-[9px] text-white/70 uppercase font-extrabold tracking-wider">
                           Minimum Bal (MAB)
                         </span>
-                        <span className="font-mono text-[9px] font-black bg-white/15 px-2 py-0.5 rounded text-white">
-                          {formatCurrency(acc.minimumAverageBalance || 0, preferences)}
-                        </span>
-                      </div>
-                      
-                      <div className={`rounded-xl p-2.5 flex items-center gap-2 text-[10px] leading-tight font-bold transition-all ${
-                        acc.balance < (acc.minimumAverageBalance || 0)
-                          ? 'bg-rose-500/40 border border-rose-350/30 text-rose-100 animate-pulse'
-                          : 'bg-emerald-500/25 border border-emerald-450/15 text-emerald-100/90'
-                      }`}>
-                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                        {acc.balance < (acc.minimumAverageBalance || 0) ? (
-                          <div className="flex-1">
-                            <span className="block font-extrabold uppercase text-[9.5px]">Below MAB Limit</span>
-                            <span className="text-[8.5px] opacity-75 font-normal tracking-wide">
-                              Top up needed: {formatCurrency((acc.minimumAverageBalance || 0) - acc.balance, preferences)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="flex-1 text-[9.5px]">MAB Maintained</span>
-                        )}
+                        <div className="flex items-center gap-1.5 relative">
+                          <span className="font-mono text-[9px] font-black bg-white/15 px-2 py-0.5 rounded text-white">
+                            {formatCurrency(acc.minimumAverageBalance || 0, preferences, 2)}
+                          </span>
+                          
+                          {/* MAB Status Indicator */}
+                          {acc.balance >= (acc.minimumAverageBalance || 0) ? (
+                            <div className="relative group cursor-help flex items-center shrink-0">
+                              <Check className="w-4 h-4 text-emerald-400 font-extrabold stroke-[3]" />
+                              {/* Hover Tooltip */}
+                              <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover:block z-50 w-32 p-2 rounded-lg bg-slate-900/95 text-[9.5px] leading-tight text-white shadow-xl border border-white/10 pointer-events-none text-center whitespace-nowrap">
+                                <span className="font-bold text-emerald-400">MAB Maintained ✓</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="relative group cursor-help flex items-center shrink-0">
+                              <X className="w-4 h-4 text-rose-400 font-extrabold animate-pulse stroke-[3]" />
+                              {/* Hover Tooltip */}
+                              <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover:block z-50 w-44 p-2 rounded-lg bg-slate-900/95 text-[9.5px] leading-tight text-white shadow-xl border border-white/10 pointer-events-none">
+                                <span className="font-extrabold text-rose-400 block text-[10px] uppercase tracking-wider mb-0.5">Below MAB Limit ⚠️</span>
+                                <span className="text-white/85 text-[9px] font-medium">
+                                  Top up needed: {formatCurrency((acc.minimumAverageBalance || 0) - acc.balance, preferences, 2)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1313,18 +1320,18 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                       <div className="flex flex-wrap items-center justify-between text-[10px] text-white/80 font-black mb-1">
                         {isLinkedCard ? (
                           <span className="flex items-center gap-1 bg-white/15 px-1.5 py-0.5 rounded text-[8.5px] uppercase font-black">
-                            🔗 Pool Limit: {formatCurrency(groupLimit, preferences)}
+                            🔗 Pool Limit: {formatCurrency(groupLimit, preferences, 2)}
                           </span>
                         ) : (
-                          <span>Limit: {formatCurrency(acc.limit || 0, preferences)}</span>
+                          <span>Limit: {formatCurrency(acc.limit || 0, preferences, 2)}</span>
                         )}
                         <span>{utilizationPercentage.toFixed(0)}% pooled use</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-white/75 font-semibold mb-1">
                         {isLinkedCard && (
                           <>
-                            <span>Spent: {formatCurrency(acc.balance, preferences)}</span>
-                            <span>Limit Remainder: {formatCurrency(Math.max(0, groupLimit - groupTotalSpent), preferences)}</span>
+                            <span>Spent: {formatCurrency(acc.balance, preferences, 2)}</span>
+                            <span>Limit Remainder: {formatCurrency(Math.max(0, groupLimit - groupTotalSpent), preferences, 2)}</span>
                           </>
                         )}
                       </div>
@@ -1381,7 +1388,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                               </div>
                               <div className="flex justify-between font-extrabold text-sm pt-1 mt-0.5 border-t border-white/5">
                                 <span className="text-emerald-300 font-sans uppercase text-[10px] tracking-wide">Billable Total:</span>
-                                <span className="text-emerald-300 font-mono">{formatCurrency(totalBillable, preferences)}</span>
+                                <span className="text-emerald-300 font-mono">{formatCurrency(totalBillable, preferences, 2)}</span>
                               </div>
                             </div>
                           </div>

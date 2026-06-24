@@ -216,14 +216,14 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
     },
     {
       id: 'settings',
-      title: '12. Customize & Core Reset',
+      title: '12. Settings & Cloud Sync',
       icon: Settings,
       color: 'text-rose-550 bg-rose-50 dark:bg-rose-950/40 border-rose-150',
-      description: 'Customizing app preferences and securing local storage.',
+      description: 'Customizing app preferences and securing cloud synchronization.',
       steps: [
-        'Dynamic Currency: Change global currency notations instantly (e.g. $, ₹, €, £) to update visual metrics throughout PaisaFlow.',
+        'Dynamic Currency & Decimals: Change global currency notations instantly (e.g. $, ₹, €, £) and view high-level balances down to 2 decimal places to track precision metrics.',
         'Creative Styling: Switch design accents instantly (Sapphire, Emerald, Gold, Ruby, Violet) and set light/dark preferences matching your environment.',
-        'High-Spend alert boundaries: Configure the threshold (e.g. ₹6,000) above which transactions earn prominent audit warning badges.',
+        'Firebase Cloud Sync: Your data is automatically synchronized and backed up securely in the cloud via Firebase Authentication and Firestore Cloud Database, with offline caching for reliable persistent storage.',
         'Double-Confirmation Reset Lock: Restore PaisaFlow original seed data safely under System Settings. If the app detects any user-created datasets, it enforces double-step checks and require tick boxes to override metrics.'
       ]
     }

@@ -656,19 +656,19 @@ export default function App() {
                 <div className="hidden sm:block">
                   <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-extrabold leading-3 block">Cash reserves</span>
                   <span id="header-liquid-readout" className="text-xs md:text-sm font-black text-slate-700 dark:text-slate-200 block whitespace-nowrap font-mono mt-0.5">
-                    {formatCurrency(totalLiquidAssets, financeData.preferences)}
+                    {formatCurrency(totalLiquidAssets, financeData.preferences, 2)}
                   </span>
                 </div>
                 <div className="hidden sm:block border-l border-slate-200 dark:border-slate-800 pl-3 md:pl-4">
                   <span className="text-[9px] text-slate-450 dark:text-slate-500 uppercase font-extrabold leading-3 block text-rose-500/90">Credit cards</span>
                   <span id="header-credit-readout" className="text-xs md:text-sm font-black text-rose-600 dark:text-rose-400 block whitespace-nowrap font-mono mt-0.5">
-                    {formatCurrency(totalOutstandingCredit, financeData.preferences)}
+                    {formatCurrency(totalOutstandingCredit, financeData.preferences, 2)}
                   </span>
                 </div>
                 <div className="sm:border-l sm:border-slate-200 dark:sm:border-slate-850 sm:pl-3 md:pl-4">
                   <span className="text-[9px] text-zinc-400 dark:text-slate-500 uppercase font-extrabold leading-3 block text-right">Net Worth</span>
                   <span id="header-net-readout" className={`text-xs md:text-sm font-extrabold block whitespace-nowrap font-mono mt-0.5 text-right ${aggregateNetWorth >= 0 ? 'text-emerald-600 dark:text-emerald-450' : 'text-rose-600 dark:text-rose-450'}`}>
-                    {formatCurrency(aggregateNetWorth, financeData.preferences)}
+                    {formatCurrency(aggregateNetWorth, financeData.preferences, 2)}
                   </span>
                 </div>
               </div>
@@ -729,7 +729,7 @@ export default function App() {
             </main>
 
             <footer id="workspace-footer" className="bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800/80 py-6 text-center text-xs text-slate-400 font-semibold mt-auto shrink-0">
-              <p>PaisaFlow • Comprehensive Monthly Capital Manager & Tracker • Fully Offline secure client-side storage (localStorage)</p>
+              <p>PaisaFlow • Comprehensive Capital Management Workspace • Secured via Firebase Cloud Sync</p>
             </footer>
           </div>
 
