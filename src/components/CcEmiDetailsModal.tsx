@@ -1,10 +1,10 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.5
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import React from 'react';
-import { CreditCardEmiMaster, CreditCardEmiInstallment, Preferences } from '../types';
+import { CreditCardEmiMaster, CreditCardEmiInstallment, Preferences, FinancialAccount } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { analyzeEmiCost } from '../utils/emiCalculations';
 import { 
@@ -14,16 +14,22 @@ import {
   Percent, 
   FileText, 
   CheckCircle2, 
-  XCircle, 
   Sparkles, 
-  DollarSign, 
   Receipt,
   RotateCcw,
-  AlertTriangle
+  AlertTriangle,
+  Lock,
+  Unlock,
+  ShieldAlert,
+  ArrowUpRight,
+  TrendingDown,
+  Info
 } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid } from 'recharts';
 
 interface CcEmiDetailsModalProps {
   emi: CreditCardEmiMaster;
+  card?: FinancialAccount;
   preferences: Preferences;
   onClose: () => void;
   onToggleInstallment: (installmentNum: number, currentStatus: 'paid' | 'unpaid') => void;
@@ -32,6 +38,7 @@ interface CcEmiDetailsModalProps {
 
 export default function CcEmiDetailsModal({
   emi,
+  card,
   preferences,
   onClose,
   onToggleInstallment,
@@ -39,24 +46,105 @@ export default function CcEmiDetailsModal({
 }: CcEmiDetailsModalProps) {
   const analysis = analyzeEmiCost(emi);
 
-  // Installments list
   const installments = emi.installments || [];
+  const totalInstallments = installments.length;
   const paidCount = installments.filter(inst => inst.paidStatus === 'paid').length;
+  const remainingTenure = totalInstallments - paidCount;
   const progressPercent = Math.round((paidCount / emi.tenure) * 100);
+
+  // Show requirements:
+  // - Principal blocked: Blocked Principal = Outstanding Principal!
+  const principalBlocked = emi.status === 'pre_closed' ? 0 : emi.outstandingPrincipal;
+  // - Principal released: Released Principal = Financed Amount - Outstanding Principal!
+  const principalReleased = emi.status === 'pre_closed' 
+    ? emi.financedAmount 
+    : Math.max(0, Math.round((emi.financedAmount - emi.outstandingPrincipal) * 100) / 100);
+
+  // Calculate: Monthly bill impacts
+  // - Month 1 Bill Impact: Installment 1 total amount (which includes principal + interest + GST + processing fee + conversion fee + offer charge + GST on fees)
+  const month1Installment = installments.find(inst => inst.installmentNumber === 1);
+  const month1BillImpact = month1Installment ? month1Installment.totalInstallmentAmount : 0;
+
+  // - Month 2+ Bill Impact: Standard regular installment amount
+  const month2Installment = installments.find(inst => inst.installmentNumber === 2) || month1Installment;
+  const regularBillImpact = month2Installment ? (month2Installment.principalComponent + month2Installment.interestComponent + month2Installment.gstOnInterest) : 0;
+
+  // Next bill impact: Amount of the next unpaid installment
+  const nextUnpaidInstallment = installments.find(inst => inst.paidStatus === 'unpaid');
+  const nextBillImpact = nextUnpaidInstallment ? nextUnpaidInstallment.totalInstallmentAmount : 0;
+
+  // Generate: Future Liability Projection Chart Data
+  // We compute the remaining cumulative payable amount after each monthly payment is scheduled
+  const chartData = [
+    {
+      month: 'Start',
+      liability: Math.round(analysis.totalPayable),
+      blocked: Math.round(emi.financedAmount),
+    },
+    ...installments.map((inst, idx) => {
+      const remainingPayableAfterThis = installments
+        .slice(idx + 1)
+        .reduce((sum, item) => sum + item.totalInstallmentAmount, 0);
+      const remainingBlockedAfterThis = installments
+        .slice(idx + 1)
+        .reduce((sum, item) => sum + item.principalComponent, 0);
+      return {
+        month: `M${inst.installmentNumber}`,
+        liability: Math.round(remainingPayableAfterThis),
+        blocked: Math.round(remainingBlockedAfterThis),
+        status: inst.paidStatus === 'paid' ? 'Paid' : 'Unpaid'
+      };
+    })
+  ];
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900 text-white p-3 rounded-xl border border-slate-850 shadow-lg text-[11px] font-sans">
+          <p className="font-extrabold text-slate-300">{payload[0].payload.month === 'Start' ? 'Initial Liability' : `End of Month ${payload[0].payload.month.replace('M', '')}`}</p>
+          <div className="space-y-1 mt-1 font-mono">
+            <p className="text-indigo-300">
+              Future Liability: <strong className="text-white">{formatCurrency(payload[0].value, preferences)}</strong>
+            </p>
+            <p className="text-emerald-400">
+              Blocked Limit: <strong className="text-white">{formatCurrency(payload[1].value, preferences)}</strong>
+            </p>
+          </div>
+          {payload[0].payload.status && (
+            <span className={`inline-block mt-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold ${payload[0].payload.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+              Installment: {payload[0].payload.status}
+            </span>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
+      <div className="bg-white rounded-3xl max-w-6xl w-full max-h-[92vh] overflow-hidden shadow-2xl border border-slate-100 flex flex-col font-sans text-left">
         
         {/* HEADER BAR */}
-        <div className="sticky top-0 bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-slate-50 border-b border-slate-150 px-6 py-4 flex items-center justify-between z-10">
           <div className="text-left">
-            <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
-              Amortization & Costs Analyzer
-            </span>
-            <h2 className="text-base font-black text-slate-800 flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                Advanced EMI Engine & Ledger Analyzer
+              </span>
+              {emi.emiType === 'no_cost' ? (
+                <span className="text-[9px] font-black text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-0.5">
+                  <Sparkles className="w-2.5 h-2.5" /> No-Cost EMI Flag
+                </span>
+              ) : (
+                <span className="text-[9px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+                  Regular Interest EMI
+                </span>
+              )}
+            </div>
+            <h2 className="text-base font-black text-slate-800 flex flex-wrap items-center gap-2 mt-1">
               {emi.expenseName}
-              <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${emi.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-550'}`}>
+              <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${emi.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
                 {emi.status.replace('_', ' ')}
               </span>
             </h2>
@@ -72,251 +160,385 @@ export default function CcEmiDetailsModal({
         {/* CONTAINER SCROLL */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
-          {/* ANALYTICS BLOCK: BENTO GRID STYLE */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
-            
-            {/* ORIGINAL COST CARD */}
-            <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wide">Original Principal</span>
-                <h4 className="text-xs font-bold text-slate-700 mt-1">Product Invoice Cost</h4>
-              </div>
-              <p className="text-xl font-black text-slate-800 font-mono mt-3">
-                {formatCurrency(emi.originalAmount, preferences)}
-              </p>
-            </div>
-
-            {/* INTEREST & FEES CARD */}
-            <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <span className="text-[9px] text-rose-500 font-extrabold uppercase tracking-wide">Charges & Interests</span>
-                <h4 className="text-xs font-bold text-slate-700 mt-1">Total Bank Costs</h4>
-              </div>
-              <div>
-                <p className="text-xl font-black text-rose-600 font-mono mt-3">
-                  {formatCurrency(analysis.totalInterest + analysis.totalProcessingFees + analysis.totalOfferCharges, preferences)}
-                </p>
-                <div className="text-[9px] text-slate-400 font-medium mt-1 leading-tight">
-                  Int: {formatCurrency(analysis.totalInterest, preferences)} | Fees: {formatCurrency(analysis.totalProcessingFees, preferences)}
-                </div>
-              </div>
-            </div>
-
-            {/* GST ACCUMULATED CARD */}
-            <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <span className="text-[9px] text-amber-600 font-extrabold uppercase tracking-wide">GST Tax components</span>
-                <h4 className="text-xs font-bold text-slate-700 mt-1">GST @{emi.gstRate}% Charged</h4>
-              </div>
-              <div>
-                <p className="text-xl font-black text-amber-600 font-mono mt-3">
-                  {formatCurrency(analysis.totalGstOnInterest + analysis.totalGstOnFees + analysis.totalGstOnOfferCharges, preferences)}
-                </p>
-                <span className="text-[9px] text-slate-400 font-medium tracking-wide">18% on Interest + Fees</span>
-              </div>
-            </div>
-
-            {/* NET OUTFLOW PAYABLE CARD */}
-            <div className="bg-indigo-950 text-white p-4.5 rounded-2xl flex flex-col justify-between shadow-xs">
-              <div>
-                <span className="text-[9px] text-indigo-300 font-extrabold uppercase tracking-wide">Net Final Cost</span>
-                <h4 className="text-xs font-bold text-indigo-100 mt-1">Total Payable Amount</h4>
-              </div>
-              <div>
-                <p className="text-xl font-black font-mono">
-                  {formatCurrency(analysis.totalPayable, preferences)}
-                </p>
-                {emi.emiType === 'no_cost' && (
-                  <span className="text-[8.5px] text-teal-350 font-bold mt-1 block tracking-wide">
-                    🎉 Save {formatCurrency(emi.merchantDiscount, preferences)} interest up-front!
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ACTIVE PROGRESS BAR */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 text-left flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-1.5">
-                <span>Tenure Payments Progress ({paidCount} of {emi.tenure} complete)</span>
-                <span className="font-mono">{progressPercent}%</span>
-              </div>
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                <div 
-                  className="h-2.5 rounded-full bg-indigo-650 transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {emi.status === 'active' && (
-              <button
-                onClick={() => {
-                  if (confirm("Proceed with EMI Preclosure? This will settle all remaining installments and reduce outstanding liabilities to zero. This ledger update cannot be undone.")) {
-                    onPreClose();
-                  }
-                }}
-                className="bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-700 font-bold text-xs py-2.5 px-4 rounded-xl transition shrink-0 cursor-pointer text-center flex items-center gap-1.5 justify-center"
-              >
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-                Pre-Close Account Early
-              </button>
-            )}
-          </div>
-
-          {/* COST METRICS GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-            <div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-3 flex items-center gap-1.5 pb-1 border-b border-slate-100">
-                <Receipt className="w-4 h-4 text-indigo-500" /> Cost Summary Analysis
-              </h3>
-              <table className="w-full text-xs text-slate-600 space-y-2.5">
-                <tbody>
-                  <tr className="flex justify-between py-1.5 border-b border-dashed border-slate-105">
-                    <span className="font-medium text-slate-500">Invoice Original Price:</span>
-                    <strong className="font-mono text-slate-800 font-bold">{formatCurrency(emi.originalAmount, preferences)}</strong>
-                  </tr>
-                  {emi.emiType === 'no_cost' && (
-                    <>
-                      <tr className="flex justify-between py-1.5 border-b border-dashed border-slate-105">
-                        <span className="font-extrabold text-teal-650">Merchant Discount (Interest Subsidy):</span>
-                        <strong className="font-mono text-teal-600 font-black">-{formatCurrency(emi.merchantDiscount, preferences)}</strong>
-                      </tr>
-                      <tr className="flex justify-between py-1.5 border-b border-dashed border-slate-105">
-                        <span className="font-bold text-slate-600">Financed Principal Blocked:</span>
-                        <strong className="font-mono text-slate-800 font-bold">{formatCurrency(emi.financedAmount, preferences)}</strong>
-                      </tr>
-                    </>
+          {/* THREE COLUMN DETAILS SUMMARY */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/50 p-5 rounded-2xl border border-slate-150/70">
+            {/* Purchase & Card Details */}
+            <div className="space-y-3 border-b md:border-b-0 md:border-r border-slate-150 pb-4 md:pb-0 md:pr-6">
+              <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Purchase Info & Card</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {card ? (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: card.color }} />
+                      <span className="text-xs font-black text-slate-850">{card.institution} - {card.name}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs font-bold text-slate-500">Unspecified Credit Card</span>
                   )}
-                  <tr className="flex justify-between py-1.5 border-b border-dashed border-slate-105">
-                    <span className="font-medium text-slate-505">Accumulated reducing Interest:</span>
-                    <strong className="font-mono text-rose-600 font-bold">+{formatCurrency(analysis.totalInterest, preferences)}</strong>
-                  </tr>
-                  <tr className="flex justify-between py-1.5 border-b border-dashed border-slate-105">
-                    <span className="font-medium text-slate-505">Processing Fees (1st Month):</span>
-                    <strong className="font-mono text-rose-600 font-bold">+{formatCurrency(analysis.totalProcessingFees, preferences)}</strong>
-                  </tr>
-                  <tr className="flex justify-between py-1.5 border-b border-dashed border-slate-105">
-                    <span className="font-medium text-slate-505">GST on Interest Charges:</span>
-                    <strong className="font-mono text-rose-500 font-semibold">+{formatCurrency(analysis.totalGstOnInterest, preferences)}</strong>
-                  </tr>
-                  <tr className="flex justify-between py-1.5 border-b border-dashed border-slate-105">
-                    <span className="font-medium text-slate-505">GST on Processing Fees & Offer Charges:</span>
-                    <strong className="font-mono text-rose-500 font-semibold">+{formatCurrency(analysis.totalGstOnFees + analysis.totalGstOnOfferCharges, preferences)}</strong>
-                  </tr>
-                  <tr className="flex justify-between py-2 border-t border-slate-200 mt-2">
-                    <span className="font-black text-slate-850 uppercase text-[11px]">Final Payable Outflow:</span>
-                    <strong className="font-mono text-indigo-700 font-extrabold text-sm">{formatCurrency(analysis.totalPayable, preferences)}</strong>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* EXPLANATORY ALERT BOX */}
-            <div className="bg-indigo-50/30 border border-indigo-100 rounded-2xl p-5 flex flex-col justify-between">
-              <div className="space-y-3.5">
-                <span className="text-[10px] font-black text-indigo-700 uppercase bg-indigo-100/50 px-2.5 py-0.5 rounded w-fit block">
-                  How No-Cost EMI Works Mathematically
-                </span>
-                <p className="text-[11.5px] text-slate-600 leading-relaxed font-medium">
-                  The merchant values a checkout offer where the upfront <strong>Merchant Discount</strong> ({formatCurrency(emi.merchantDiscount, preferences)}) equals your cumulative reducing bank interest.
-                </p>
-                <p className="text-[11.5px] text-slate-600 leading-relaxed font-semibold">
-                  Although the bank charges reducing interest of <strong>{emi.interestRate}% APR</strong> on the financed balance of <strong>{formatCurrency(emi.financedAmount, preferences)}</strong>, the pre-discount perfectly offsets this, keeping base principal payments equal to the original product cost.
-                </p>
-                <div className="bg-white/70 rounded-xl p-3 border border-indigo-50/60 text-[10px] text-slate-450 space-y-1">
-                  <strong>Notes on applicable elements:</strong>
-                  <li>18% GST applies strictly onto interest segments monthly.</li>
-                  <li>Processing Fees + 18% GST are billed purely in installment #1.</li>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-400 text-[10px] font-semibold block">Purchase Date</span>
+                    <strong className="text-slate-700 font-mono flex items-center gap-1 mt-0.5">
+                      <Calendar className="w-3 h-3 text-slate-400" />
+                      {emi.purchaseDate || 'Not Stored'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] font-semibold block">First Due Date</span>
+                    <strong className="text-slate-700 font-mono flex items-center gap-1 mt-0.5">
+                      <Calendar className="w-3 h-3 text-indigo-400" />
+                      {emi.startDate}
+                    </strong>
+                  </div>
+                </div>
+                <div className="pt-1.5 border-t border-slate-100">
+                  <span className="text-slate-450 text-[10px] font-semibold block uppercase tracking-wide">EMI Parameters</span>
+                  <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-semibold">
+                    Purchase Amt: <strong className="font-mono text-slate-800">{formatCurrency(emi.originalAmount, preferences)}</strong> @ <strong className="text-indigo-600">{emi.interestRate}% APR</strong> for <strong className="text-slate-850">{emi.tenure} Months</strong> tenure.
+                  </p>
                 </div>
               </div>
-              <div className="text-[10px] text-indigo-650 font-bold bg-white p-2.5 rounded-xl border border-indigo-50 mt-4">
-                Remaining outstanding liability: <span className="font-mono font-black text-xs text-indigo-700">{formatCurrency(analysis.remainingPayable, preferences)}</span>
+            </div>
+
+            {/* Calculations and Fees breakdown */}
+            <div className="space-y-2.5 border-b md:border-b-0 md:border-r border-slate-150 pb-4 md:pb-0 md:pr-6">
+              <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Fees & GST Calculations</h4>
+              <div className="text-xs space-y-1.5 font-medium text-slate-600">
+                <div className="flex justify-between">
+                  <span>Processing Fee:</span>
+                  <span className="font-mono text-slate-800">{formatCurrency(emi.processingFee, preferences)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Conversion Fee:</span>
+                  <span className="font-mono text-slate-800">{formatCurrency(emi.conversionFee || 0, preferences)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Offer Redemption Fee:</span>
+                  <span className="font-mono text-slate-800">{formatCurrency(emi.offerCharge, preferences)}</span>
+                </div>
+                <div className="flex justify-between text-rose-600">
+                  <span>Cumulative GST on Fees (@{emi.gstRate}%):</span>
+                  <span className="font-mono font-bold">
+                    +{formatCurrency(analysis.totalGstOnFees + (analysis.totalGstOnConversionFees || 0) + analysis.totalGstOnOfferCharges, preferences)}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-slate-100 font-semibold">
+                  <span>Total Tax & Fees Cost:</span>
+                  <span className="font-mono text-slate-900">
+                    {formatCurrency(
+                      emi.processingFee + (emi.conversionFee || 0) + emi.offerCharge + 
+                      analysis.totalGstOnFees + (analysis.totalGstOnConversionFees || 0) + analysis.totalGstOnOfferCharges, 
+                      preferences
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Monthly Bill impact */}
+            <div className="space-y-2.5">
+              <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Monthly Statement Bill Impact</h4>
+              <div className="space-y-2 text-xs">
+                <div className="bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/50">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-indigo-700">
+                    <span>Month 1 Billed Outflow</span>
+                    <span className="bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded text-[8px] font-mono font-black uppercase">Higher Impact</span>
+                  </div>
+                  <div className="text-lg font-black font-mono text-indigo-900 mt-1">
+                    {formatCurrency(month1BillImpact, preferences)}
+                  </div>
+                  <p className="text-[9.5px] text-slate-500 font-medium leading-tight mt-0.5">
+                    Includes EMI + GST + Processing, Conversion, & Offer fees with GST taxes.
+                  </p>
+                </div>
+
+                <div className="bg-slate-100/50 p-2 rounded-lg text-[10px] text-slate-650 flex justify-between font-semibold">
+                  <span>Regular Month 2+ Bill Impact:</span>
+                  <span className="font-mono text-slate-800 font-extrabold">
+                    {formatCurrency(regularBillImpact, preferences)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* AMORTIZATION TABULAR BREAKOUT */}
+          {/* ADVANCED LIVE METRICS - SHOW BLOCKED VS RELEASED AND REMAINING TENURE */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+            {/* PRINCIPAL BLOCKED CARD */}
+            <div className="bg-amber-50/40 p-4.5 rounded-2xl border border-amber-100 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[9px] font-extrabold text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5 text-amber-600" />
+                  Credit Limit Blocked
+                </span>
+                <p className="text-lg font-black text-slate-800 font-mono">
+                  {formatCurrency(principalBlocked, preferences)}
+                </p>
+                <span className="text-[9.5px] text-slate-500 font-medium block">Outstanding base principal on card</span>
+              </div>
+              <div className="p-3 bg-amber-100 text-amber-700 rounded-2xl">
+                <Lock className="w-5 h-5 animate-pulse" />
+              </div>
+            </div>
+
+            {/* PRINCIPAL RELEASED CARD */}
+            <div className="bg-emerald-50/40 p-4.5 rounded-2xl border border-emerald-100 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[9px] font-extrabold text-emerald-700 uppercase tracking-wider flex items-center gap-1">
+                  <Unlock className="w-3.5 h-3.5 text-emerald-600" />
+                  Credit Limit Released
+                </span>
+                <p className="text-lg font-black text-slate-800 font-mono">
+                  {formatCurrency(principalReleased, preferences)}
+                </p>
+                <span className="text-[9.5px] text-slate-500 font-medium block">Principal paid and restored to limit</span>
+              </div>
+              <div className="p-3 bg-emerald-100 text-emerald-700 rounded-2xl">
+                <Unlock className="w-5 h-5" />
+              </div>
+            </div>
+
+            {/* REMAINING TENURE CARD */}
+            <div className="bg-indigo-50/40 p-4.5 rounded-2xl border border-indigo-100 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[9px] font-extrabold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                  Remaining Tenure
+                </span>
+                <p className="text-lg font-black text-slate-800 font-mono">
+                  {remainingTenure} of {totalInstallments} Months
+                </p>
+                <span className="text-[9.5px] text-slate-500 font-medium block">Payments completed: {paidCount} ({progressPercent}%)</span>
+              </div>
+              <div className="p-3 bg-indigo-100 text-indigo-700 rounded-2xl">
+                <Clock className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* TWO PANEL ANALYTICS & VISUALIZATION (FUTURE LIABILITY CHART & METRICS) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* LIABILITY REDUCTION / PROJECTION CHART (2 COLS) */}
+            <div className="lg:col-span-2 bg-slate-50/40 p-5 rounded-2xl border border-slate-150 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-1">
+                  <TrendingDown className="w-4 h-4 text-indigo-600" />
+                  Future Liability & Blocked Limit Projection
+                </h3>
+                <p className="text-[10px] text-slate-450 font-semibold mb-4 leading-tight">
+                  Visualizes remaining cumulative debt and blocked credit limit decrease month-by-month over the tenure progression.
+                </p>
+              </div>
+              
+              <div className="w-full h-56 mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorLiability" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.01}/>
+                      </linearGradient>
+                      <linearGradient id="colorBlocked" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.01}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 9, fontWeight: 700, fill: '#64748b' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 9, fontWeight: 600, fill: '#64748b' }}
+                      tickFormatter={(v) => `${preferences.currencySymbol}${v}`}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <RechartsTooltip content={<CustomTooltip />} />
+                    <Area 
+                      name="Future Liability"
+                      type="monotone" 
+                      dataKey="liability" 
+                      stroke="#6366f1" 
+                      strokeWidth={2.5}
+                      fillOpacity={1} 
+                      fill="url(#colorLiability)" 
+                    />
+                    <Area 
+                      name="Principal Blocked"
+                      type="monotone" 
+                      dataKey="blocked" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                      fillOpacity={1} 
+                      fill="url(#colorBlocked)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-slate-450 font-bold border-t border-slate-150/60 pt-3 mt-3">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full inline-block"></span>
+                  Remaining Payable Outflow
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block"></span>
+                  Outstanding Blocked Principal
+                </span>
+                <span className="text-[10px] text-indigo-750 font-black font-mono">
+                  Current Net Remaining: {formatCurrency(analysis.remainingPayable, preferences)}
+                </span>
+              </div>
+            </div>
+
+            {/* DETAILED COST STATS SUMMARY (1 COL) */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-150 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-1.5 border-b border-slate-100 pb-1.5">
+                  <Receipt className="w-4 h-4 text-emerald-550" />
+                  Aggregate Bank Ledger
+                </h3>
+                <div className="text-xs space-y-2 font-medium text-slate-600 mt-2">
+                  <div className="flex justify-between border-b border-dashed border-slate-100 py-1">
+                    <span className="text-slate-450">Base Purchase Cost:</span>
+                    <strong className="font-mono text-slate-700">{formatCurrency(emi.originalAmount, preferences)}</strong>
+                  </div>
+                  {emi.emiType === 'no_cost' && (
+                    <div className="flex justify-between border-b border-dashed border-slate-100 py-1">
+                      <span className="text-teal-650 font-bold">Upfront Merchant Discount:</span>
+                      <strong className="font-mono text-teal-650 font-black">-{formatCurrency(emi.merchantDiscount, preferences)}</strong>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-b border-dashed border-slate-100 py-1">
+                    <span className="text-slate-450">Financed Base Principal:</span>
+                    <strong className="font-mono text-slate-800">{formatCurrency(emi.financedAmount, preferences)}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-dashed border-slate-100 py-1">
+                    <span className="text-slate-450">Aggregate Reducing Interest:</span>
+                    <strong className="font-mono text-rose-600 font-bold">+{formatCurrency(analysis.totalInterest, preferences)}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-dashed border-slate-100 py-1">
+                    <span className="text-slate-450">Aggregate Base Fees:</span>
+                    <strong className="font-mono text-rose-500">
+                      +{formatCurrency(emi.processingFee + (emi.conversionFee || 0) + emi.offerCharge, preferences)}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between border-b border-dashed border-slate-100 py-1">
+                    <span className="text-slate-450">Aggregate GST (18% on Int+Fees):</span>
+                    <strong className="font-mono text-rose-500">
+                      +{formatCurrency(
+                        analysis.totalGstOnInterest + analysis.totalGstOnFees + (analysis.totalGstOnConversionFees || 0) + analysis.totalGstOnOfferCharges,
+                        preferences
+                      )}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-slate-200 mt-2 font-extrabold text-slate-800">
+                    <span className="uppercase text-[10px] tracking-wide">Total Payable Liability:</span>
+                    <span className="font-mono text-indigo-750 text-sm font-black">{formatCurrency(analysis.totalPayable, preferences)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-indigo-50/30 p-3 rounded-xl border border-indigo-100/50 mt-4 text-[10px] space-y-1.5 leading-tight text-slate-500">
+                <div className="flex items-center gap-1 text-indigo-800 font-bold uppercase tracking-wider">
+                  <Info className="w-3.5 h-3.5" />
+                  Payments Audit
+                </div>
+                <div className="flex justify-between font-semibold">
+                  <span>Settled To-date:</span>
+                  <span className="font-mono text-emerald-650 font-black">{formatCurrency(analysis.totalPaid, preferences)}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t border-slate-150/40 pt-1">
+                  <span>O/S Remaining Liability:</span>
+                  <span className="font-mono text-indigo-700 font-black">{formatCurrency(analysis.remainingPayable, preferences)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CHRONOLOGICAL MONTHLY AMORTIZATION SCHEDULE TABLE */}
           <div className="space-y-3 text-left">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest pb-1.5 border-b border-slate-100 flex items-center gap-2">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest pb-1 border-b border-slate-100 flex items-center gap-2">
               <FileText className="w-4 h-4 text-emerald-500" /> Chronological Monthly Amortization Schedule
             </h3>
             
-            <div className="overflow-x-auto rounded-xl border border-slate-100">
-              <table className="w-full text-left text-xs text-slate-600 min-w-[750px]">
+            <div className="overflow-x-auto rounded-2xl border border-slate-150 shadow-xs">
+              <table className="w-full text-left text-xs text-slate-600 min-w-[850px] border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-4 text-center">Inst</th>
+                  <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-black text-slate-450 uppercase tracking-wider">
+                    <th className="py-3 px-4 text-center">Month</th>
                     <th className="py-3 px-2">Due Date</th>
                     <th className="py-3 px-2 text-right">Principal component</th>
                     <th className="py-3 px-2 text-right">Interest component</th>
                     <th className="py-3 px-2 text-right">GST on Interest</th>
-                    <th className="py-3 px-2 text-right">Fees & GST</th>
-                    <th className="py-3 px-2 text-right">Net Payable dues</th>
+                    <th className="py-3 px-2 text-right">Fees Added (Month 1)</th>
+                    <th className="py-3 px-2 text-right">GST on Fees</th>
+                    <th className="py-3 px-2 text-right">Net Billed dues</th>
                     <th className="py-3 px-4 text-center">Installment status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {installments.map((inst) => {
-                    const feesSum = inst.processingFee + inst.offerCharge;
-                    const gstFeesSum = inst.gstOnProcessingFee + inst.gstOnOfferCharge;
-                    const combinedFeesDues = feesSum + gstFeesSum;
-
+                    const feesSum = inst.processingFee + (inst.conversionFee || 0) + inst.offerCharge;
+                    const gstFeesSum = inst.gstOnProcessingFee + (inst.gstOnConversionFee || 0) + inst.gstOnOfferCharge;
                     const isPaid = inst.paidStatus === 'paid';
 
                     return (
-                      <tr key={inst.installmentNumber} className={`hover:bg-slate-50/50 ${isPaid ? 'bg-emerald-50/20 text-slate-500 opacity-80' : 'text-slate-700'}`}>
-                        {/* NUMBER */}
-                        <td className="py-3.5 px-4 text-center font-bold font-mono">
+                      <tr key={inst.installmentNumber} className={`hover:bg-slate-50/50 transition-colors ${isPaid ? 'bg-emerald-50/20 text-slate-450 opacity-80' : 'text-slate-700'}`}>
+                        {/* MONTH */}
+                        <td className="py-3 px-4 text-center font-bold font-mono">
                           #{inst.installmentNumber}
                         </td>
 
                         {/* DUE DATE */}
-                        <td className="py-3.5 px-2 font-mono">
+                        <td className="py-3 px-2 font-mono text-[11px]">
                           {inst.dueDate}
                         </td>
 
-                        {/* PRINCIPAL COMPONENT */}
-                        <td className="py-3.5 px-2 text-right font-mono font-bold text-slate-800">
+                        {/* PRINCIPAL */}
+                        <td className="py-3 px-2 text-right font-mono font-bold text-slate-800">
                           {formatCurrency(inst.principalComponent, preferences)}
                         </td>
 
-                        {/* INTEREST COMPONENT */}
-                        <td className="py-3.5 px-2 text-right font-mono text-rose-600">
+                        {/* INTEREST */}
+                        <td className="py-3 px-2 text-right font-mono text-rose-600">
                           {inst.interestComponent > 0 ? `+${formatCurrency(inst.interestComponent, preferences)}` : '—'}
                         </td>
 
                         {/* GST ON INTEREST */}
-                        <td className="py-3.5 px-2 text-right font-mono text-amber-600">
+                        <td className="py-3 px-2 text-right font-mono text-amber-600">
                           {inst.gstOnInterest > 0 ? `+${formatCurrency(inst.gstOnInterest, preferences)}` : '—'}
                         </td>
 
-                        {/* FEES & CHARGES */}
-                        <td className="py-3.5 px-2 text-right font-mono text-rose-500">
-                          {combinedFeesDues > 0 ? (
-                            <div>
-                              <span>+{formatCurrency(combinedFeesDues, preferences)}</span>
-                              <span className="text-[8px] text-slate-400 block font-normal leading-none mt-0.5">
-                                Fee: {formatCurrency(feesSum, preferences)} (GST incl)
-                              </span>
-                            </div>
-                          ) : '—'}
+                        {/* FEES */}
+                        <td className="py-3 px-2 text-right font-mono text-rose-500">
+                          {feesSum > 0 ? `+${formatCurrency(feesSum, preferences)}` : '—'}
                         </td>
 
-                        {/* NET DU_PAYABLE_DUES */}
-                        <td className="py-3.5 px-2 text-right font-mono font-black text-slate-900">
+                        {/* GST ON FEES */}
+                        <td className="py-3 px-2 text-right font-mono text-amber-600">
+                          {gstFeesSum > 0 ? `+${formatCurrency(gstFeesSum, preferences)}` : '—'}
+                        </td>
+
+                        {/* NET COMPONENT DU_PAYABLE_DUES */}
+                        <td className="py-3 px-2 text-right font-mono font-black text-slate-900">
                           {formatCurrency(inst.totalInstallmentAmount, preferences)}
                         </td>
 
                         {/* PAID TOGGLE OPERATION */}
-                        <td className="py-3.5 px-4 text-center">
+                        <td className="py-3 px-4 text-center">
                           <button
                             onClick={() => onToggleInstallment(inst.installmentNumber, inst.paidStatus)}
-                            className={`py-1 px-2.5 rounded-lg text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition-all ${
+                            className={`py-1 px-2.5 rounded-lg text-[10px] font-black inline-flex items-center gap-1 cursor-pointer transition-all ${
                               isPaid 
                                 ? 'bg-emerald-50 border border-emerald-100 text-emerald-700' 
-                                : 'bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-indigo-650'
+                                : 'bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-indigo-600 dark:text-indigo-400'
                             }`}
                           >
                             {isPaid ? (
@@ -341,17 +563,32 @@ export default function CcEmiDetailsModal({
           </div>
         </div>
 
-        {/* BOTTOM STATUS DETAILS ACTION BAR */}
-        <div className="sticky bottom-0 bg-slate-50 border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 font-sans">
-          <div className="text-[11px] text-slate-500 font-bold self-start sm:self-center">
-            * Marking installments as paid automatically adjusts outstanding liabilities and increments monthly billing footprints on the card.
+        {/* BOTTOM ACTION BAR */}
+        <div className="sticky bottom-0 bg-slate-50 border-t border-slate-150 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 font-sans">
+          <div className="text-[10px] text-slate-450 font-bold self-start sm:self-center leading-normal">
+            * Blocked limit represents outstanding base principal on the card, and is released upon installment settlements. GST is applied at {emi.gstRate}% standard rates.
           </div>
-          <button
-            onClick={onClose}
-            className="w-full sm:w-auto bg-indigo-650 hover:bg-indigo-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl transition cursor-pointer"
-          >
-            Finished Audit
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+            {emi.status === 'active' && (
+              <button
+                onClick={() => {
+                  if (confirm(`Proceed with CC EMI Pre-closure? This will settle all remaining installments and reduce outstanding liabilities to zero. This ledger update cannot be undone.`)) {
+                    onPreClose();
+                  }
+                }}
+                className="w-full sm:w-auto bg-rose-50 hover:bg-rose-100 border border-rose-150 text-rose-700 font-extrabold text-[11px] py-2.5 px-4 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
+                Pre-Close Account Early
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-550 text-white font-extrabold text-[11px] px-5 py-2.5 rounded-xl transition cursor-pointer text-center"
+            >
+              Finished Audit
+            </button>
+          </div>
         </div>
       </div>
     </div>

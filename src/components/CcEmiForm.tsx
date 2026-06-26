@@ -40,6 +40,7 @@ export default function CcEmiForm({
   // Regular EMI Inputs
   const [interestRate, setInterestRate] = useState('13.5');
   const [processingFee, setProcessingFee] = useState('199');
+  const [conversionFee, setConversionFee] = useState('99');
   const [offerCharge, setOfferCharge] = useState('0');
 
   // No-Cost EMI Inputs
@@ -49,6 +50,12 @@ export default function CcEmiForm({
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [gstRate, setGstRate] = useState(18);
+
+  // Installments paid editing states
+  const [initialPaidCount, setInitialPaidCount] = useState(0);
+  const [paidInstallmentsCount, setPaidInstallmentsCount] = useState(0);
+  const [matchingExpenses, setMatchingExpenses] = useState<Expense[]>([]);
+  const [selectedExpenseIdsToDelete, setSelectedExpenseIdsToDelete] = useState<string[]>([]);
 
   // Set card validation date check
   const [cardValidityDays, setCardValidityDays] = useState(0);
@@ -61,16 +68,20 @@ export default function CcEmiForm({
         setExpenseName(emi.expenseName);
         setCategory(emi.category || 'Shopping');
         setCardId(emi.cardId);
-        setTransactionDate(emi.startDate); // Use start date or store transaction date
+        setTransactionDate(emi.purchaseDate || emi.startDate); // Use purchaseDate or fallback to startDate
         setOriginalAmount(emi.originalAmount.toString());
         setStartDate(emi.startDate);
         setTenure(emi.tenure.toString());
         setEmiType(emi.emiType);
         setInterestRate(emi.interestRate.toString());
         setProcessingFee(emi.processingFee.toString());
+        setConversionFee((emi.conversionFee || 0).toString());
         setOfferCharge(emi.offerCharge.toString());
         setNotes(emi.notes || '');
         setGstRate(emi.gstRate);
+        const currentPaid = (emi.installments || []).filter(inst => inst.paidStatus === 'paid').length;
+        setInitialPaidCount(currentPaid);
+        setPaidInstallmentsCount(currentPaid);
         if (emi.emiType === 'no_cost') {
           setMerchantDiscount(emi.merchantDiscount.toString());
           setAutoCalculateDiscount(emi.merchantDiscount > 0 && emi.interestRate > 0);
@@ -102,6 +113,36 @@ export default function CcEmiForm({
       setCardValidityDays(0);
     }
   }, [tenure]);
+
+  // Detect when paid installments are reduced and scan the ledger for matching expenses to delete
+  useEffect(() => {
+    if (editingEmiId && paidInstallmentsCount < initialPaidCount && paidInstallmentsCount > 0) {
+      const emi = (data.ccEmis || []).find(e => e.id === editingEmiId);
+      if (emi) {
+        const originallyPaidNums = (emi.installments || [])
+          .filter(inst => inst.paidStatus === 'paid')
+          .map(inst => inst.installmentNumber);
+
+        // Installment numbers that are being unmarked (sequential from paidInstallmentsCount + 1 to initialPaidCount)
+        const targetNums = originallyPaidNums.filter(num => num > paidInstallmentsCount);
+
+        const foundExpenses = data.expenses.filter(exp => {
+          if (exp.accountId !== emi.cardId) return false;
+          return targetNums.some(num => 
+            exp.description.includes(emi.expenseName) && 
+            exp.description.includes(`(Installment ${num}/`)
+          );
+        });
+
+        setMatchingExpenses(foundExpenses);
+        // By default, select all found expenses for deletion
+        setSelectedExpenseIdsToDelete(foundExpenses.map(exp => exp.id));
+      }
+    } else {
+      setMatchingExpenses([]);
+      setSelectedExpenseIdsToDelete([]);
+    }
+  }, [editingEmiId, paidInstallmentsCount, initialPaidCount, data.ccEmis, data.expenses]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,6 +177,7 @@ export default function CcEmiForm({
     }
 
     const pfVal = parseFloat(processingFee) || 0;
+    const cfVal = parseFloat(conversionFee) || 0;
     const ocVal = parseFloat(offerCharge) || 0;
 
     let manualDiscount = parseFloat(merchantDiscount) || 0;
@@ -151,8 +193,10 @@ export default function CcEmiForm({
         tenure: monthsVal,
         merchantDiscount: manualDiscount,
         processingFee: pfVal,
+        conversionFee: cfVal,
         offerCharge: ocVal,
         startDate: startDate || new Date().toISOString().split('T')[0],
+        purchaseDate: transactionDate || new Date().toISOString().split('T')[0],
         gstRate,
         autoCalculateDiscount: emiType === 'no_cost' && autoCalculateDiscount,
       });
@@ -161,20 +205,127 @@ export default function CcEmiForm({
       setFinanceData(prev => {
         const baseCcEmis = prev.ccEmis || [];
         let updatedList;
+        let nextExpenses = [...prev.expenses];
+        let nextAccounts = [...prev.accounts];
+        let nextCcTransactions = [...(prev.ccTransactions || [])];
+
         if (editingEmiId) {
-          updatedList = baseCcEmis.map(item => item.id === editingEmiId ? { ...schedule, id: editingEmiId } : item);
+          const originalEmi = baseCcEmis.find(item => item.id === editingEmiId);
+          
+          // 1. Map over the newly generated schedule installments, set their paidStatus
+          const updatedInstallments = schedule.installments.map(inst => {
+            if (inst.installmentNumber <= paidInstallmentsCount) {
+              return { ...inst, paidStatus: 'paid' as const };
+            }
+            return { ...inst, paidStatus: 'unpaid' as const };
+          });
+
+          // 2. Compute outstanding principal based on unpaid installments
+          const unpaidInstallments = updatedInstallments.filter(inst => inst.paidStatus === 'unpaid');
+          const newOutstanding = unpaidInstallments.reduce((sum, inst) => sum + inst.principalComponent, 0);
+
+          // 3. Status is closed if all paid
+          const allPaid = updatedInstallments.every(inst => inst.paidStatus === 'paid');
+          const nextStatusMaster = allPaid ? 'closed' as const : (originalEmi ? originalEmi.status : 'active' as const);
+
+          const updatedEmi: CreditCardEmiMaster = {
+            ...schedule,
+            id: editingEmiId,
+            outstandingPrincipal: Math.round(newOutstanding * 100) / 100,
+            installments: updatedInstallments,
+            status: nextStatusMaster,
+          };
+
+          updatedList = baseCcEmis.map(item => item.id === editingEmiId ? updatedEmi : item);
+
+          // 4. Update the Expenses Ledger
+          if (originalEmi) {
+            if (paidInstallmentsCount === 0) {
+              // Delete ALL expenses from expenses ledger for this EMI
+              nextExpenses = nextExpenses.filter(exp => {
+                if (exp.accountId !== originalEmi.cardId) return true;
+                const isMatch = exp.description.includes(originalEmi.expenseName) && 
+                                exp.description.includes("EMI Payment:");
+                return !isMatch;
+              });
+            } else if (paidInstallmentsCount < initialPaidCount) {
+              // Delete selected expenses that are being removed
+              nextExpenses = nextExpenses.filter(exp => !selectedExpenseIdsToDelete.includes(exp.id));
+            } else if (paidInstallmentsCount > initialPaidCount) {
+              // Add expenses for the newly paid installments
+              for (let num = initialPaidCount + 1; num <= paidInstallmentsCount; num++) {
+                const inst = updatedInstallments.find(item => item.installmentNumber === num);
+                const instAmt = inst ? inst.totalInstallmentAmount : 0;
+                const todayString = new Date().toISOString().split('T')[0];
+                const newExpense = {
+                  id: `exp-ccemi-${Date.now()}-${num}-${Math.floor(Math.random() * 1000)}`,
+                  description: `EMI Payment: ${expenseName.trim()} (Installment ${num}/${monthsVal})`,
+                  amount: instAmt,
+                  category: category || 'Shopping',
+                  date: todayString,
+                  accountId: cardId,
+                  isRecurring: false
+                };
+                nextExpenses = [newExpense, ...nextExpenses];
+              }
+            }
+          }
+
+          // 5. Update Credit Card Transactions and Accounts
+          if (originalEmi) {
+            // Revert old transaction logs and card balance
+            originalEmi.installments.forEach(inst => {
+              if (inst.paidStatus === 'paid') {
+                const amt = inst.totalInstallmentAmount;
+                nextAccounts = nextAccounts.map(a => {
+                  if (a.id === originalEmi.cardId) {
+                    return { ...a, balance: Math.max(0, Math.round((a.balance - amt) * 100) / 100) };
+                  }
+                  return a;
+                });
+                nextCcTransactions = nextCcTransactions.filter(
+                  t => t.id !== `tx_cc_emi-${originalEmi.id}-${inst.installmentNumber}`
+                );
+              }
+            });
+          }
+
+          // Apply new transaction logs and card balance for paid installments
+          updatedInstallments.forEach(inst => {
+            if (inst.paidStatus === 'paid') {
+              const amt = inst.totalInstallmentAmount;
+              const todayString = new Date().toISOString().split('T')[0];
+              nextAccounts = nextAccounts.map(a => {
+                if (a.id === cardId) {
+                  return { ...a, balance: Math.round((a.balance + amt) * 100) / 100 };
+                }
+                return a;
+              });
+              const ccTxId = `tx_cc_emi-${editingEmiId}-${inst.installmentNumber}`;
+              const newCcTx = {
+                id: ccTxId,
+                cardId: cardId,
+                type: 'purchase' as const,
+                description: `EMI Payment: ${expenseName.trim()} (Installment ${inst.installmentNumber}/${monthsVal})`,
+                amount: amt,
+                date: todayString,
+                category: category || 'Shopping',
+              };
+              nextCcTransactions.push(newCcTx);
+            }
+          });
+
         } else {
           // Add newly converted EMI
           updatedList = [...baseCcEmis, schedule];
         }
 
-        // On creation of CC EMI, Outstanding Principal blocks immediately.
-        // It's listed separately, but we could also adapt the balance if needed.
-        // Let's create an expense item pointing to this to keep financial timeline accurate, or log purchase.
-        // Here, the user says: "Outstanding Principal should be blocked immediately... This should appear separately from normal credit card dues."
         return {
           ...prev,
           ccEmis: updatedList,
+          expenses: nextExpenses,
+          accounts: nextAccounts,
+          ccTransactions: nextCcTransactions,
         };
       });
 
@@ -285,7 +436,7 @@ export default function CcEmiForm({
 
         {/* TRANSACTION DATE */}
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Transaction Date</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Purchase Date</label>
           <input
             type="date"
             value={transactionDate}
@@ -362,7 +513,7 @@ export default function CcEmiForm({
         </div>
       </div>
 
-      <div className="border-t border-slate-50 pt-3 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="border-t border-slate-50 pt-3 mt-2 grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* ANNUAL INTEREST RATE */}
         <div>
           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
@@ -384,7 +535,7 @@ export default function CcEmiForm({
         {/* PROCESSING FEE */}
         <div>
           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-            Conversion / Processing Fee (1st Month)
+            Processing Fee (1st Month)
           </label>
           <div className="relative">
             <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">{preferences.currencySymbol}</span>
@@ -398,10 +549,27 @@ export default function CcEmiForm({
           </div>
         </div>
 
+        {/* CONVERSION FEE */}
+        <div>
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+            Conversion Fee (1st Month)
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">{preferences.currencySymbol}</span>
+            <input
+              type="number"
+              value={conversionFee}
+              onChange={(e) => setConversionFee(e.target.value)}
+              placeholder="e.g. 99"
+              className="w-full text-xs border border-slate-200 rounded-lg p-2.5 pl-7 bg-slate-50 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800"
+            />
+          </div>
+        </div>
+
         {/* OFFER CHARGE */}
         <div>
           <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-            Offer Handling / Redemption Charge (1st Month)
+            Offer Redemption Charge (1st Month)
           </label>
           <div className="relative">
             <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">{preferences.currencySymbol}</span>
@@ -463,13 +631,86 @@ export default function CcEmiForm({
         </div>
       )}
 
+      {/* EDIT PAID INSTALLMENTS SECTION */}
+      {editingEmiId && (
+        <div className="bg-slate-50 border border-slate-150 rounded-xl p-4 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Installments Paid</label>
+              <select
+                value={paidInstallmentsCount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setPaidInstallmentsCount(val);
+                }}
+                className="w-full text-xs border border-slate-200 rounded-lg p-2.5 bg-white focus:outline-none focus:border-indigo-500 font-bold text-slate-800"
+              >
+                {Array.from({ length: parseInt(tenure, 10) + 1 }, (_, idx) => (
+                  <option key={idx} value={idx}>
+                    {idx} of {tenure} Paid
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="text-[10.5px] text-slate-500 font-medium leading-relaxed self-center text-left">
+              Editing paid installments will automatically update the outstanding principal and ledger logs. 
+              {paidInstallmentsCount === 0 && initialPaidCount > 0 && (
+                <span className="text-rose-600 block font-bold mt-1">
+                  ⚠️ Setting to 0 will automatically delete all matching ledger expenses for this EMI!
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Ask which transactions to delete from expenses ledger */}
+          {paidInstallmentsCount > 0 && paidInstallmentsCount < initialPaidCount && matchingExpenses.length > 0 && (
+            <div className="border-t border-slate-150 pt-3 animate-fade-in text-left">
+              <span className="text-[10.5px] font-black text-rose-700 uppercase tracking-wider block mb-1.5">
+                Select transactions to delete from Expenses Ledger:
+              </span>
+              <p className="text-[10px] text-slate-500 mb-2 font-medium">
+                You are reducing paid installments from {initialPaidCount} to {paidInstallmentsCount}. Select which existing ledger expenses to delete:
+              </p>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto bg-white p-2.5 rounded-lg border border-slate-200">
+                {matchingExpenses.map(exp => {
+                  const isChecked = selectedExpenseIdsToDelete.includes(exp.id);
+                  return (
+                    <label key={exp.id} className="flex items-start gap-2.5 p-1.5 hover:bg-slate-50 rounded cursor-pointer text-xs font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          if (isChecked) {
+                            setSelectedExpenseIdsToDelete(prev => prev.filter(id => id !== exp.id));
+                          } else {
+                            setSelectedExpenseIdsToDelete(prev => [...prev, exp.id]);
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 mt-0.5"
+                      />
+                      <div className="flex-1 text-left">
+                        <div className="flex justify-between font-bold">
+                          <span>{exp.description}</span>
+                          <span className="font-mono text-slate-900">{formatCurrency(exp.amount, preferences)}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">Date: {exp.date}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* INTERNAL NOTES FIELD */}
       <div>
         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description / Internal Notes</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. Dual-bank HDFC premium checkout scheme. Standard 1.5% rewards applied."
+          placeholder="e.g. Purchased during holiday sale promotion."
           rows={1.5}
           className="w-full text-xs border border-slate-200 rounded-lg p-2 bg-slate-50 focus:outline-none focus:border-indigo-500 text-slate-700 font-semibold"
         />

@@ -193,7 +193,7 @@ export default function RecurringSpendsSection({ data, setFinanceData }: Recurri
     }
 
     const newSub: RecurringSpend = {
-      id: `rec-${Date.now()}`,
+      id: `rec-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       name: name.trim(),
       amount: amt,
       category,
@@ -364,7 +364,7 @@ export default function RecurringSpendsSection({ data, setFinanceData }: Recurri
 
     // Create corresponding analytical expense transaction
     const newExpense = {
-      id: `exp-sub-${Date.now()}`,
+      id: `exp-sub-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       description: `Subscription: ${paySub.name}`,
       amount: amt,
       category: paySub.category,

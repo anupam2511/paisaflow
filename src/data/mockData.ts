@@ -32,6 +32,7 @@ export const INITIAL_FINANCE_DATA: FinanceData = {
       color: '#ff9900', // amazon orange
       limit: 150000,
       billingCycleStartDay: 15,
+      paymentDueDay: 5,
     },
     {
       id: 'cc-2',
@@ -42,6 +43,7 @@ export const INITIAL_FINANCE_DATA: FinanceData = {
       color: '#1a1a1a', // premium dark gray
       limit: 500000,
       billingCycleStartDay: 5,
+      paymentDueDay: 25,
     },
   ],
   savingGoals: [
@@ -237,6 +239,23 @@ export const INITIAL_FINANCE_DATA: FinanceData = {
     investmentCategories: ['Mutual Funds', 'Government Schemes', 'Gold Investment', 'Fixed Deposits', 'Stocks & Equities', 'Alternative Assets'],
     themeMode: 'light',
     accentColor: 'blue',
+    netWorthSettings: {
+      categories: [
+        { key: 'bank_accounts', label: 'Bank accounts', isManual: false, manualValue: 0 },
+        { key: 'cash', label: 'Cash', isManual: true, manualValue: 15000 },
+        { key: 'mutual_funds', label: 'Mutual funds', isManual: false, manualValue: 0 },
+        { key: 'stocks', label: 'Stocks', isManual: false, manualValue: 0 },
+        { key: 'ppf', label: 'PPF', isManual: false, manualValue: 0 },
+        { key: 'nps', label: 'NPS', isManual: true, manualValue: 50000 },
+        { key: 'gold', label: 'Gold', isManual: false, manualValue: 0 },
+        { key: 'epf', label: 'EPF', isManual: true, manualValue: 180000 },
+        { key: 'ssy', label: 'SSY', isManual: true, manualValue: 0 },
+        { key: 'fixed_deposits', label: 'Fixed deposits', isManual: true, manualValue: 100000 },
+        { key: 'credit_cards', label: 'Credit card outstanding', isManual: false, manualValue: 0 },
+        { key: 'emis', label: 'EMIs', isManual: false, manualValue: 0 },
+        { key: 'loans', label: 'Loans', isManual: false, manualValue: 0 }
+      ]
+    }
   },
   investments: [
     {
@@ -319,5 +338,61 @@ export const INITIAL_FINANCE_DATA: FinanceData = {
       isActive: true,
       notes: 'Final instalment due this month'
     }
+  ],
+  ccTransactions: [
+    {
+      id: 'tx-cc-1',
+      cardId: 'cc-1',
+      type: 'purchase',
+      description: 'Zomato Food Delivery',
+      amount: 1450,
+      date: '2026-06-18',
+      category: 'Food & Dining',
+    },
+    {
+      id: 'tx-cc-2',
+      cardId: 'cc-1',
+      type: 'purchase',
+      description: 'Amazon Shopping Festival',
+      amount: 12500,
+      date: '2026-06-12',
+      category: 'Shopping',
+    },
+    {
+      id: 'tx-cc-3',
+      cardId: 'cc-1',
+      type: 'refund',
+      description: 'Refund for returned T-Shirt',
+      amount: 1550,
+      date: '2026-06-14',
+      category: 'Shopping',
+    },
+    {
+      id: 'tx-cc-4',
+      cardId: 'cc-2',
+      type: 'purchase',
+      description: 'MakeMyTrip Flight Booking',
+      amount: 18500,
+      date: '2026-06-08',
+      category: 'Travel & Transport',
+    },
+    {
+      id: 'tx-cc-5',
+      cardId: 'cc-2',
+      type: 'emi_conversion',
+      description: 'EMI Conversion - Macbook Pro',
+      amount: 85000,
+      date: '2026-06-10',
+      category: 'Shopping',
+    },
+    {
+      id: 'tx-cc-6',
+      cardId: 'cc-2',
+      type: 'bill_payment',
+      description: 'Auto Bill Pay via SBI Account',
+      amount: 5000,
+      date: '2026-06-05',
+      category: 'Rent & Utilities',
+    },
   ]
 };

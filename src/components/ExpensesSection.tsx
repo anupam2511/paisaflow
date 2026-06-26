@@ -125,7 +125,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
       : savingGoals;
 
     const newExpense: Expense = {
-      id: `exp-${Date.now()}`,
+      id: `exp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       description: description.trim(),
       amount: amt,
       category,
@@ -688,13 +688,13 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
 
         {/* LEDGER EXPENSE LIST */}
         <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-          {filteredExpenses.map(exp => {
+          {filteredExpenses.map((exp, index) => {
             const isLarge = exp.amount >= threshold;
             const connectedAcc = accounts.find(a => a.id === exp.accountId);
             
             return (
               <div
-                key={exp.id}
+                key={`${exp.id}_${index}`}
                 className={`p-4 bg-white dark:bg-slate-900/50 border rounded-2xl shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center justify-between ${isLarge ? 'border-amber-205 dark:border-amber-550/30 bg-amber-50/15 dark:bg-amber-950/10' : 'border-slate-100 dark:border-slate-800/80'}`}
               >
                 <div className="flex items-center gap-3">

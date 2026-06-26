@@ -14,6 +14,7 @@ export interface FinancialAccount {
   linkedGroupId?: string;
   isMainCard?: boolean;
   billingCycleStartDay?: number; // e.g. 1-28/31 representing the start day of monthly statement cycle
+  paymentDueDay?: number;        // e.g. Day of the month when payment is due
   mabRequired?: boolean;         // Has Minimum Average Balance requirement
   minimumAverageBalance?: number;// Required minimal balance amount
 }
@@ -94,6 +95,8 @@ export interface CreditCardEmiInstallment {
   gstOnInterest: number;
   processingFee: number;
   gstOnProcessingFee: number;
+  conversionFee?: number;
+  gstOnConversionFee?: number;
   offerCharge: number;
   gstOnOfferCharge: number;
   totalInstallmentAmount: number;
@@ -112,9 +115,11 @@ export interface CreditCardEmiMaster {
   tenure: number;
   merchantDiscount: number;
   processingFee: number;
+  conversionFee?: number;
   offerCharge: number;
   gstRate: number; // e.g. 18
   startDate: string; // YYYY-MM-DD
+  purchaseDate?: string; // YYYY-MM-DD
   outstandingPrincipal: number;
   status: 'active' | 'closed' | 'pre_closed';
   installments: CreditCardEmiInstallment[];
@@ -139,12 +144,32 @@ export interface Investment {
   nextBillingDate?: string;   // YYYY-MM-DD representing when next auto-debit triggers
 }
 
+export interface NetWorthCategoryConfig {
+  key: string;
+  label: string;
+  isManual: boolean;
+  manualValue: number;
+}
+
 export interface Preferences {
   currencySymbol: string;     // default "₹"
   largeExpenseThreshold: number; // default 4000
   investmentCategories?: string[]; // user-defined investment holding categories
   themeMode?: 'light' | 'dark' | 'system'; // default "light"
   accentColor?: 'blue' | 'emerald' | 'yellow' | 'rose' | 'violet'; // default "blue"
+  netWorthSettings?: {
+    categories: NetWorthCategoryConfig[];
+  };
+}
+
+export interface CcTransaction {
+  id: string;
+  cardId: string;
+  type: 'purchase' | 'refund' | 'emi_conversion' | 'bill_payment';
+  description: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  category?: string; // Spend category
 }
 
 export interface FinanceData {
@@ -158,4 +183,5 @@ export interface FinanceData {
   investments?: Investment[]; // optional for backward compatibility, will initiate standard defaults if undefined
   emis?: EmiItem[]; // Equated Monthly Installments registry
   ccEmis?: CreditCardEmiMaster[]; // Credit Card EMI management registry
+  ccTransactions?: CcTransaction[]; // Credit Card transaction tracking registry
 }

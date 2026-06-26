@@ -49,7 +49,7 @@ export default function IncomeSection({ data, setFinanceData }: IncomeSectionPro
     }
 
     const newIncome: Income = {
-      id: `inc-${Date.now()}`,
+      id: `inc-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       source: source.trim(),
       amount: amt,
       frequency,

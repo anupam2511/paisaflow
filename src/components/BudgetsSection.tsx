@@ -208,7 +208,7 @@ export default function BudgetsSection({ data, setFinanceData }: BudgetsSectionP
 
         {/* OVERALL CAP STATEMENT */}
         <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white p-6 md:p-8 rounded-3xl border border-slate-200/60 dark:border-slate-800 relative overflow-hidden shadow-xs dark:shadow-sm">
-          <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-indigo-650 rounded-full opacity-10 dark:opacity-25 pointer-events-none"></div>
+          <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-indigo-600 rounded-full opacity-10 dark:opacity-25 pointer-events-none"></div>
           <div className="relative z-10 flex justify-between items-start">
             <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400">Total Monthly budget shield</span>
             <Scale className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />

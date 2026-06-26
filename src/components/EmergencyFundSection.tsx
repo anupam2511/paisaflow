@@ -115,7 +115,7 @@ export default function EmergencyFundSection({ data, setFinanceData }: Emergency
           </div>
 
           {/* DYNAMIC ESSENTIAL OUTFLOW VALUE */}
-          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 rounded-xl flex items-center justify-between text-xs font-semibold">
+          <div className="bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 p-3 rounded-xl flex items-center justify-between text-xs font-semibold">
             <div>
               <span className="text-[10px] text-slate-400 block uppercase font-bold">Dynamic Monthly Essentials Outflow</span>
               <span className="text-slate-500 text-[10px] block mt-0.5">Average monthly bills, subscriptions, EMIs.</span>

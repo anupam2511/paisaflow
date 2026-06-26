@@ -24,11 +24,16 @@ import {
   Gauge,
   CalendarClock,
   ArrowRight,
-  Info
+  Info,
+  Lock,
+  Unlock,
+  Receipt,
+  X
 } from 'lucide-react';
 import CcEmiForm from './CcEmiForm';
 import CcEmiDetailsModal from './CcEmiDetailsModal';
 import { analyzeEmiCost } from '../utils/emiCalculations';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, Legend } from 'recharts';
 
 interface EmisSectionProps {
   data: FinanceData;
@@ -103,6 +108,51 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
 
   const totalCcMerchantDiscountSaved = ccEmis.reduce((sum, e) => sum + (e.merchantDiscount || 0), 0);
   const closedCcCount = ccEmis.filter(e => e.status === 'closed' || e.status === 'pre_closed').length;
+
+  // Consolidated Credit Limits, Blocked and Released calculations
+  const activeCcEmiAccounts = accounts.filter(a => activeCcEmis.some(e => e.cardId === a.id));
+  const totalCcEmiCardsLimit = activeCcEmiAccounts.reduce((sum, c) => sum + (c.limit || 0), 0);
+  
+  const totalCcFinancedAmount = activeCcEmis.reduce((sum, e) => sum + e.financedAmount, 0);
+  const totalCcReleasedPrincipal = Math.max(0, Math.round((totalCcFinancedAmount - totalCcOutstandingPrincipal) * 100) / 100);
+
+  // Generate unified monthly projection for the next 12 months
+  const getUnifiedLiabilityProjection = () => {
+    const monthsData: { [key: string]: { monthName: string; amount: number; principal: number } } = {};
+    const today = new Date();
+    
+    // Initialize next 12 months starting from current month
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+      const monthName = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+      monthsData[key] = { monthName, amount: 0, principal: 0 };
+    }
+    
+    // Accumulate from all active EMIs
+    activeCcEmis.forEach(emi => {
+      emi.installments.forEach(inst => {
+        if (inst.paidStatus === 'unpaid') {
+          const instMonthKey = inst.dueDate.substring(0, 7); // YYYY-MM
+          if (monthsData[instMonthKey]) {
+            monthsData[instMonthKey].amount += inst.totalInstallmentAmount;
+            monthsData[instMonthKey].principal += inst.principalComponent;
+          }
+        }
+      });
+    });
+    
+    return Object.keys(monthsData)
+      .sort()
+      .map(key => ({
+        monthKey: key,
+        Month: monthsData[key].monthName,
+        "Statement Bill Impact": Math.round(monthsData[key].amount),
+        "Principal Blocked": Math.round(monthsData[key].principal)
+      }));
+  };
+
+  const unifiedProjection = getUnifiedLiabilityProjection();
 
   // --- ELIGIBLE CARD TRANSACTIONS FOR EMI CONVERSION ---
   // Large transaction cards checkout (> ₹4,000) that aren't already mapped as active EMIs
@@ -351,6 +401,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
 
       let nextExpenses = [...prev.expenses];
       let nextAccounts = [...prev.accounts];
+      let nextCcTransactions = [...(prev.ccTransactions || [])];
 
       const targetInstallment = emi.installments.find(inst => inst.installmentNumber === installmentNum);
       const installmentAmt = targetInstallment ? targetInstallment.totalInstallmentAmount : 0;
@@ -368,6 +419,18 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
         };
         nextExpenses = [newExpense, ...nextExpenses];
 
+        const ccTxId = `tx_cc_emi-${emi.id}-${installmentNum}`;
+        const newCcTx = {
+          id: ccTxId,
+          cardId: emi.cardId,
+          type: 'purchase' as const,
+          description: `EMI Payment: ${emi.expenseName} (Installment ${installmentNum}/${emi.tenure})`,
+          amount: installmentAmt,
+          date: todayString,
+          category: emi.category || 'Shopping',
+        };
+        nextCcTransactions = [newCcTx, ...nextCcTransactions];
+
         nextAccounts = prev.accounts.map(a => {
           if (a.id === emi.cardId) {
             return { ...a, balance: Math.round((a.balance + installmentAmt) * 100) / 100 };
@@ -378,6 +441,10 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
       } else {
         nextExpenses = prev.expenses.filter(
           e => !e.description.includes(`EMI Payment: ${emi.expenseName} (Installment ${installmentNum}/`)
+        );
+
+        nextCcTransactions = nextCcTransactions.filter(
+          t => t.id !== `tx_cc_emi-${emi.id}-${installmentNum}`
         );
 
         nextAccounts = prev.accounts.map(a => {
@@ -394,6 +461,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
         ccEmis: updatedCcEmis,
         expenses: nextExpenses,
         accounts: nextAccounts,
+        ccTransactions: nextCcTransactions,
       };
     });
 
@@ -418,6 +486,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
 
       const emi = baseCcEmis[emiIndex];
       let nextExpenses = [...prev.expenses];
+      let nextCcTransactions = [...(prev.ccTransactions || [])];
       let balanceToCharge = 0;
 
       const updatedInstallments = emi.installments.map(inst => {
@@ -433,6 +502,19 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
             isRecurring: false
           };
           nextExpenses = [newExpense, ...nextExpenses];
+
+          const ccTxId = `tx_cc_emi-${emi.id}-${inst.installmentNumber}`;
+          const newCcTx = {
+            id: ccTxId,
+            cardId: emi.cardId,
+            type: 'purchase' as const,
+            description: `EMI Settle Early: ${emi.expenseName} (Installment ${inst.installmentNumber}/${emi.tenure})`,
+            amount: inst.totalInstallmentAmount,
+            date: todayString,
+            category: emi.category || 'Shopping',
+          };
+          nextCcTransactions = [newCcTx, ...nextCcTransactions];
+
           balanceToCharge += inst.totalInstallmentAmount;
 
           return { ...inst, paidStatus: 'paid' as const };
@@ -465,6 +547,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
         ccEmis: updatedCcEmis,
         expenses: nextExpenses,
         accounts: updatedAccounts,
+        ccTransactions: nextCcTransactions,
       };
     });
 
@@ -573,7 +656,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-400 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-indigo-650 dark:text-indigo-400 animate-pulse" />
+                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
                     Eligible Transactions for EMI Conversion
                   </h4>
                   <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed mt-0.5">
@@ -620,35 +703,55 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
             </div>
           )}
 
-          {/* ADD / EDIT FORM BOX */}
-          {showCcForm ? (
-            <div id="cc-emi-form-container">
-              <CcEmiForm 
-                data={data}
-                setFinanceData={setFinanceData}
-                editingEmiId={editingCcEmiId}
-                prefilledExpense={prefilledExpense}
-                onClose={() => {
-                  setShowCcForm(false);
-                  setEditingCcEmiId(null);
-                  setPrefilledExpense(null);
-                }}
-              />
-            </div>
-          ) : (
-            <div className="flex justify-end">
-               <button
-                onClick={() => {
-                  setEditingCcEmiId(null);
-                  setPrefilledExpense(null);
-                  setShowCcForm(true);
-                }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 px-4.5 rounded-xl shadow-xs hover:shadow transition flex items-center gap-1.5 cursor-pointer font-sans"
-              >
-                <Plus className="w-4 h-4 animate-bounce" /> Convert credit card transaction to EMI
-              </button>
+          {/* ADD / EDIT FORM POPUP MODAL */}
+          {showCcForm && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 text-left my-8">
+                <div className="flex items-center justify-between border-b border-slate-150 dark:border-slate-800 pb-3.5 mb-4">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-widest flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-550" />
+                    {editingCcEmiId ? 'Modify CC EMI Parameters' : 'Convert Credit Card Transaction to EMI'}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowCcForm(false);
+                      setEditingCcEmiId(null);
+                      setPrefilledExpense(null);
+                    }}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-350 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="max-h-[75vh] overflow-y-auto pr-1">
+                  <CcEmiForm 
+                    data={data}
+                    setFinanceData={setFinanceData}
+                    editingEmiId={editingCcEmiId}
+                    prefilledExpense={prefilledExpense}
+                    onClose={() => {
+                      setShowCcForm(false);
+                      setEditingCcEmiId(null);
+                      setPrefilledExpense(null);
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           )}
+
+          <div className="flex justify-end">
+             <button
+              onClick={() => {
+                setEditingCcEmiId(null);
+                setPrefilledExpense(null);
+                setShowCcForm(true);
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 px-4.5 rounded-xl shadow-xs hover:shadow transition flex items-center gap-1.5 cursor-pointer font-sans"
+            >
+              <Plus className="w-4 h-4 animate-bounce" /> Convert credit card transaction to EMI
+            </button>
+          </div>
 
           {/* CC EMIS SUMMARY METRIC CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -704,6 +807,107 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
               </p>
             </div>
           </div>
+
+          {/* ADVANCED EMI ENGINE BENTO INSIGHTS */}
+          {activeCcEmis.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+              {/* FUTURE LIABILITY PROJECTION CHART (2 COLS) */}
+              <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                    <TrendingDown className="w-4 h-4 text-indigo-500 animate-pulse" />
+                    Consolidated 12-Month Cash Flow & Future Liability Projection
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                    Shows monthly billing impacts and blocked principal reducing over the next 12 statement cycles.
+                  </p>
+                </div>
+
+                <div className="h-56 mt-4 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={unifiedProjection} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="Month" tick={{ fontSize: 9, fontWeight: 700, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 9, fontWeight: 650, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${preferences.currencySymbol}${v}`} />
+                      <RechartsTooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '11px', fontFamily: 'sans-serif' }} 
+                        itemStyle={{ color: '#fff' }}
+                      />
+                      <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '10px', fontWeight: 700 }} />
+                      <Bar name="Statement Bill Impact" dataKey="Statement Bill Impact" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                      <Bar name="Principal Blocked" dataKey="Principal Blocked" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* CONSOLIDATED LIMIT STATUS BLOCK (1 COL) */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 border-b border-slate-50 pb-2">
+                    <Lock className="w-4 h-4 text-amber-500" />
+                    Consolidated Credit Limit Impact
+                  </h3>
+                  <div className="mt-4 space-y-4">
+                    {/* Blocked limit */}
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          Blocked Principal
+                        </span>
+                        <p className="text-lg font-black text-slate-800 font-mono">
+                          {formatCurrency(totalCcOutstandingPrincipal, preferences)}
+                        </p>
+                      </div>
+                      <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                    </div>
+
+                    {/* Released limit */}
+                    <div className="flex items-center justify-between border-t border-slate-50 pt-3">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          Released Principal
+                        </span>
+                        <p className="text-lg font-black text-slate-800 font-mono">
+                          {formatCurrency(totalCcReleasedPrincipal, preferences)}
+                        </p>
+                      </div>
+                      <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <Unlock className="w-4 h-4" />
+                      </div>
+                    </div>
+
+                    {/* Visual bar split */}
+                    <div className="space-y-1 pt-2">
+                      <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+                        <span>Released ({Math.round((totalCcReleasedPrincipal / (totalCcFinancedAmount || 1)) * 100)}%)</span>
+                        <span>Blocked ({Math.round((totalCcOutstandingPrincipal / (totalCcFinancedAmount || 1)) * 100)}%)</span>
+                      </div>
+                      <div className="w-full bg-amber-100 h-2 rounded-full overflow-hidden flex">
+                        <div 
+                          className="bg-emerald-500 h-2" 
+                          style={{ width: `${(totalCcReleasedPrincipal / (totalCcFinancedAmount || 1)) * 100}%` }}
+                        />
+                        <div 
+                          className="bg-amber-500 h-2" 
+                          style={{ width: `${(totalCcOutstandingPrincipal / (totalCcFinancedAmount || 1)) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-slate-450 leading-tight block pt-0.5 font-medium">
+                        Based on total financed amount: <strong className="font-mono">{formatCurrency(totalCcFinancedAmount, preferences)}</strong>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 mt-4 text-[9.5px] leading-tight text-indigo-850 font-bold">
+                  💡 Settle monthly installments to instantly release card credit limits and restore available balances.
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* DYNAMIC LIST BOARD TABLE */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
@@ -849,7 +1053,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-1 mt-1 overflow-hidden">
                               <div 
-                                className={`h-1 rounded-full transition-all duration-300 ${isPreclosed || paidCount >= emi.tenure ? 'bg-emerald-500' : 'bg-indigo-650'}`}
+                                className={`h-1 rounded-full transition-all duration-300 ${isPreclosed || paidCount >= emi.tenure ? 'bg-emerald-500' : 'bg-indigo-600'}`}
                                 style={{ width: `${progressPercentage}%` }}
                               />
                             </div>
@@ -1196,7 +1400,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                         <span className="font-mono font-bold text-slate-800">{formatCurrency(item.amountSum, preferences)}/mo</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1">
-                        <div className="h-1 rounded-full bg-indigo-650" style={{ width: '60%' }} />
+                        <div className="h-1 rounded-full bg-indigo-600" style={{ width: '60%' }} />
                       </div>
                     </div>
                   ))}
@@ -1271,7 +1475,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                           <td className="py-3.5 text-center">
                             <span className="font-mono text-[10px] font-bold">{emi.installmentsPaid} of {emi.totalTenure} paid ({progress}%)</span>
                             <div className="w-20 bg-slate-100 h-1 rounded-full mx-auto mt-1 overflow-hidden">
-                              <div className="h-1 rounded-full bg-indigo-650" style={{ width: `${progress}%` }} />
+                              <div className="h-1 rounded-full bg-indigo-600" style={{ width: `${progress}%` }} />
                             </div>
                           </td>
                           <td className="py-3.5 text-right font-mono">
@@ -1345,6 +1549,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
       {selectedCcEmiForDetails && (
         <CcEmiDetailsModal 
           emi={selectedCcEmiForDetails}
+          card={accounts.find(a => a.id === selectedCcEmiForDetails.cardId)}
           preferences={preferences}
           onClose={() => setSelectedCcEmiForDetails(null)}
           onToggleInstallment={(num, curr) => handleToggleCcInstallment(selectedCcEmiForDetails.id, num, curr)}

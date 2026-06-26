@@ -332,7 +332,7 @@ export default function InvestmentsSection({ data, setFinanceData }: Investments
       let updatedExpenses = prev.expenses || [];
       if (recordExpense) {
         const topUpExpense = {
-          id: `exp-topup-${Date.now()}`,
+          id: `exp-topup-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
           description: `SIP Top-up: ${topUpInvestment.name}`,
           amount: topUpAmt,
           category: 'Investment',
@@ -397,7 +397,7 @@ export default function InvestmentsSection({ data, setFinanceData }: Investments
 
     // Create corresponding analytical expense transaction in ledger
     const newExpense = {
-      id: `exp-inv-manual-${Date.now()}`,
+      id: `exp-inv-manual-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       description: `SIP Investment: ${payInvestment.name}`,
       amount: amt,
       category: 'Investment',

@@ -33,6 +33,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useFinance } from '../context/FinanceContext';
 
 interface DashboardProps {
   data: FinanceData;
@@ -41,6 +42,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ data, setFinanceData, setCurrentTab }: DashboardProps) {
+  const { showToast } = useFinance();
   const { accounts, savingGoals, incomes, expenses, recurringSpends, budgets, preferences, investments = [] } = data;
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [breakdownType, setBreakdownType] = useState<'category' | 'account'>('category');
@@ -48,8 +50,6 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
   const [quickSaveType, setQuickSaveType] = useState<'installment' | 'addon'>('installment');
   const [quickSaveAmount, setQuickSaveAmount] = useState<string>('');
   const [quickSaveAccId, setQuickSaveAccId] = useState<string>('');
-  const [quickSaveError, setQuickSaveError] = useState<string>('');
-  const [quickSaveSuccess, setQuickSaveSuccess] = useState<boolean>(false);
 
   // Sync quick save contribution amount based on goal selections and contribution type
   const [allocatedEmergency, setAllocatedEmergency] = useState<number>(0);
@@ -214,35 +214,33 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
   // Quick savings transfer handler
   const handleQuickSave = (e: React.FormEvent) => {
     e.preventDefault();
-    setQuickSaveError('');
-    setQuickSaveSuccess(false);
 
     if (!quickSaveGoalId || !quickSaveAmount || !quickSaveAccId) {
-      setQuickSaveError('Please select a goal, source account, and input a valid amount.');
+      showToast('Please select a goal, source account, and input a valid amount.', 'error');
       return;
     }
 
     const amt = parseFloat(quickSaveAmount);
     if (isNaN(amt) || amt <= 0) {
-      setQuickSaveError('Please enter a positive numeric amount.');
+      showToast('Please enter a positive numeric amount.', 'error');
       return;
     }
 
     const sourceAcc = accounts.find(a => a.id === quickSaveAccId);
     if (!sourceAcc) {
-      setQuickSaveError('Selected source account not found.');
+      showToast('Selected source account not found.', 'error');
       return;
     }
 
     if (sourceAcc.type === 'bank' && sourceAcc.balance < amt) {
-      setQuickSaveError(`Insufficient balance in ${sourceAcc.name}. Available: ${formatCurrency(sourceAcc.balance, preferences)}`);
+      showToast(`Insufficient balance in ${sourceAcc.name}. Available: ${formatCurrency(sourceAcc.balance, preferences)}`, 'error');
       return;
     }
 
     if (sourceAcc.type === 'credit_card') {
       const avail = (sourceAcc.limit || 0) - sourceAcc.balance;
       if (avail < amt) {
-        setQuickSaveError(`Insufficient credit limit on ${sourceAcc.name}. Available credit: ${formatCurrency(avail, preferences)}`);
+        showToast(`Insufficient credit limit on ${sourceAcc.name}. Available credit: ${formatCurrency(avail, preferences)}`, 'error');
         return;
       }
     }
@@ -286,7 +284,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
     // Automatically log this as an expense under category "Saving Goals" if wanted, or simply adjust pools
     // Let's create an expense to model this out as a "Goal Investment" allocation
     const savingsExpense: Expense = {
-      id: `exp-goalsave-${Date.now()}`,
+      id: `exp-goalsave-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       description: `Savings Goal Contribution: ${savingGoals.find(g => g.id === quickSaveGoalId)?.name}`,
       amount: amt,
       category: 'Miscellaneous',
@@ -304,8 +302,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
     }));
 
     setQuickSaveAmount('');
-    setQuickSaveSuccess(true);
-    setTimeout(() => setQuickSaveSuccess(false), 4000);
+    showToast('Allocated successfully! Cash balances adjusted.', 'success');
   };
 
   const getFriendlyTypeLabel = (val: string) => {
@@ -656,7 +653,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Dimension Selection */}
-            <div className="flex bg-slate-50 p-1 rounded-lg border border-slate-200">
+            <div className="flex bg-slate-50/50 dark:bg-slate-950/20 p-1 rounded-lg border border-slate-100 dark:border-slate-800/80">
               <button
                 type="button"
                 onClick={() => {
@@ -850,7 +847,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
           <div>
             <div className="flex justify-between items-center pb-2 border-b border-slate-50">
               <h2 className="text-lg font-bold text-slate-800">Visual Spend Breakdown</h2>
-              <div className="flex bg-slate-50 p-1 rounded-lg border border-slate-100">
+              <div className="flex bg-slate-50/50 dark:bg-slate-950/20 p-1 rounded-lg border border-slate-100 dark:border-slate-800/80">
                 <button
                   onClick={() => setBreakdownType('category')}
                   className={`text-xs px-2.5 py-1 rounded-md transition font-medium ${breakdownType === 'category' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
@@ -1015,7 +1012,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
         {/* LARGE EXPENSES COMPONENT */}
         <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl text-slate-800 dark:text-white border border-slate-200/60 dark:border-slate-800 shadow-xs dark:shadow-xl lg:col-span-5 flex flex-col justify-between overflow-hidden relative min-h-[380px]">
           {/* Subtle design gradient circles in background */}
-          <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-indigo-650 rounded-full opacity-[0.06] dark:opacity-20 pointer-events-none"></div>
+          <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-indigo-600 rounded-full opacity-[0.06] dark:opacity-20 pointer-events-none"></div>
           <div className="absolute -left-12 -top-12 w-32 h-32 bg-indigo-500 rounded-full opacity-[0.04] dark:opacity-10 pointer-events-none"></div>
 
           <div className="relative z-10">
@@ -1030,7 +1027,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
             </div>
 
             {/* Threshold ratio display */}
-            <div className="my-5 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/10">
+            <div className="my-5 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 rounded-2xl">
               <div className="flex justify-between text-xs font-semibold text-slate-550 dark:text-slate-300 mb-1.5">
                 <span>Large Spends ratio ({largeExpenses.length} items)</span>
                 <span className="font-mono text-indigo-600 dark:text-indigo-300">{totalOutflow > 0 ? ((totalLargeExpenses / totalOutflow) * 100).toFixed(0) : 0}% of flow</span>
@@ -1059,11 +1056,11 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
                   <p className="text-xs text-slate-500 dark:text-slate-300 mt-2">Zero worries! No transactions cross the threshold.</p>
                 </div>
               ) : (
-                largeExpenses.map(exp => {
+                largeExpenses.map((exp, index) => {
                   const connectedAccName = accounts.find(a => a.id === exp.accountId)?.name || 'Direct Transfer';
                   return (
                     <div 
-                      key={exp.id}
+                      key={`${exp.id}_${index}`}
                       className="p-3 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between transition-colors hover:bg-slate-100 dark:hover:bg-white/10"
                     >
                       <div className="truncate pr-2">
@@ -1162,7 +1159,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
                         <span className="text-[10px] text-slate-400 block font-semibold leading-3">
                           {isFixed ? 'Installment' : 'Target'}
                         </span>
-                        <span className="text-xs font-bold text-indigo-650">
+                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                           {isFixed 
                             ? `${formatCurrency(goal.installmentAmount || 0, preferences)}/mo` 
                             : formatCurrency(targetAmt, preferences)}
@@ -1259,23 +1256,14 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
                     value={quickSaveAmount}
                     onChange={(e) => setQuickSaveAmount(e.target.value)}
                     placeholder="e.g. 5000"
-                    className="w-full text-xs border border-slate-200 rounded-lg p-2 pl-6 bg-slate-50 focus:outline-none focus:border-indigo-500 font-semibold"
+                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-lg p-2 pl-6 bg-white dark:bg-[#111c44]/40 focus:outline-none focus:border-indigo-500 font-semibold"
                   />
                 </div>
               </div>
 
-              {quickSaveError && (
-                <p className="text-[10px] font-semibold text-rose-500 bg-rose-50/50 p-1.5 rounded-md border border-rose-100">{quickSaveError}</p>
-              )}
-              {quickSaveSuccess && (
-                <p className="text-[10px] font-semibold text-teal-600 bg-teal-50 p-1.5 rounded-md border border-teal-100 flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-teal-500" /> Allocated successfully! Cash balances adjusted.
-                </p>
-              )}
-
               <button
                 type="submit"
-                className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-sm transition hover:shadow-md flex items-center justify-center gap-1"
+                className="w-full text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg shadow-sm transition hover:shadow-md flex items-center justify-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> Commit Savings Fund
               </button>

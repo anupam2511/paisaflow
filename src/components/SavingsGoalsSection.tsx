@@ -398,7 +398,7 @@ export default function SavingsGoalsSection({ data, setFinanceData }: SavingsGoa
 
     // Create an automatic expense line to record the cash outflow
     const savingsExpense: Expense = {
-      id: `exp-gcon-${Date.now()}`,
+      id: `exp-gcon-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       description: `Savings goal top up: ${savingGoals.find(g => g.id === selectedGoalId)?.name}`,
       amount: amt,
       category: 'Miscellaneous',
@@ -686,7 +686,7 @@ export default function SavingsGoalsSection({ data, setFinanceData }: SavingsGoa
             </div>
 
             {selectedGoalId && savingGoals.find(g => g.id === selectedGoalId)?.goalType === 'fixed' && (
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100/80 space-y-2">
+              <div className="bg-white dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-100/80 dark:border-slate-800 space-y-2">
                 <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Contribution Strategy</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button

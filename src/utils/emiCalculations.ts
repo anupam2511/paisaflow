@@ -38,8 +38,10 @@ interface GenerateScheduleParams {
   tenure: number;
   merchantDiscount: number;
   processingFee: number;
+  conversionFee?: number;
   offerCharge: number;
   startDate: string; // YYYY-MM-DD
+  purchaseDate?: string; // YYYY-MM-DD
   gstRate?: number; // default 18
   autoCalculateDiscount?: boolean;
 }
@@ -56,8 +58,10 @@ export function generateEmiSchedule(params: GenerateScheduleParams): CreditCardE
     interestRate,
     tenure,
     processingFee = 0,
+    conversionFee = 0,
     offerCharge = 0,
     startDate,
+    purchaseDate,
     gstRate = 18,
     autoCalculateDiscount = false,
   } = params;
@@ -132,6 +136,9 @@ export function generateEmiSchedule(params: GenerateScheduleParams): CreditCardE
     const currentProcessingFee = t === 1 ? processingFee : 0;
     const gstOnProcessingFee = Math.round((currentProcessingFee * (gstRate / 100)) * 100) / 100;
 
+    const currentConversionFee = t === 1 ? conversionFee : 0;
+    const gstOnConversionFee = Math.round((currentConversionFee * (gstRate / 100)) * 100) / 100;
+
     const currentOfferCharge = t === 1 ? offerCharge : 0;
     const gstOnOfferCharge = Math.round((currentOfferCharge * (gstRate / 100)) * 100) / 100;
 
@@ -141,6 +148,8 @@ export function generateEmiSchedule(params: GenerateScheduleParams): CreditCardE
         gstOnInterest +
         currentProcessingFee +
         gstOnProcessingFee +
+        currentConversionFee +
+        gstOnConversionFee +
         currentOfferCharge +
         gstOnOfferCharge) *
         100
@@ -154,6 +163,8 @@ export function generateEmiSchedule(params: GenerateScheduleParams): CreditCardE
       gstOnInterest,
       processingFee: currentProcessingFee,
       gstOnProcessingFee,
+      conversionFee: currentConversionFee,
+      gstOnConversionFee,
       offerCharge: currentOfferCharge,
       gstOnOfferCharge,
       totalInstallmentAmount,
@@ -174,9 +185,11 @@ export function generateEmiSchedule(params: GenerateScheduleParams): CreditCardE
     tenure,
     merchantDiscount,
     processingFee,
+    conversionFee,
     offerCharge,
     gstRate,
     startDate,
+    purchaseDate,
     outstandingPrincipal: financedAmount,
     status: 'active',
     installments,
@@ -192,6 +205,8 @@ export interface EmiCostSummary {
   totalGstOnInterest: number;
   totalProcessingFees: number;
   totalGstOnFees: number;
+  totalConversionFees: number;
+  totalGstOnConversionFees: number;
   totalOfferCharges: number;
   totalGstOnOfferCharges: number;
   totalPaid: number;
@@ -210,6 +225,9 @@ export function analyzeEmiCost(emi: CreditCardEmiMaster): EmiCostSummary {
   const totalProcessingFees = sum(emi.installments.map(inst => inst.processingFee));
   const totalGstOnFees = sum(emi.installments.map(inst => inst.gstOnProcessingFee));
 
+  const totalConversionFees = sum(emi.installments.map(inst => inst.conversionFee || 0));
+  const totalGstOnConversionFees = sum(emi.installments.map(inst => inst.gstOnConversionFee || 0));
+
   const totalOfferCharges = sum(emi.installments.map(inst => inst.offerCharge));
   const totalGstOnOfferCharges = sum(emi.installments.map(inst => inst.gstOnOfferCharge));
 
@@ -224,7 +242,7 @@ export function analyzeEmiCost(emi: CreditCardEmiMaster): EmiCostSummary {
   const remainingInterest = sum(unpaidInstallments.map(inst => inst.interestComponent));
   
   const remainingGst = sum(
-    unpaidInstallments.map(inst => inst.gstOnInterest + inst.gstOnProcessingFee + inst.gstOnOfferCharge)
+    unpaidInstallments.map(inst => inst.gstOnInterest + inst.gstOnProcessingFee + (inst.gstOnConversionFee || 0) + inst.gstOnOfferCharge)
   );
   
   const remainingPayable = sum(unpaidInstallments.map(inst => inst.totalInstallmentAmount));
@@ -235,6 +253,8 @@ export function analyzeEmiCost(emi: CreditCardEmiMaster): EmiCostSummary {
     totalGstOnInterest,
     totalProcessingFees,
     totalGstOnFees,
+    totalConversionFees,
+    totalGstOnConversionFees,
     totalOfferCharges,
     totalGstOnOfferCharges,
     totalPaid,

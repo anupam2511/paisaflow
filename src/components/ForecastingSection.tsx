@@ -378,33 +378,33 @@ export default function ForecastingSection({ data }: ForecastingSectionProps) {
       </div>
 
       {/* HORIZONTAL TIMELINE LOG TABLE */}
-      <div className="bg-white dark:bg-[#0b1329] rounded-2xl border border-slate-150 dark:border-slate-800 p-5 shadow-xs">
-        <h3 className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-3">Compounding Milestones Logs</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+      <div className="bg-white dark:bg-[#0b1329] rounded-3xl border border-slate-100 dark:border-slate-800/80 p-6 shadow-xs mt-6">
+        <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 tracking-tight mb-4">Compounding Milestones Logs</h3>
+        <div className="w-full overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-extrabold text-slate-400 uppercase">
-                <th className="pb-2">Period Milestone</th>
-                <th className="pb-2 text-right">Cash Reserves Base</th>
-                <th className="pb-2 text-right">Investments Growth</th>
-                <th className="pb-2 text-right">Net Worth (Cons)</th>
-                <th className="pb-2 text-right text-indigo-600 dark:text-indigo-400">Net Worth (Balanced)</th>
-                <th className="pb-2 text-right text-emerald-600 dark:text-emerald-400 font-bold">Net Worth (Optimistic)</th>
+              <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">Period Milestone</th>
+                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest text-right">Cash Reserves Base</th>
+                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest text-right">Investments Growth</th>
+                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest text-right">Net Worth (Cons)</th>
+                <th className="py-3 px-4 text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest text-right">Net Worth (Balanced)</th>
+                <th className="py-3 px-4 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest text-right">Net Worth (Optimistic)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0b1329]">
               {chartData
                 .filter((_, idx) => idx === 0 || idx % 12 === 0 || idx === chartData.length - 1)
                 .map((row) => (
-                  <tr key={row.monthIndex} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-slate-700 dark:text-slate-350">
-                    <td className="py-2.5 font-bold">
+                  <tr key={row.monthIndex} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                    <td className="py-3 px-4 text-xs font-bold text-slate-700 dark:text-slate-300">
                       {row.monthIndex === 0 ? 'Starting Point' : `Year ${row.monthIndex / 12} (${row.label})`}
                     </td>
-                    <td className="py-2.5 text-right font-mono">{formatCurrency(row.CashReserves, preferences)}</td>
-                    <td className="py-2.5 text-right font-mono">{formatCurrency(row.InvestmentShares, preferences)}</td>
-                    <td className="py-2.5 text-right font-mono text-rose-550 dark:text-rose-450">{formatCurrency(row['Conservative Outlook (ROI -3%)'], preferences)}</td>
-                    <td className="py-2.5 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(row['Balanced Net Worth'], preferences)}</td>
-                    <td className="py-2.5 text-right font-mono text-emerald-600 dark:text-emerald-450 font-bold">{formatCurrency(row['Optimistic Outlook (ROI +3%)'], preferences)}</td>
+                    <td className="py-3 px-4 text-xs font-semibold text-right font-mono text-slate-600 dark:text-slate-400">{formatCurrency(row.CashReserves, preferences)}</td>
+                    <td className="py-3 px-4 text-xs font-semibold text-right font-mono text-slate-600 dark:text-slate-400">{formatCurrency(row.InvestmentShares, preferences)}</td>
+                    <td className="py-3 px-4 text-xs font-semibold text-right font-mono text-rose-600 dark:text-rose-400">{formatCurrency(row['Conservative Outlook (ROI -3%)'], preferences)}</td>
+                    <td className="py-3 px-4 text-xs font-bold text-right font-mono text-indigo-600 dark:text-indigo-400">{formatCurrency(row['Balanced Net Worth'], preferences)}</td>
+                    <td className="py-3 px-4 text-xs font-bold text-right font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(row['Optimistic Outlook (ROI +3%)'], preferences)}</td>
                   </tr>
                 ))}
             </tbody>
