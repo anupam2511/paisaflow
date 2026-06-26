@@ -33,6 +33,7 @@ const activeFirebaseConfig = {
 };
 
 const databaseId = metaEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID || (firebaseAppletConfig as any).firestoreDatabaseId;
+const cleanDatabaseId = (databaseId && databaseId !== "(default)") ? databaseId : undefined;
 
 // Initialize Firebase
 const app = initializeApp(activeFirebaseConfig);
@@ -42,7 +43,7 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Initialize Firestore
-export const db = getFirestore(app, databaseId);
+export const db = getFirestore(app, cleanDatabaseId);
 
 // Enable offline persistence for better user experience
 try {
