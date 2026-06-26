@@ -7,7 +7,6 @@
 ![React](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 ![Vite](https://img.shields.io/badge/Vite-Latest-purple)
-![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
