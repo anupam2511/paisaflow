@@ -120,7 +120,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
 
   if (!isOpen) return null;
 
-  // Comprehensive SaaS documentation content definition
+  // Comprehensive documentation content definition
   const guidePages: GuidePage[] = [
     {
       id: 'welcome',
@@ -146,7 +146,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           content: [
             'Track True Net Worth: Real-time balance calculations offsetting liquid bank assets directly against credit liabilities and outstanding EMIs.',
             'Precision Cash Flow: Differentiate between disposable income and fixed commitments (subscriptions, bill payments, loan interest).',
-            'SaaS Debt Optimization: Real-time interest amortization simulations with live prepayment savings calculations.',
+            'Debt Optimization: Real-time interest amortization simulations with live prepayment savings calculations.',
             'Emergency Shield Architecture: Visualise cash liquidity specifically secured and fenced away from daily shopping pools.',
             'Compound Horizons Forecasting: Predict net worth evolution 12 to 240 months in advance using customizable CAGR parameters.'
           ]
@@ -155,6 +155,16 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           title: 'Who is PaisaFlow For?',
           type: 'text',
           content: 'PaisaFlow is engineered for working professionals, freelancers, multi-income households, and passive investors in India. Whether you are balancing HDFC credit card statements, tracking mutual fund SIPs, or optimizing prepayment schedules for an SBI home loan, PaisaFlow synthesizes your financial picture into a singular, beautiful command console.'
+        },
+        {
+          title: 'How to Navigate PaisaFlow Workspace',
+          type: 'list',
+          content: [
+            '1. Change Tabs: Click on any page tab (e.g. Dashboard, Bank Accounts, Budget Caps) in the left sidebar navigation menu to slide that screen into view.',
+            '2. Launch the Help Center: Click the circular blue question mark icon (?) in the bottom-right corner of your screen. This help drawer will pop out, automatically focusing on the documentation page for your active tab!',
+            '3. Update Display Theme: Go to the "System Settings" tab, scroll to "Accent Theme", and click the "Dark" or "Light" switch to immediately toggle your lighting mode. You can also click color chips to repaint the interface accent colors!',
+            '4. Minimize or Close Manual: Click the double arrow icon in the top-right of the help panel to maximize the guide, or click the "X" button to slide it closed and return to the main workspace.'
+          ]
         },
         {
           title: 'Architecture Guardrails',
@@ -188,6 +198,17 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
             '10. Lock the Emergency Shield: Designate a coverage period (e.g., 6 months of essential survival costs) to establish your secure financial buffer.',
             '11. Audit Wealth Forecast: Navigate to the Forecasting tab to see where your trajectory leads in 5, 10, or 20 years.',
             '12. Review the Annual Recap: Explore your annual compounding summaries, true savings rates, and milestone accomplishments.'
+          ]
+        },
+        {
+          title: 'Step-by-Step Setup Execution Guide',
+          type: 'list',
+          content: [
+            '1. Create Savings Account: Go to "Bank Accounts" in the left navigation sidebar. Click "Add New Account" in the top-right corner. Enter "HDFC Savings" as name, enter "15000" as current balance, select "Savings account" type, click the indigo color bubble, and click "Create Account".',
+            '2. Create Credit Card: Click "Credit Cards" in the sidebar. Click "Add Card/Line" in the top-right corner. Enter "SBI Card", select standalone, enter credit limit "100000", billing cycle start "15", due day "5", click the red color bubble, and click "Register Card".',
+            '3. Create Income Stream: Click "Income Streams" in the sidebar. Click "Define Inflow" in the top-right. Enter "Primary Job", type amount "60000", select "HDFC Savings" as receiving account, select monthly frequency, choose date "1", and click "Create Stream".',
+            '4. Save Budget Cap: Click "Budget Caps" in the sidebar. Locate "Dining Out" and click its grey pencil icon. Enter "5000" in the text box and click the checkmark to lock your budget cap.',
+            '5. Input First Expense: Click "Expense Ledger" in the sidebar. Click "Add Transaction" in the top-right corner. Enter "Weekly Groceries", type "1200" as amount, select category "Groceries", select date, choose "HDFC Savings" as the payment method, and click "Submit Transaction". Your HDFC Savings balance will immediately drop to 13800!'
           ]
         },
         {
@@ -226,6 +247,16 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           title: 'Interactive Widgets',
           type: 'text',
           content: 'Use the quick-action panel to immediately commit savings contributions from active bank accounts, or toggle visual dimensions between category-wise and account-wise spend ratios.'
+        },
+        {
+          title: 'Step-by-Step: How to Use the Dashboard HUD',
+          type: 'list',
+          content: [
+            '1. View Current Net Worth: Read the top row of cards. The "Net Worth" card shows your true net position. Green text means positive net assets, and red text warns of negative net position.',
+            '2. Change Graph Filters: Scroll to "Spend Distribution". In the top-right corner of the pie chart panel, click the "Category", "Credit Card", or "Bank" tab. Clicking "Credit Card" will instantly redraw the chart and list to show your spend ratio across all cards!',
+            '3. Move Cash to Goals: Locate the "Quick Allocate to Savings" widget. Click the "Source Account" dropdown and select "HDFC Savings". Click the "Target Milestone" dropdown and select "Emergency Fund". Type "5000" in the "Amount" box and click "Process Allocation". This instantly moves money on the dashboard and logs a ledger transaction!',
+            '4. Review Actionable Alerts: Look at the "Actionable Notifications" card. Check if any card has crossed the 30% CUR, if a budget cap has overspent, or if a subscription is due. Click on the card to go directly to that tab and take action.'
+          ]
         }
       ]
     },
@@ -246,6 +277,17 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           title: 'The Calculation Model',
           type: 'example',
           content: 'Net Worth = (Bank Balances + Cash On Hand + Current Investments Market Value) - (Credit Card Debts + EMI Principal Outstanding).'
+        },
+        {
+          title: 'Step-by-Step: How to Track & Expand Net Worth',
+          type: 'list',
+          content: [
+            '1. Open Net Worth: Click "Net Worth" in the sidebar. You will see a large real-time Net Worth card at the top, followed by interactive doughnut charts.',
+            '2. Examine Asset Allocation: Look at the "Asset Allocation" doughnut chart. This chart aggregates your bank balances and investment market values. Hover over any slice (e.g. "Mutual Funds", "PPF", "Cash") to see its exact rupee value and total allocation percentage.',
+            '3. Inspect Outstanding Liabilities: Look at the "Liabilities Breakdown" doughnut chart. This aggregates your credit card outstanding debt and unpaid loan principals. Tap on any slice to review its share of your debt burden.',
+            '4. Perform a Valuation Update: If your mutual funds or stocks rise, click "Investments Portfolio" in the sidebar, locate your fund, click "Update Valuations", enter the new NAV, and click "Save". Go back to the Net Worth section—your asset charts and net worth figure will have risen instantly!',
+            '5. Record a Liability Reduction: Click "Credit Cards" in the sidebar, click "Clear Bill / Pay" on an active card, enter the payment amount, and click "Execute Payment". This offsets bank cash with card debt, keeping your net worth stable while optimization metrics improve.'
+          ]
         },
         {
           title: 'Strategic Asset Allocation',
@@ -275,6 +317,18 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
             'Salary Checking: Active accounts directly receiving monthly payroll credits. These act as your primary operational hubs.',
             'Interest-Bearing Savings: Yielding accounts (e.g. SBI, Kotak, HDFC savings) holding secondary reserves.',
             'Physical Wallet / Liquid Cash: Unchecked physical currency used for localized offline grocery or transport cash transactions.'
+          ]
+        },
+        {
+          title: 'Step-by-Step: Adding and Managing Accounts',
+          type: 'list',
+          content: [
+            '1. Open Accounts Screen: Click "Bank Accounts" in the left navigation sidebar. You will see your existing active cash reserves cards.',
+            '2. Add a New Bank Account: Click the blue "Add New Account" button in the top-right corner. A modal form will pop open.',
+            '3. Fill In the Form: Click "Account Name" and enter a name (e.g. "SBI Savings"). Click the "Account Type" dropdown and select "Savings account" or "Salary checking". Click the "Current Balance" box and enter your real-world balance (e.g. "50000").',
+            '4. Custom Style the Card: Under the "Accent Color" row, click on any color circle (Blue, Emerald, Purple, Indigo, Rose, Gold) to style your account card. Click the "Create Account" button to save. Your new card is now visible!',
+            '5. Log an Account-to-Account Transfer: If you move ₹10,000 from checking to savings, go to "Expense Ledger" in the sidebar, and click "Add Transaction". Enter "Transfer to SBI" in Description, enter "10000" in Amount, select "Transfer" in Category. Select the "Source Account" (e.g. HDFC Salary) and choose "SBI Savings" under the "Paid Via/Target Card" dropdown. Click "Submit Transaction". This shifts ₹10,000 from HDFC to SBI without registering a spend/expense!',
+            '6. Edit or Delete an Account: Locate your card under Bank Accounts, hover over it, and click the "Edit" pencil icon to modify the name/balance, or click the red "Delete" trash can icon to remove it.'
           ]
         },
         {
@@ -314,6 +368,18 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           content: 'Suppose your HDFC Millennia card has a ₹2,00,000 credit limit and your Billing Cycle starts on the 10th of every month. The statement cycle runs from Jan 10 to Feb 9. On Feb 10, a bill is generated for all transactions in this cycle. The payment due date is typically March 2 (20 days later). PaisaFlow dynamically isolates statement cycles based on this billing start day so you can track precisely how much billable spending you have accumulated.'
         },
         {
+          title: 'Step-by-Step: Managing Credit Cards',
+          type: 'list',
+          content: [
+            '1. Register a Credit Card: Click "Credit Cards" in the sidebar. Click the blue "Add Card/Line" button in the top-right corner. A side panel will slide open.',
+            '2. Define Card Hierarchy: In the form, choose whether this is a Standalone card or if it is part of a shared network. If you click the "Dependent Card (Shared limit)" option, select its Master Card from the dropdown—the limit will lock and sync automatically!',
+            '3. Enter Card parameters: Enter the card name (e.g. "Amex Gold"), specify the issuing bank (e.g. "American Express"), type your credit limit (e.g. "150000"), enter your statement billing cycle start day (e.g. "12"), and payment due day (e.g. "2"). Click "Register Card" to save.',
+            '4. Check Your Credit Utilization Ratio (CUR): Look at the circular progress gauge on the card. If your outstanding balance exceeds 30% of your credit limit, the gauge turns red as a warning to protect your credit score!',
+            '5. Log a Card Purchase: To record a card swipe, go to "Expense Ledger", click "Add Transaction", enter your purchase (e.g., "Indigo Flights"), enter the amount, select category "Transport", select your credit card under the "Paid Via/Target Card" dropdown, and click "Submit". The card\'s outstanding debt increases instantly.',
+            '6. Pay Your Credit Card Bill: Under the Credit Cards section, locate your card and click the green "Clear Bill / Pay" button. A payment form will slide open. Select your source Bank Account (e.g. "HDFC Salary"), enter the payment amount (defaults to full outstanding), and click "Execute Payment". This deducts cash from your bank account and credits it to the card, clearing its outstanding debt!'
+          ]
+        },
+        {
           title: 'Bill Clearance Procedure',
           type: 'callout',
           calloutType: 'warning',
@@ -342,6 +408,17 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
             'Freelance / Gig Contracts: Variable payouts with irregular timelines.',
             'Rental / Real Estate: Passive monthly inflows from owned properties.',
             'Other Inflows: Intermittent gains such as capital dividends, gift rewards, tax refunds, or interest payouts.'
+          ]
+        },
+        {
+          title: 'Step-by-Step: Setting Up Income Inflows',
+          type: 'list',
+          content: [
+            '1. Open Income Streams: Click "Income Streams" in the left sidebar. You will see your income dashboard, monthly inflow charts, and recurring schedules.',
+            '2. Create a Regular Inflow: Click the blue "Define Inflow" button in the top-right corner. A side form will slide out.',
+            '3. Fill Inflow Details: Click "Stream Description" and type a label (e.g. "Infosys Salary"). Type the expected amount (e.g. "75000") in the amount field. Click the "Receiving Account" dropdown and select your checking account (e.g. "HDFC Salary Account").',
+            '4. Set the Pay Date & Frequency: Select "Monthly" from the frequency dropdown. Choose the calendar day of the month when your salary is credited (e.g., "1"). Click "Create Stream" to activate the schedule.',
+            '5. Record Income Credit in Ledger: On your credit day, click "Expense Ledger" in the sidebar, and click "Add Transaction". At the top of the form, click the toggle to change from "Expense" to "Inflow" (green status). Enter "Infosys salary paycheck", type "75000", select category "Salary", choose "HDFC Salary Account" as the receiving account, and click "Submit Transaction". This credits your bank account balance instantly!'
           ]
         },
         {
@@ -374,6 +451,16 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           ]
         },
         {
+          title: 'Step-by-Step: Setting & Tracking Budget Caps',
+          type: 'list',
+          content: [
+            '1. View Active Envelopes: Click "Budget Caps" in the sidebar. You will see a grid of all budget categories, showing current monthly spending progress.',
+            '2. Edit an Individual Category Cap: Locate the category you want to adjust (e.g. "Dining Out"). Click the grey "Edit" pencil icon in the top-right corner of that category card. The card will switch to an editing input field.',
+            '3. Enter Budget Amount: Type your custom monthly spending limit (e.g. "8000") directly in the input box. Click the checkmark icon or click "Save Cap" to commit the changes. The progress bar will re-render instantly to show your new limit!',
+            '4. Test Your Budget Tracking: Click "Expense Ledger" in the sidebar. Click "Add Transaction". Log a "Dine Out at Taj" transaction for ₹4,500 under the "Dining Out" category. Go back to Budget Caps. You will see the Dining Out progress bar jump forward, changing colors dynamically based on how close you are to the limit!'
+          ]
+        },
+        {
           title: 'Dynamic Adjustment Strategy',
           type: 'callout',
           calloutType: 'best_practice',
@@ -401,6 +488,18 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
             'Fixed Schedules: Monthly commitments with predictable billing dates and values (e.g., Netflix Premium at ₹649, Spotify Premium at ₹119).',
             'Variable Schedules: Recurring payments where the amount or date may vary slightly (e.g., monthly electricity bills, utility pipelines).',
             'Annual Premiums: Once-a-year outlays that often catch households off guard (e.g., HDFC Ergo health cover premium of ₹18,000).'
+          ]
+        },
+        {
+          title: 'Step-by-Step: Adding and Paying Subscriptions',
+          type: 'list',
+          content: [
+            '1. Open Subscriptions Panel: Click "Subscriptions" in the sidebar. You will see a dashboard with your total monthly subscription cost and upcoming due dates.',
+            '2. Add a Recurring Service: Click the blue "Add Subscription" button in the top-right corner. A side panel will slide open.',
+            '3. Fill In the Details: Enter the service name (e.g., "YouTube Premium"). Enter your monthly cost (e.g., "189"). Select your default billing day of the month (e.g., "18"). Choose "Monthly" or "Annual" frequency.',
+            '4. Select Payment Source: Click the "Default Account/Card" dropdown and select your primary payment method (e.g., "HDFC Salary" or "SBI Credit Card"). Click "Activate Subscription" to save.',
+            '5. Record a Monthly Payment with One Click: When a subscription bill is due, locate its card in the grid. Click the green "Record Month\'s Pay" button. In a fraction of a second, the app deducts the charge from your bank/credit account, logs a neat entry in your transaction ledger, and advances the card\'s next billing date by one month automatically!',
+            '6. Cancel or Delete a Subscription: Click the red "Delete" trash can icon on the card to remove it from your active list, immediately stopping all payment notifications.'
           ]
         },
         {
@@ -444,6 +543,18 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           content: '✅ Prepayment Strategy: Use PaisaFlow\'s Debt Prepayment Simulator to calculate interest and tenure savings. Prepaying a lump sum (even equivalent to just 1 extra EMI per year) directly reduces the core principal outstanding, instantly skipping multiple months of outstanding tenure and saving thousands in compounded bank interest.'
         },
         {
+          title: 'Step-by-Step: Registering Loans and Simulating Prepayments',
+          type: 'list',
+          content: [
+            '1. Navigate to EMIs: Click "EMIs" in the sidebar. You will see active loan overview panels and amortization tracking modules.',
+            '2. Log a New EMI/Loan: Click the blue "Add EMI/Loan" button in the top-right corner. A side form will slide out.',
+            '3. Fill Out Loan Parameters: Enter the loan name (e.g. "SBI Home Loan"). Select "Standard EMI" or "No-Cost EMI". Type the original loan principal amount (e.g. "500000"). Enter the annual interest rate p.a. percentage (e.g. "8.5"). Type the loan tenure in months (e.g. "60"). Choose your start date and enter any processing fees.',
+            '4. Attach Repayment Account: Select your payment bank account from the dropdown. Click the green "Submit EMI" button. The system will compute your Equated Monthly Installment and outstanding principal interest schedule instantly!',
+            '5. Record Monthly Installment: Locate your loan card. Click "Record Installment Pay". This automatically deducts the monthly payment from your linked bank account, reduces your loan\'s outstanding principal in the database, and posts a clean log in your expense ledger under the "EMI/Loan" category.',
+            '6. Simulate a Lump-Sum Prepayment: Locate your loan card and click the grey "Simulate Prepayments" button. A popup window opens. Type a prepayment principal amount (e.g., "50000") in the box and click "Calculate Savings". PaisaFlow will instantly render a detailed breakdown showing exactly how much interest cash you will save, and how many months you will shave off the loan tenure!'
+          ]
+        },
+        {
           title: 'Things to Remember',
           type: 'callout',
           calloutType: 'warning',
@@ -475,6 +586,19 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           ]
         },
         {
+          title: 'Step-by-Step: Adding and Searching Transactions',
+          type: 'list',
+          content: [
+            '1. Open Expense Ledger: Click "Expense Ledger" in the left sidebar. You will see your chronological transaction logs.',
+            '2. Log a Purchase: Click the blue "Add Transaction" button in the top-right corner. A modal form will open.',
+            '3. Fill Transaction Form: In the description field, type a label (e.g., "Zara Clothes"). Type the cost (e.g. "3200") in the amount field. Select "Wants" or "Shopping" from the Category dropdown. Choose the date.',
+            '4. Choose Payment Method: Select your payment source from the "Paid Via/Target Card" dropdown (e.g., "SBI Savings Account" or your registered "SBI Credit Card"). Click "Submit Transaction". Your selected bank balance drops immediately, or your card\'s outstanding debt increases!',
+            '5. Filter by Credit Card Billing Cycle: Locate the "Filter by Card" dropdown at the top of the ledger card. Select your credit card (e.g., "Amex Gold"). The ledger will instantly hide all other transactions and clamp the start and end dates to your current card statement cycle (e.g., May 15 to June 14) so you can audit your active bill!',
+            '6. Use Full-Text Search: Click the "Search transactions..." search box. Type "chai" or "amazon". The list filters in real time as you type, showing matching descriptions.',
+            '7. Delete a Mistaken Transaction: Locate the transaction row, click the red trash can icon on the far right. The app will void the transaction, reverse its effect on your bank account balance or card debt, and erase the log.'
+          ]
+        },
+        {
           title: 'Operational Guidelines',
           type: 'callout',
           calloutType: 'best_practice',
@@ -503,6 +627,18 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
             'Target Amount: Total capital required (e.g., ₹75,000).',
             'Target Date: Expected month/year of purchase, which helps calculate your required monthly installment contributions automatically.',
             'Current Accumulated: Live ledger showing cash specifically allocated to this milestone.'
+          ]
+        },
+        {
+          title: 'Step-by-Step: Managing Savings Milestones',
+          type: 'list',
+          content: [
+            '1. Open Savings Section: Click "Savings" in the sidebar. You will see your active goals with radial or linear progress tracking bars.',
+            '2. Add a New Goal: Click the blue "New Milestone" button in the top-right. A form side panel will open.',
+            '3. Fill Out Goal Details: Enter a name (e.g. "MacBook Pro M4"). Enter your target amount (e.g. "150000"). Choose your target month and year from the date pickers. Select your default funding bank account from the dropdown. Click the green "Create Milestone" button.',
+            '4. Process a Goal Allocation: Locate your new milestone card. Click the green "Contribute / Allocate" button. In the popup, select your funding source bank account, enter the allocation amount (e.g. "12000"), and click "Process Allocation". This instantly subtracts ₹12,000 from your active checking balance on the dashboard and credits it to your milestone progress bar—keeping your Net Worth stable while fencing this cash away from daily spending!',
+            '5. Deallocate / Withdraw Funds: If you need to dip back into your savings goal, click the grey "Withdraw / Deallocate" button on the card. Enter the amount to transfer back (e.g., "5000"), and click "Process Withdrawal" to move it back to your active bank balance.',
+            '6. Delete a Milestone: Click the red "Delete" trash can icon on the card to delete the goal and release all accumulated funds back to your general bank account.'
           ]
         },
         {
@@ -548,6 +684,17 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           content: 'When adding a Fixed Deposit, PaisaFlow calculates your exact maturity timeline and remaining days (e.g. "214 Days Remaining") so you can visualize upcoming liquid asset cash-in events directly in your planning HUD.'
         },
         {
+          title: 'Step-by-Step: Adding & Updating Investments',
+          type: 'list',
+          content: [
+            '1. Open Portfolio: Click "Investments" in the sidebar. You will see investment asset distribution charts, total valuation summaries, and active asset lists.',
+            '2. Register an Investment: Click the blue "Log Investment Asset" button in the top-right corner. A form panel will slide open.',
+            '3. Enter Asset parameters: Enter the asset name (e.g. "Nifty 50 Index Fund"). Click "Asset Type" and select your category. Type your Purchase Value (e.g. "50000"), click "Units Owned" and enter your total units (e.g. "250"), and type your purchase NAV. Click "Add Portfolio Asset" to save.',
+            '4. Log a Fixed Deposit with Maturity Countdown: Click "Log Investment Asset". Enter FD name (e.g. "SBI 1-Yr FD"). Select "Fixed Deposit (FD)" as the asset type. Enter principal value (e.g. "100000"), annual interest rate (e.g. "7.1"), duration in days (e.g. "365"), select your start date, and click save. The card will now display a live calculated days-to-maturity countdown!',
+            '5. Update Portfolio Valuations Live: When market prices change, locate your asset card. Click the grey "Update Valuations" button. Enter the new current NAV/price in the box and click "Save Changes". Your Net Worth, asset distribution, and portfolio ROI metrics will recalculate in real time!'
+          ]
+        },
+        {
           title: 'Tracking Strategy',
           type: 'callout',
           calloutType: 'best_practice',
@@ -581,6 +728,16 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           title: 'Simulating Three Trajectories',
           type: 'example',
           content: 'PaisaFlow projects three outcomes in the timeline graph:\n1. Balanced Forecast: The standard projection utilizing your exact ROI inputs.\n2. Optimistic Outlook: Calculates standard projection with an added +3% ROI premium, simulating robust market cycles.\n3. Conservative Outlook: Calculates Standard projection with a -3% ROI penalty, preparing you for prolonged market consolidations.'
+        },
+        {
+          title: 'Step-by-Step: Simulating Compounding Trajectories',
+          type: 'list',
+          content: [
+            '1. Open Forecast Engine: Click "Forecasting" in the sidebar. You will see a large chart showing your projected net worth growth over 10 years.',
+            '2. Enter Growth Parameters: Scroll down to the "Simulation Controls" panel.',
+            '3. Configure ROI and Savings: Click the "Expected ROI %" box and enter your estimated returns (e.g., 12). Click the "Expected Inflation %" box and enter the average price index (e.g., 6). Click the "Monthly Savings" field and enter the amount you plan to save each month.',
+            '4. Read Projected Outcomes: Look at the line chart. The solid blue line shows your standard expected path, the green line displays the optimistic outcome (+3% ROI), and the orange line represents the conservative projection (-3% ROI). Hover over any point on the lines to view the exact future net worth value!'
+          ]
         },
         {
           title: 'Projections Disclaimer',
@@ -618,6 +775,16 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           ]
         },
         {
+          title: 'Step-by-Step: Activating Your Emergency Shield',
+          type: 'list',
+          content: [
+            '1. Open Emergency Shield: Click "Emergency" in the sidebar. You will see a visual shield indicating your current coverage level.',
+            '2. Set Target Coverage: Drag the "Target Coverage" slider or type into the input box to choose how many months of vital expenses you want to buffer (e.g. "6" Months). Click "Update Shield Target".',
+            '3. Deposit Cash into Shield: Click the green "Allocate Funds" button. Select your funding source Bank Account (e.g., "HDFC Salary Account"), type the deposit amount (e.g., "25000"), and click "Process Allocation". The shield gauge fills instantly, showing your updated target percentage!',
+            '4. Release / Unlock Funds: If a real crisis strikes, click the grey "Deallocate / Unlock" button. Enter the amount you need to withdraw (e.g., "15000"), and click "Release Funds" to instantly move that cash back into your active checking account.'
+          ]
+        },
+        {
           title: 'Shield State Indicators',
           type: 'callout',
           calloutType: 'best_practice',
@@ -646,6 +813,16 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
             'True Savings Rate: Calculated strictly as: (Total Annual Income - Total Annual Expenses) / Total Annual Income. Aim for a savings rate of 30% or higher.',
             'Compounding Growth: Percentage expansion of your investment portfolio and asset holdings over the year.',
             'Top Spending Categories: Ranks your biggest capital outlays to identify where your budget experienced leakages.'
+          ]
+        },
+        {
+          title: 'Step-by-Step: Reviewing Your Financial Year',
+          type: 'list',
+          content: [
+            '1. Open Annual Review: Click "Annual Review" in the left sidebar navigation. You will see a comprehensive retrospective report of your financial year.',
+            '2. Check Key Performance Indicators: Inspect the metrics cards showing Total Annual Income, Annual Expenses, Net Compounding Gains, and your True Savings Rate percentage.',
+            '3. Analyze Category Ratios: View the horizontal bar charts ranking your top 5 biggest spending categories to identify budget leaks.',
+            '4. Reset for the New Year: In the "Actions" section, you can export your annual report data or click the link to go to System Settings to adjust your budgets based on your year-end spending trends.'
           ]
         },
         {
@@ -680,6 +857,19 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           ]
         },
         {
+          title: 'Step-by-Step: Workspace Personalization Guide',
+          type: 'list',
+          content: [
+            '1. Open Settings Screen: Click "Settings" in the left navigation sidebar.',
+            '2. Change Global Currency Notation: Locate the "Global Currency" card. Click the dropdown menu showing the active currency symbol (e.g. "₹"). Select "$ (USD)", "€ (EUR)", or "£ (GBP)". The entire interface will instantly switch all currency notations to your choice!',
+            '3. Adjust Auditing Flags: Locate the "High-Spend Threshold" card. Click the numeric input box, type "10000", and click out. Any transaction logged in your ledger that exceeds ₹10,000 will be automatically flagged with an amber warning badge for rapid weekly audits.',
+            '4. Customize Branding Color Scheme: Under the "Accent Theme" card, click on the colored circular chips (Sapphire, Emerald, Gold, Ruby, Violet). Click the "Dark Mode" toggle switch to convert the interface to a high-contrast dark theme.',
+            '5. Download Full DB Backup: Locate the "Backup & Restore" panel. Click the blue "Export Data Backup" button. A portable JSON text file containing your complete ledger history will immediately download to your device!',
+            '6. Restore from a Backup File: Click the grey "Import/Restore" button. In the system file selector, click and select your previously saved PaisaFlow JSON backup file. Click "Open". The database restores your full accounts and history instantly.',
+            '7. Erase All Workspace Data: To clear everything and start fresh, click the red "Hard Data Reset" button. Read the warnings, click all confirmation checkboxes, and click "Erase All Data". This returns the workspace to clean factory defaults.'
+          ]
+        },
+        {
           title: 'Double-Confirmation Reset Lock',
           type: 'callout',
           calloutType: 'warning',
@@ -696,7 +886,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
       relatedIds: ['welcome', 'quick_start'],
       sections: [
         {
-          title: 'SaaS Help Center Frequently Asked Questions',
+          title: 'Help Center Frequently Asked Questions',
           type: 'faq',
           content: [] // Rendered dynamically via react state below
         }
@@ -939,7 +1129,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           </div>
           <div>
             <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-              PaisaFlow SaaS Help Center
+              PaisaFlow Help Center
             </h2>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1076,7 +1266,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 bg-slate-50/30 dark:bg-slate-900/10 flex items-center justify-between shrink-0 print:hidden">
             {/* Breadcrumbs */}
             <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              <span>SaaS Help Center</span>
+              <span>Help Center</span>
               <span>/</span>
               <span>{activePage.category}</span>
               <span>/</span>

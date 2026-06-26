@@ -94,6 +94,8 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
   const [newCardBillingDay, setNewCardBillingDay] = useState<number>(15);
   const [newCardDueDay, setNewCardDueDay] = useState<number>(5);
   const [newCardInitialBalance, setNewCardInitialBalance] = useState<number>(0);
+  const [newCardIsMain, setNewCardIsMain] = useState(false);
+  const [newCardLinkedGroupId, setNewCardLinkedGroupId] = useState('');
 
   // Helper to calculate dynamic preview values inside the form render block
   const getFormPreviewMetrics = (dayVal: number) => {
@@ -164,10 +166,35 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
   const selectedCard = creditCards.find(c => c.id === (selectedCardId || creditCards[0]?.id));
   const selectedCardMetrics = selectedCard ? getCardMetrics(selectedCard) : null;
 
+  const openAddCardModal = () => {
+    setEditingCardId(null);
+    setNewCardName('');
+    setNewCardInstitution('');
+    setNewCardLimit('');
+    setNewCardColor('#2563eb');
+    setNewCardBillingDay(15);
+    setNewCardDueDay(5);
+    setNewCardInitialBalance(0);
+    setNewCardIsMain(false);
+    setNewCardLinkedGroupId('');
+    setShowAddCard(true);
+  };
+
   // Handler for adding or editing a card
   const handleAddCardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCardName || !newCardInstitution || !newCardLimit) return;
+
+    const isMain = newCardIsMain;
+    const linkedId = newCardLinkedGroupId || '';
+    const masterLimit = (!isMain && linkedId)
+      ? (creditCards.find(c => c.id === linkedId)?.limit || 0)
+      : Number(newCardLimit || 0);
+
+    if (!newCardName || !newCardInstitution) return;
+    if (!isMain && !linkedId && !masterLimit) {
+      // If standalone, we require a credit limit
+      return;
+    }
 
     if (editingCardId) {
       setFinanceData((prev: any) => ({
@@ -178,11 +205,13 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                 ...a,
                 name: newCardName,
                 institution: newCardInstitution,
-                limit: Number(newCardLimit),
+                limit: masterLimit,
                 color: newCardColor,
                 billingCycleStartDay: newCardBillingDay,
                 paymentDueDay: newCardDueDay,
-                balance: Number(newCardInitialBalance)
+                balance: Number(newCardInitialBalance),
+                isMainCard: isMain,
+                linkedGroupId: isMain ? '' : linkedId,
               }
             : a
         )
@@ -192,11 +221,13 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
       addCreditCard({
         name: newCardName,
         institution: newCardInstitution,
-        limit: Number(newCardLimit),
+        limit: masterLimit,
         color: newCardColor,
         billingCycleStartDay: newCardBillingDay,
         paymentDueDay: newCardDueDay,
         initialBalance: newCardInitialBalance,
+        isMainCard: isMain,
+        linkedGroupId: isMain ? '' : linkedId,
       });
     }
 
@@ -207,6 +238,8 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
     setNewCardBillingDay(15);
     setNewCardDueDay(5);
     setNewCardInitialBalance(0);
+    setNewCardIsMain(false);
+    setNewCardLinkedGroupId('');
     setShowAddCard(false);
   };
 
@@ -248,7 +281,7 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => setShowAddCard(true)}
+            onClick={openAddCardModal}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/15 hover:shadow-indigo-600/25 transition flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -305,7 +338,7 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
           title="No Credit Cards Linked"
           description="You haven't declared any physical credit card accounts yet in your current financial model space."
           actionLabel="Add First Credit Card"
-          onAction={() => setShowAddCard(true)}
+          onAction={openAddCardModal}
         />
       ) : (
         <>
@@ -449,9 +482,20 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 leading-tight">
                                   {card.name}
                                 </h4>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 leading-none">
-                                  {card.institution}
-                                </p>
+                                <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider leading-none">
+                                    {card.institution}
+                                  </span>
+                                  {card.isMainCard ? (
+                                    <span className="text-[8px] bg-indigo-55 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                                      Master
+                                    </span>
+                                  ) : (card.linkedGroupId && card.linkedGroupId !== '') ? (
+                                    <span className="text-[8px] bg-amber-55 dark:bg-amber-955/60 text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider px-1.5 py-0.5 rounded" title={`Shares limit with ${metrics.parentCardName}`}>
+                                      Dependent
+                                    </span>
+                                  ) : null}
+                                </div>
                               </div>
                             </div>
                             <button
@@ -534,6 +578,8 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                             setNewCardBillingDay(selectedCard.billingCycleStartDay || 15);
                             setNewCardDueDay(selectedCard.paymentDueDay || 5);
                             setNewCardInitialBalance(selectedCard.balance || 0);
+                            setNewCardIsMain(!!selectedCard.isMainCard);
+                            setNewCardLinkedGroupId(selectedCard.linkedGroupId || '');
                             setShowAddCard(true);
                           }}
                           className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer"
@@ -606,6 +652,41 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                             </div>
                           </div>
                         </div>
+
+                        {/* Shared Limit Info Box */}
+                        {selectedCardMetrics.isShared && (
+                          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/65 border border-slate-100 dark:border-slate-800/80 text-slate-600 dark:text-slate-300 text-xs space-y-1.5 animate-fade-in">
+                            <div className="flex items-center gap-2 font-black uppercase text-[10px] tracking-wider text-indigo-600 dark:text-indigo-400">
+                              <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                              Shared Limit Network Active
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                              {selectedCardMetrics.isMainCard ? (
+                                <>
+                                  This is a <strong className="text-indigo-600 dark:text-indigo-400">Master Card</strong>. Its limit of <strong>{formatCurrency(selectedCardMetrics.creditLimit, data.preferences)}</strong> is shared across the linked dependent card network.
+                                </>
+                              ) : (
+                                <>
+                                  This is a <strong className="text-amber-600 dark:text-amber-400">Dependent Card</strong> sharing the credit limit pool of the Master Card <strong className="text-slate-700 dark:text-slate-200">{selectedCardMetrics.parentCardName}</strong>.
+                                </>
+                              )}
+                            </p>
+                            <div className="pt-2 border-t border-slate-200/50 dark:border-slate-800/40 grid grid-cols-2 gap-4 text-[11px]">
+                              <div>
+                                <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-[9px] tracking-wider block">Network spending</span>
+                                <span className="font-extrabold font-mono text-slate-700 dark:text-slate-300">
+                                  {formatCurrency(selectedCardMetrics.groupUtilized, data.preferences)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 dark:text-slate-500 font-bold uppercase text-[9px] tracking-wider block">Network available</span>
+                                <span className="font-black font-mono text-indigo-600 dark:text-indigo-400">
+                                  {formatCurrency(selectedCardMetrics.groupAvailable, data.preferences)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Bill Payment Quick Action */}
                         {selectedCardMetrics.utilized > 0 && (
@@ -1012,12 +1093,30 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                   </label>
                   <input
                     type="number"
-                    required
+                    required={!(!newCardIsMain && newCardLinkedGroupId)}
+                    disabled={!newCardIsMain && !!newCardLinkedGroupId}
                     placeholder="e.g. 150000"
-                    value={newCardLimit}
+                    value={
+                      !newCardIsMain && newCardLinkedGroupId
+                        ? (creditCards.find(c => c.id === newCardLinkedGroupId)?.limit || '')
+                        : newCardLimit
+                    }
                     onChange={(e) => setNewCardLimit(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className={`w-full border rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+                      !newCardIsMain && newCardLinkedGroupId
+                        ? 'bg-slate-100 dark:bg-slate-800/60 border-slate-150 dark:border-slate-800 text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-50 dark:bg-slate-900 border-slate-150 dark:border-slate-800 text-slate-705 dark:text-slate-300'
+                    }`}
                   />
+                  {!newCardIsMain && newCardLinkedGroupId ? (
+                    <p className="text-[9px] text-indigo-500/80 mt-1 font-medium leading-normal">
+                      Auto-synced with Master Card's shared limit
+                    </p>
+                  ) : (
+                    <p className="text-[9px] text-slate-400 mt-1 font-medium leading-normal">
+                      Total limit for standalone credit line
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -1083,6 +1182,97 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* CARD RELATIONSHIP SELECTION */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800/80 space-y-3">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  Card Facility Relationship (Shared Limit Pool)
+                </label>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewCardIsMain(false);
+                      setNewCardLinkedGroupId('');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                      !newCardIsMain && !newCardLinkedGroupId
+                        ? 'bg-indigo-600 border-indigo-600 text-white font-extrabold shadow-sm'
+                        : 'bg-white dark:bg-[#070c19] border-slate-150 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold'
+                    }`}
+                  >
+                    <span className="text-[10px]">Standalone</span>
+                    <span className={`text-[8px] leading-none ${!newCardIsMain && !newCardLinkedGroupId ? 'text-white/80' : 'text-slate-400'}`}>Own Limit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewCardIsMain(true);
+                      setNewCardLinkedGroupId('');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                      newCardIsMain
+                        ? 'bg-indigo-600 border-indigo-600 text-white font-extrabold shadow-sm'
+                        : 'bg-white dark:bg-[#070c19] border-slate-150 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold'
+                    }`}
+                  >
+                    <span className="text-[10px]">Main Card</span>
+                    <span className={`text-[8px] leading-none ${newCardIsMain ? 'text-white/80' : 'text-slate-400'}`}>Limit Source</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={creditCards.filter(c => c.isMainCard && c.id !== editingCardId).length === 0}
+                    onClick={() => {
+                      setNewCardIsMain(false);
+                      const availableMain = creditCards.find(c => c.isMainCard && c.id !== editingCardId);
+                      setNewCardLinkedGroupId(availableMain ? availableMain.id : '');
+                    }}
+                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed ${
+                      !newCardIsMain && newCardLinkedGroupId
+                        ? 'bg-indigo-600 border-indigo-600 text-white font-extrabold shadow-sm'
+                        : 'bg-white dark:bg-[#070c19] border-slate-150 dark:border-slate-800 text-slate-600 dark:text-slate-400 font-semibold'
+                    }`}
+                  >
+                    <span className="text-[10px]">Dependent</span>
+                    <span className={`text-[8px] leading-none ${!newCardIsMain && newCardLinkedGroupId ? 'text-white/80' : 'text-slate-400'}`}>Shared Pool</span>
+                  </button>
+                </div>
+
+                {/* If Dependent, show dropdown of available Main Cards */}
+                {!newCardIsMain && newCardLinkedGroupId !== '' && (
+                  <div className="space-y-1 animate-fade-in">
+                    <label className="block text-[9px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                      Select Master Card limit source
+                    </label>
+                    <select
+                      value={newCardLinkedGroupId}
+                      onChange={(e) => setNewCardLinkedGroupId(e.target.value)}
+                      className="w-full bg-white dark:bg-[#070c19] border border-slate-150 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-705 dark:text-slate-300"
+                    >
+                      {creditCards
+                        .filter(c => c.isMainCard && c.id !== editingCardId)
+                        .map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.institution})
+                          </option>
+                        ))}
+                    </select>
+                    <p className="text-[9px] text-slate-400 mt-0.5 leading-snug">
+                      This card will share the credit limit pool of the selected Master Card. Its spending and outstanding balance will deplete the shared available limit.
+                    </p>
+                  </div>
+                )}
+
+                {/* Warning/Helper if no Master Cards exist */}
+                {!newCardIsMain && !newCardLinkedGroupId && creditCards.filter(c => c.isMainCard && c.id !== editingCardId).length === 0 && (
+                  <p className="text-[9px] text-slate-400 italic text-center">
+                    To connect a dependent card with a shared limit pool, declare at least one other card as a "Main Card" first.
+                  </p>
+                )}
               </div>
 
               <div>

@@ -35,7 +35,9 @@ export function useCreditCards() {
   const deleteCreditCard = (cardId: string) => {
     setFinanceData((prev) => ({
       ...prev,
-      accounts: prev.accounts.filter((a) => a.id !== cardId),
+      accounts: prev.accounts
+        .filter((a) => a.id !== cardId)
+        .map((a) => (a.linkedGroupId === cardId ? { ...a, linkedGroupId: '' } : a)),
       ccTransactions: (prev.ccTransactions || []).filter((t) => t.cardId !== cardId),
     }));
   };
@@ -149,9 +151,60 @@ export function useCreditCards() {
 
   // Helper to calculate card metrics
   const getCardMetrics = (card: FinancialAccount) => {
-    const creditLimit = card.limit || 0;
-    const utilized = card.balance || 0;
-    const available = Math.max(0, creditLimit - utilized);
+    let creditLimit = card.limit || 0;
+    let utilized = card.balance || 0;
+    let available = Math.max(0, creditLimit - utilized);
+
+    let isShared = false;
+    let isMainCard = !!card.isMainCard;
+    let parentCardId = card.linkedGroupId || '';
+    let parentCardName = '';
+    let groupUtilized = utilized;
+    let groupAvailable = available;
+
+    // Check if it's dependent (has a linkedGroupId pointing to a master card)
+    if (card.linkedGroupId && card.linkedGroupId !== '') {
+      let mainCard = creditCards.find(c => c.id === card.linkedGroupId);
+      
+      // Self-healing fallback: If the linked master card doesn't exist anymore,
+      // fallback to the first available master card in the workspace
+      if (!mainCard) {
+        mainCard = creditCards.find(c => c.isMainCard);
+      }
+
+      if (mainCard) {
+        isShared = true;
+        const sharedLimit = mainCard.limit || 0;
+        const sharedGroupCards = creditCards.filter(
+          (c) => c.id === mainCard.id || c.linkedGroupId === mainCard.id || c.id === card.id
+        );
+        const totalGroupUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+        const totalGroupAvailable = Math.max(0, sharedLimit - totalGroupUtilized);
+
+        creditLimit = sharedLimit;
+        utilized = card.balance || 0;
+        available = totalGroupAvailable; // Shares the available pool
+        groupUtilized = totalGroupUtilized;
+        groupAvailable = totalGroupAvailable;
+        parentCardName = mainCard.name;
+        parentCardId = mainCard.id;
+      }
+    } else if (card.isMainCard) {
+      // It is a Master Card
+      isShared = true;
+      const sharedLimit = card.limit || 0;
+      const sharedGroupCards = creditCards.filter(c => c.id === card.id || c.linkedGroupId === card.id);
+      const totalGroupUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+      const totalGroupAvailable = Math.max(0, sharedLimit - totalGroupUtilized);
+
+      creditLimit = sharedLimit;
+      utilized = card.balance || 0;
+      available = totalGroupAvailable; // Shares the available pool
+      groupUtilized = totalGroupUtilized;
+      groupAvailable = totalGroupAvailable;
+    }
+
+    // Individual card's utilization percentage is based on its own balance vs its credit limit (which is the shared limit for dependent cards)
     const utilizationPercent = creditLimit > 0 ? (utilized / creditLimit) * 100 : 0;
 
     // Statement day (bill generation day of month)
@@ -195,17 +248,32 @@ export function useCreditCards() {
       creditLimit,
       utilized,
       available,
-      utilizationPercent,
+      utilizationPercent: Math.min(100, utilizationPercent),
       billingCycle: `${formatDateString(periodStartDate)} to ${formatDateString(periodEndDate)}`,
       dueDay: dueDate.getDate(),
       nextBillDateStr: formatDateString(billDate),
       nextDueDateStr: formatDateString(dueDate),
+      isShared,
+      isMainCard,
+      parentCardId,
+      parentCardName,
+      groupUtilized,
+      groupAvailable,
     };
   };
 
   // Overall dashboard metrics
   const getOverallMetrics = () => {
-    const totalLimit = creditCards.reduce((sum, c) => sum + (c.limit || 0), 0);
+    const totalLimit = creditCards.reduce((sum, c) => {
+      if (c.linkedGroupId && c.linkedGroupId !== '' && !c.isMainCard) {
+        // Skip dependent cards only if a master card exists in the workspace to avoid double-counting
+        const hasMaster = creditCards.some(m => m.id === c.linkedGroupId || m.isMainCard);
+        if (hasMaster) {
+          return sum;
+        }
+      }
+      return sum + (c.limit || 0);
+    }, 0);
     const totalUtilized = creditCards.reduce((sum, c) => sum + c.balance, 0);
     const totalAvailable = Math.max(0, totalLimit - totalUtilized);
     const overallPercent = totalLimit > 0 ? (totalUtilized / totalLimit) * 100 : 0;
