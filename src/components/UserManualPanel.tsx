@@ -850,6 +850,10 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
     {
       q: 'Does PaisaFlow require internet access to function?',
       a: 'PaisaFlow supports robust offline caching, allowing you to view and log transactions without an active internet connection. Your data will automatically sync with the cloud database once connection is restored.'
+    },
+    {
+      q: 'If I pay my credit card bill, does it mark related/connected EMIs as paid? How do I prevent double-counting transactions?',
+      a: 'No. In PaisaFlow, credit card bill payments and individual EMIs are separate trackers. A credit card bill payment is recorded as an Account-to-Card "Transfer" (reducing card liability and bank balance, which does not count as a new expense/spending). The actual monthly installment is recorded separately in the EMIs section as an Expense (under the "EMI/Loan" category) to accurately reflect monthly spending. Recording the card payment as a Transfer and the monthly installment as an Expense ensures zero double-counting.'
     }
   ];
 
