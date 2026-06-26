@@ -124,6 +124,7 @@ export interface CreditCardEmiMaster {
   status: 'active' | 'closed' | 'pre_closed';
   installments: CreditCardEmiInstallment[];
   notes?: string;
+  convertedFromExpenseId?: string; // ID of the original transaction in the expense ledger, if converted from one
 }
 
 export interface Investment {

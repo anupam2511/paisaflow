@@ -161,9 +161,12 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
     const isLarge = exp.amount >= 4000;
     // Ensure it hasn't already been mapped as an active CC EMI
     const isAlreadyConverted = ccEmis.some(e => 
-      e.originalAmount === exp.amount && 
-      e.cardId === exp.accountId &&
-      (e.expenseName.toLowerCase().includes(exp.description.toLowerCase()) || exp.description.toLowerCase().includes(e.expenseName.toLowerCase()))
+      e.convertedFromExpenseId === exp.id || (
+        !e.convertedFromExpenseId &&
+        e.originalAmount === exp.amount && 
+        e.cardId === exp.accountId &&
+        (e.expenseName.toLowerCase().includes(exp.description.toLowerCase()) || exp.description.toLowerCase().includes(e.expenseName.toLowerCase()))
+      )
     );
     return isCc && isLarge && !isAlreadyConverted;
   });
@@ -558,10 +561,65 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
   const handleDeleteCcEmi = () => {
     if (!ccEmiToDelete) return;
 
-    setFinanceData(prev => ({
-      ...prev,
-      ccEmis: (prev.ccEmis || []).filter(e => e.id !== ccEmiToDelete.id)
-    }));
+    setFinanceData(prev => {
+      const baseCcEmis = prev.ccEmis || [];
+      const emiToDelete = baseCcEmis.find(e => e.id === ccEmiToDelete.id);
+      if (!emiToDelete) return prev;
+
+      let nextAccounts = [...prev.accounts];
+      let nextCcTransactions = [...(prev.ccTransactions || [])];
+
+      // If it was converted from an expense, we need to revert the balance deduction
+      if (emiToDelete.convertedFromExpenseId) {
+        nextAccounts = nextAccounts.map(a => {
+          if (a.id === emiToDelete.cardId) {
+            return {
+              ...a,
+              balance: Math.round((a.balance + emiToDelete.originalAmount) * 100) / 100
+            };
+          }
+          return a;
+        });
+
+        // Also remove the conversion refund transaction so history is perfectly clean
+        nextCcTransactions = nextCcTransactions.filter(
+          t => !(t.cardId === emiToDelete.cardId && t.type === 'emi_conversion' && t.amount === emiToDelete.originalAmount)
+        );
+      }
+
+      // Also remove any paid installments' transaction records and expenses
+      const paidInstallments = emiToDelete.installments?.filter(inst => inst.paidStatus === 'paid') || [];
+      paidInstallments.forEach(inst => {
+        const amt = inst.totalInstallmentAmount;
+        // Revert card balance increase from paid installments
+        nextAccounts = nextAccounts.map(a => {
+          if (a.id === emiToDelete.cardId) {
+            return { ...a, balance: Math.max(0, Math.round((a.balance - amt) * 100) / 100) };
+          }
+          return a;
+        });
+        // Remove CC transaction
+        nextCcTransactions = nextCcTransactions.filter(
+          t => t.id !== `tx_cc_emi-${emiToDelete.id}-${inst.installmentNumber}`
+        );
+      });
+
+      // Filter out EMI payment expenses from the master expenses list
+      let nextExpenses = prev.expenses.filter(exp => {
+        if (exp.accountId !== emiToDelete.cardId) return true;
+        const isMatch = exp.description.includes(emiToDelete.expenseName) && 
+                        exp.description.includes("EMI Payment:");
+        return !isMatch;
+      });
+
+      return {
+        ...prev,
+        ccEmis: baseCcEmis.filter(e => e.id !== ccEmiToDelete.id),
+        accounts: nextAccounts,
+        ccTransactions: nextCcTransactions,
+        expenses: nextExpenses
+      };
+    });
 
     setOk(`Removed Credit Card EMI entry: "${ccEmiToDelete.name}"`);
     setCcEmiToDelete(null);

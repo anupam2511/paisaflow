@@ -63,11 +63,11 @@ export function useCreditCards() {
           } else if (tx.type === 'bill_payment') {
             updatedBal -= tx.amount;
           } else if (tx.type === 'emi_conversion') {
-            // Converts existing balance/purchase into EMI. 
-            // In Indian credit cards, the outstanding principal is blocked,
-            // but immediate statement balance changes.
-            // Let's assume EMI conversion moves amount from immediate outstanding or just logs it.
-            // No direct immediate balance change if already part of the balance, or we can leave it as a transfer.
+            // Converts existing purchase into an EMI.
+            // The initial purchase was already added to the card balance,
+            // so we subtract it from active statement balance now to reflect
+            // that it has been deferred and is no longer part of current billing dues.
+            updatedBal -= tx.amount;
           }
 
           return {
@@ -152,7 +152,18 @@ export function useCreditCards() {
   // Helper to calculate card metrics
   const getCardMetrics = (card: FinancialAccount) => {
     let creditLimit = card.limit || 0;
-    let utilized = card.balance || 0;
+    
+    // Calculate unbilled CC EMI principal for this card
+    const cardCcEmis = (financeData.ccEmis || []).filter(
+      (e) => e.cardId === card.id && e.status === 'active'
+    );
+    const unbilledEmiPrincipal = cardCcEmis.reduce(
+      (sum, e) => sum + (e.outstandingPrincipal || 0),
+      0
+    );
+
+    const statementBalance = card.balance || 0;
+    let utilized = statementBalance + unbilledEmiPrincipal; // Total Outstanding on this individual card
     let available = Math.max(0, creditLimit - utilized);
 
     let isShared = false;
@@ -178,11 +189,22 @@ export function useCreditCards() {
         const sharedGroupCards = creditCards.filter(
           (c) => c.id === mainCard.id || c.linkedGroupId === mainCard.id || c.id === card.id
         );
-        const totalGroupUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+        
+        // Sum normal statement balances for the group
+        const totalGroupNormalUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+        // Sum unbilled EMI outstanding principal for the group
+        const totalGroupUnbilled = sharedGroupCards.reduce((sum, c) => {
+          const cCcEmis = (financeData.ccEmis || []).filter(
+            (e) => e.cardId === c.id && e.status === 'active'
+          );
+          return sum + cCcEmis.reduce((s, e) => s + (e.outstandingPrincipal || 0), 0);
+        }, 0);
+
+        const totalGroupUtilized = totalGroupNormalUtilized + totalGroupUnbilled;
         const totalGroupAvailable = Math.max(0, sharedLimit - totalGroupUtilized);
 
         creditLimit = sharedLimit;
-        utilized = card.balance || 0;
+        utilized = statementBalance + unbilledEmiPrincipal;
         available = totalGroupAvailable; // Shares the available pool
         groupUtilized = totalGroupUtilized;
         groupAvailable = totalGroupAvailable;
@@ -194,17 +216,26 @@ export function useCreditCards() {
       isShared = true;
       const sharedLimit = card.limit || 0;
       const sharedGroupCards = creditCards.filter(c => c.id === card.id || c.linkedGroupId === card.id);
-      const totalGroupUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+      
+      const totalGroupNormalUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+      const totalGroupUnbilled = sharedGroupCards.reduce((sum, c) => {
+        const cCcEmis = (financeData.ccEmis || []).filter(
+          (e) => e.cardId === c.id && e.status === 'active'
+        );
+        return sum + cCcEmis.reduce((s, e) => s + (e.outstandingPrincipal || 0), 0);
+      }, 0);
+
+      const totalGroupUtilized = totalGroupNormalUtilized + totalGroupUnbilled;
       const totalGroupAvailable = Math.max(0, sharedLimit - totalGroupUtilized);
 
       creditLimit = sharedLimit;
-      utilized = card.balance || 0;
+      utilized = statementBalance + unbilledEmiPrincipal;
       available = totalGroupAvailable; // Shares the available pool
       groupUtilized = totalGroupUtilized;
       groupAvailable = totalGroupAvailable;
     }
 
-    // Individual card's utilization percentage is based on its own balance vs its credit limit (which is the shared limit for dependent cards)
+    // Individual card's utilization percentage is based on its own total outstanding vs its credit limit (which is the shared limit for dependent cards)
     const utilizationPercent = creditLimit > 0 ? (utilized / creditLimit) * 100 : 0;
 
     // Statement day (bill generation day of month)
@@ -246,8 +277,10 @@ export function useCreditCards() {
 
     return {
       creditLimit,
-      utilized,
-      available,
+      utilized, // True Total Outstanding Debt (Statement + Unbilled EMIs)
+      statementBalance, // Billed current statement due (card.balance)
+      unbilledEmiPrincipal, // Unbilled EMI principal remaining
+      available, // True available limit
       utilizationPercent: Math.min(100, utilizationPercent),
       billingCycle: `${formatDateString(periodStartDate)} to ${formatDateString(periodEndDate)}`,
       dueDay: dueDate.getDate(),
@@ -274,11 +307,19 @@ export function useCreditCards() {
       }
       return sum + (c.limit || 0);
     }, 0);
-    const totalUtilized = creditCards.reduce((sum, c) => sum + c.balance, 0);
+
+    const totalUtilized = creditCards.reduce((sum, card) => {
+      const metrics = getCardMetrics(card);
+      return sum + metrics.utilized; // Sum of total outstanding (statement + unbilled EMI)
+    }, 0);
+
+    const totalStatementBalance = creditCards.reduce((sum, card) => sum + (card.balance || 0), 0);
+    const totalUnbilledEmiPrincipal = Math.max(0, totalUtilized - totalStatementBalance);
+
     const totalAvailable = Math.max(0, totalLimit - totalUtilized);
     const overallPercent = totalLimit > 0 ? (totalUtilized / totalLimit) * 100 : 0;
 
-    // Find upcoming due bills / amounts
+    // Find upcoming due bills / amounts based only on active billed statement dues
     const upcomingBills = creditCards.map((card) => {
       const metrics = getCardMetrics(card);
       return {
@@ -286,7 +327,7 @@ export function useCreditCards() {
         name: card.name,
         institution: card.institution,
         color: card.color,
-        amountDue: card.balance,
+        amountDue: metrics.statementBalance, // Show statement balance as the amount due!
         dueDay: metrics.dueDay,
         billingCycle: metrics.billingCycle,
       };
@@ -295,6 +336,8 @@ export function useCreditCards() {
     return {
       totalLimit,
       totalUtilized,
+      totalStatementBalance,
+      totalUnbilledEmiPrincipal,
       totalAvailable,
       overallPercent,
       upcomingBills,

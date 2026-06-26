@@ -317,7 +317,34 @@ export default function CcEmiForm({
 
         } else {
           // Add newly converted EMI
-          updatedList = [...baseCcEmis, schedule];
+          const scheduleWithRef = prefilledExpense 
+            ? { ...schedule, convertedFromExpenseId: prefilledExpense.id }
+            : schedule;
+          updatedList = [...baseCcEmis, scheduleWithRef];
+
+          // If converting an existing card purchase (prefilledExpense), we log an emi_conversion transaction
+          // that credits back/offset-refunds the full purchase amount from the active statement balance.
+          if (prefilledExpense) {
+            const conversionTxId = `tx_cc_conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            const conversionTx = {
+              id: conversionTxId,
+              cardId: cardId,
+              type: 'emi_conversion' as const,
+              description: `Converted to EMI: ${prefilledExpense.description}`,
+              amount: prefilledExpense.amount,
+              date: new Date().toISOString().split('T')[0],
+              category: prefilledExpense.category || 'Shopping',
+            };
+            nextCcTransactions = [conversionTx, ...nextCcTransactions];
+
+            // Refund/offset the full purchase amount from the active credit card balance
+            nextAccounts = nextAccounts.map(a => {
+              if (a.id === cardId) {
+                return { ...a, balance: Math.max(0, Math.round((a.balance - prefilledExpense.amount) * 100) / 100) };
+              }
+              return a;
+            });
+          }
         }
 
         return {

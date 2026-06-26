@@ -427,15 +427,16 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                     title="Available Pool"
                     value={formatCurrency(overall.totalAvailable, data.preferences, 0)}
                     icon={Wallet}
-                    subtext="Total idle safety net capacity"
+                    subtext="Total idle limit minus all active card debt"
                     colorClassName="text-emerald-600 dark:text-emerald-450"
                     iconColorClassName="bg-emerald-50 border-emerald-150 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900/40"
                   />
                   <MetricCard
-                    title="Cards Active"
-                    value={`${creditCards.length} Cards`}
-                    icon={Sparkles}
-                    subtext="Across major national banking issuers"
+                    title="Active Statement Dues"
+                    value={formatCurrency(overall.totalStatementBalance, data.preferences, 0)}
+                    icon={Coins}
+                    subtext={`Unbilled EMIs: ${formatCurrency(overall.totalUnbilledEmiPrincipal, data.preferences, 0)} (Total ${creditCards.length} cards)`}
+                    colorClassName="text-indigo-600 dark:text-indigo-400"
                     iconColorClassName="bg-amber-50 border-amber-150 text-amber-500 dark:bg-amber-950/20 dark:border-amber-900/40"
                   />
                 </div>
@@ -653,6 +654,28 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                           </div>
                         </div>
 
+                        {/* STATEMENT DUE VS UNBILLED EMI BREAKDOWN */}
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="p-3 bg-slate-50 dark:bg-slate-900/45 rounded-2xl border border-slate-100 dark:border-slate-800/80 text-center animate-fade-in">
+                            <span className="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider block mb-1">Statement Due</span>
+                            <span className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 font-mono block">
+                              {formatCurrency(selectedCardMetrics.statementBalance, data.preferences)}
+                            </span>
+                          </div>
+                          <div className="p-3 bg-slate-50 dark:bg-slate-900/45 rounded-2xl border border-slate-100 dark:border-slate-800/80 text-center animate-fade-in">
+                            <span className="text-[9px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider block mb-1">Unbilled EMIs</span>
+                            <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 font-mono block">
+                              {formatCurrency(selectedCardMetrics.unbilledEmiPrincipal, data.preferences)}
+                            </span>
+                          </div>
+                          <div className="p-3 bg-indigo-50/30 dark:bg-[#0f1935] rounded-2xl border border-indigo-100/55 dark:border-indigo-950/45 text-center animate-fade-in">
+                            <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider block mb-1">Total Outstanding</span>
+                            <span className="text-xs sm:text-sm font-black text-slate-850 dark:text-white font-mono block">
+                              {formatCurrency(selectedCardMetrics.utilized, data.preferences)}
+                            </span>
+                          </div>
+                        </div>
+
                         {/* Shared Limit Info Box */}
                         {selectedCardMetrics.isShared && (
                           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/65 border border-slate-100 dark:border-slate-800/80 text-slate-600 dark:text-slate-300 text-xs space-y-1.5 animate-fade-in">
@@ -689,18 +712,18 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                         )}
 
                         {/* Bill Payment Quick Action */}
-                        {selectedCardMetrics.utilized > 0 && (
-                          <div className="p-4 rounded-2xl bg-indigo-600/5 dark:bg-indigo-400/5 border border-indigo-600/10 dark:border-indigo-400/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        {selectedCardMetrics.statementBalance > 0 ? (
+                          <div className="p-4 rounded-2xl bg-indigo-600/5 dark:bg-indigo-400/5 border border-indigo-600/10 dark:border-indigo-400/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-xl bg-indigo-600/10 dark:bg-indigo-400/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                                 <CheckCircle2 className="w-5 h-5" />
                               </div>
                               <div>
                                 <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                  Settle Card Outstanding
+                                  Settle Current Statement Bill
                                 </h4>
                                 <p className="text-[10px] text-slate-450 dark:text-slate-400 font-bold mt-0.5">
-                                  Outstanding Balance of {formatCurrency(selectedCardMetrics.utilized, data.preferences)} is due soon.
+                                  Your current statement billed balance of <strong>{formatCurrency(selectedCardMetrics.statementBalance, data.preferences)}</strong> is due. (Remaining unbilled EMI principal is {formatCurrency(selectedCardMetrics.unbilledEmiPrincipal, data.preferences)})
                                 </p>
                               </div>
                             </div>
@@ -708,7 +731,7 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                               onClick={() => {
                                 setTxType('bill_payment');
                                 setTxCardId(selectedCard.id);
-                                setTxAmount(selectedCardMetrics.utilized);
+                                setTxAmount(selectedCardMetrics.statementBalance);
                                 setTxDesc(`Repayment of ${selectedCard.name} statement dues`);
                                 if (bankAccounts.length > 0) {
                                   setPayFromBankId(bankAccounts[0].id);
@@ -718,10 +741,32 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                               className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition cursor-pointer flex items-center gap-1.5 shrink-0"
                             >
                               {React.createElement(getCurrencyIcon(data.preferences?.currencySymbol || '₹'), { className: "w-3.5 h-3.5" })}
-                              Pay Dues Now
+                              Pay Statement Bill
                             </button>
                           </div>
-                        )}
+                        ) : selectedCardMetrics.utilized > 0 ? (
+                          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-550 flex items-center justify-center shrink-0">
+                                <Info className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                  Statement Bill Settled
+                                </h4>
+                                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-0.5">
+                                  No current statement billing dues. Remaining card limit block of <strong>{formatCurrency(selectedCardMetrics.unbilledEmiPrincipal, data.preferences)}</strong> is deferred as future active EMIs.
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              disabled
+                              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-550 rounded-xl text-[10px] font-black uppercase tracking-wider border border-slate-250/50 dark:border-slate-700 select-none cursor-not-allowed shrink-0"
+                            >
+                              Dues Cleared
+                            </button>
+                          </div>
+                        ) : null}
 
                         {/* Recent Transactions filter block */}
                         <div>
