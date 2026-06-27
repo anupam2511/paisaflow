@@ -116,8 +116,13 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setUserDisplayName(user.displayName);
         localStorage.setItem('paisaflow_active_user', user.uid);
 
+        const isForcedOffline = localStorage.getItem('paisaflow_force_offline') === 'true';
+
         // Load secure data from Firestore
         try {
+          if (isForcedOffline) {
+            throw new Error("Client is offline (forced offline mode enabled by user settings).");
+          }
           const dbData = await getUserFinanceData(user.uid);
           if (dbData) {
             setFinanceData(sanitizeFinanceData(dbData));
@@ -128,15 +133,19 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             if (legacyDataStr) {
               const parsed = JSON.parse(legacyDataStr);
               setFinanceData(sanitizeFinanceData(parsed));
-              saveUserFinanceData(user.uid, sanitizeFinanceData(parsed)).catch(err => {
-                console.warn("Failed to write initial legacy migration to Firestore:", err);
-              });
+              if (!isForcedOffline) {
+                saveUserFinanceData(user.uid, sanitizeFinanceData(parsed)).catch(err => {
+                  console.warn("Failed to write initial legacy migration to Firestore:", err);
+                });
+              }
             } else {
               const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
               setFinanceData(sanitizeFinanceData(freshClone));
-              saveUserFinanceData(user.uid, sanitizeFinanceData(freshClone)).catch(err => {
-                console.warn("Failed to write initial default data to Firestore:", err);
-              });
+              if (!isForcedOffline) {
+                saveUserFinanceData(user.uid, sanitizeFinanceData(freshClone)).catch(err => {
+                  console.warn("Failed to write initial default data to Firestore:", err);
+                });
+              }
             }
           }
           setIsDataLoaded(true);
@@ -208,15 +217,18 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       const userKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
       localStorage.setItem(userKey, JSON.stringify(financeData));
       
-      // Mirror to Firestore securely
-      saveUserFinanceData(currentUser, financeData).catch(err => {
-        const errMsg = err?.message || String(err);
-        if (errMsg.toLowerCase().includes("offline") || errMsg.toLowerCase().includes("unavailable") || err?.code === "unavailable") {
-          console.warn('Firestore duplex Sync deferred (client is offline):', errMsg);
-        } else {
-          console.error('Firestore duplex Sync error:', err);
-        }
-      });
+      // Mirror to Firestore securely if not forced offline
+      const isForcedOffline = localStorage.getItem('paisaflow_force_offline') === 'true';
+      if (!isForcedOffline) {
+        saveUserFinanceData(currentUser, financeData).catch(err => {
+          const errMsg = err?.message || String(err);
+          if (errMsg.toLowerCase().includes("offline") || errMsg.toLowerCase().includes("unavailable") || err?.code === "unavailable") {
+            console.warn('Firestore duplex Sync deferred (client is offline):', errMsg);
+          } else {
+            console.error('Firestore duplex Sync error:', err);
+          }
+        });
+      }
     } catch (e) {
       console.error('Storage sync error:', e);
     }
