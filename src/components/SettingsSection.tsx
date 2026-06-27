@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FinanceData, Preferences, CategoryBudget } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { useFinance } from '../context/FinanceContext';
 import { INITIAL_FINANCE_DATA } from '../data/mockData';
 import {
   Settings,
@@ -42,6 +43,7 @@ interface SettingsSectionProps {
 }
 
 export default function SettingsSection({ data, setFinanceData, userEmail }: SettingsSectionProps) {
+  const { forceOffline, setForceOffline } = useFinance();
   const { preferences, investments = [], expenses = [], budgets = [] } = data;
 
   // Local state for settings elements
@@ -67,7 +69,6 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
   const [pastedError, setPastedError] = useState('');
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [previewData, setPreviewData] = useState<any | null>(null);
-  const [forceOffline, setForceOffline] = useState(() => localStorage.getItem('paisaflow_force_offline') === 'true');
   const [copySuccess, setCopySuccess] = useState(false);
   const [activeTabSub, setActiveTabSub] = useState<'scan' | 'import' | 'export'>('scan');
 
@@ -145,11 +146,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
   };
 
   const handleToggleForceOffline = (checked: boolean) => {
-    localStorage.setItem('paisaflow_force_offline', checked ? 'true' : 'false');
     setForceOffline(checked);
-    if (window.confirm(`Local-First Mode is now ${checked ? 'ENABLED' : 'DISABLED'}. Bypassing Firestore network calls. The page will now reload to apply this change.`)) {
-      window.location.reload();
-    }
   };
 
   // Card reordering states
@@ -1210,7 +1207,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">Size: {(size / 1024).toFixed(2)} KB</p>
                             </div>
                             {isCompatible ? (
-                              <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider shrink-0">
+                              <span className="text-[9px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider shrink-0">
                                 Compatible
                               </span>
                             ) : (
@@ -1225,7 +1222,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                               <button
                                 type="button"
                                 onClick={() => handleRestoreKey(key, keyData)}
-                                className="flex-1 text-[10px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-1.5 transition text-center cursor-pointer"
+                                className="flex-1 text-[10px] font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-1.5 transition text-center cursor-pointer"
                               >
                                 Restore
                               </button>

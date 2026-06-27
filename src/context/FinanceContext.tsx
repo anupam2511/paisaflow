@@ -65,6 +65,8 @@ export interface FinanceContextType {
   toasts: ToastMessage[];
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   removeToast: (id: string) => void;
+  forceOffline: boolean;
+  setForceOffline: (checked: boolean) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -87,6 +89,14 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [autoDebitLogs, setAutoDebitLogs] = useState<string[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [forceOffline, setForceOfflineState] = useState(() => {
+    return localStorage.getItem('paisaflow_force_offline') === 'true';
+  });
+
+  const setForceOffline = (checked: boolean) => {
+    localStorage.setItem('paisaflow_force_offline', checked ? 'true' : 'false');
+    setForceOfflineState(checked);
+  };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -218,8 +228,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(userKey, JSON.stringify(financeData));
       
       // Mirror to Firestore securely if not forced offline
-      const isForcedOffline = localStorage.getItem('paisaflow_force_offline') === 'true';
-      if (!isForcedOffline) {
+      if (!forceOffline) {
         saveUserFinanceData(currentUser, financeData).catch(err => {
           const errMsg = err?.message || String(err);
           if (errMsg.toLowerCase().includes("offline") || errMsg.toLowerCase().includes("unavailable") || err?.code === "unavailable") {
@@ -232,7 +241,37 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [financeData, currentUser, isDataLoaded]);
+  }, [financeData, currentUser, isDataLoaded, forceOffline]);
+
+  // Listen to forceOffline transitions to dynamically load or sync
+  useEffect(() => {
+    if (!currentUser || !isDataLoaded) return;
+
+    if (!forceOffline) {
+      showToast("Re-establishing connection with Cloud Firestore...", "info");
+      getUserFinanceData(currentUser)
+        .then((dbData) => {
+          if (dbData) {
+            setFinanceData(sanitizeFinanceData(dbData));
+            showToast("Successfully connected! Cloud data synchronized.", "success");
+          } else {
+            saveUserFinanceData(currentUser, financeData)
+              .then(() => {
+                showToast("Connected! Backup sync complete.", "success");
+              })
+              .catch((err) => {
+                console.error("Failed to write initial backup to Firestore:", err);
+              });
+          }
+        })
+        .catch((err) => {
+          console.warn("Failed to load user data from Firestore on reconnect:", err);
+          showToast("Firestore connection failed. Running in offline cache mode.", "error");
+        });
+    } else {
+      showToast("Switched to Local-First Offline Mode. Bypassing Firestore network calls.", "info");
+    }
+  }, [forceOffline, currentUser, isDataLoaded]);
 
   const handleLogout = async () => {
     try {
@@ -339,6 +378,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         toasts,
         showToast,
         removeToast,
+        forceOffline,
+        setForceOffline,
       }}
     >
       {children}
