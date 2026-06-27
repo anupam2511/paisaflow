@@ -25,6 +25,10 @@ const mappings = {
 let updated = false;
 for (const [envKey, jsonKey] of Object.entries(mappings)) {
   if (process.env[envKey]) {
+    if (envKey === 'VITE_FIREBASE_FIRESTORE_DATABASE_ID' && process.env[envKey] === '(default)') {
+      console.log(`Skipping VITE_FIREBASE_FIRESTORE_DATABASE_ID because it has the generic value '(default)'.`);
+      continue;
+    }
     config[jsonKey] = process.env[envKey];
     updated = true;
   }

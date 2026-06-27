@@ -128,16 +128,47 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             if (legacyDataStr) {
               const parsed = JSON.parse(legacyDataStr);
               setFinanceData(sanitizeFinanceData(parsed));
-              await saveUserFinanceData(user.uid, sanitizeFinanceData(parsed));
+              saveUserFinanceData(user.uid, sanitizeFinanceData(parsed)).catch(err => {
+                console.warn("Failed to write initial legacy migration to Firestore:", err);
+              });
             } else {
               const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
               setFinanceData(sanitizeFinanceData(freshClone));
-              await saveUserFinanceData(user.uid, sanitizeFinanceData(freshClone));
+              saveUserFinanceData(user.uid, sanitizeFinanceData(freshClone)).catch(err => {
+                console.warn("Failed to write initial default data to Firestore:", err);
+              });
             }
           }
           setIsDataLoaded(true);
-        } catch (error) {
-          console.error("Failed to load user data from Firestore", error);
+        } catch (error: any) {
+          const errMsg = error?.message || String(error);
+          if (errMsg.toLowerCase().includes("offline") || errMsg.toLowerCase().includes("unavailable") || error?.code === "unavailable") {
+            console.warn("Failed to load user data from Firestore (client is offline):", errMsg);
+          } else {
+            console.error("Failed to load user data from Firestore", error);
+          }
+          
+          // Fallback to local storage backup so the app is always functional
+          const legacyKey = `personal_finance_dashboard_data_user_${user.uid.toLowerCase()}`;
+          const legacyDataStr = localStorage.getItem(legacyKey);
+          if (legacyDataStr) {
+            try {
+              const parsed = JSON.parse(legacyDataStr);
+              setFinanceData(sanitizeFinanceData(parsed));
+              showToast("Loaded local storage finance backup (Firestore network offline).", "info");
+            } catch (e) {
+              console.warn("Error parsing backup local storage data (logged as warning):", e);
+              const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
+              setFinanceData(sanitizeFinanceData(freshClone));
+              showToast("Loaded demo financial pools (Firestore offline).", "info");
+            }
+          } else {
+            const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
+            setFinanceData(sanitizeFinanceData(freshClone));
+            showToast("Loaded demo financial pools (Firestore offline).", "info");
+          }
+          
+          setIsDataLoaded(true);
         }
       } else {
         setCurrentUser(null);
@@ -179,7 +210,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       
       // Mirror to Firestore securely
       saveUserFinanceData(currentUser, financeData).catch(err => {
-        console.error('Firestore duplex Sync error:', err);
+        const errMsg = err?.message || String(err);
+        if (errMsg.toLowerCase().includes("offline") || errMsg.toLowerCase().includes("unavailable") || err?.code === "unavailable") {
+          console.warn('Firestore duplex Sync deferred (client is offline):', errMsg);
+        } else {
+          console.error('Firestore duplex Sync error:', err);
+        }
       });
     } catch (e) {
       console.error('Storage sync error:', e);

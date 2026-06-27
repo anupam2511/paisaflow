@@ -10,11 +10,12 @@ import {
   User as FirebaseUser 
 } from "firebase/auth";
 import { 
-  getFirestore, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager,
   doc, 
   getDoc, 
-  setDoc, 
-  enableIndexedDbPersistence 
+  setDoc 
 } from "firebase/firestore";
 
 import firebaseAppletConfig from "../../firebase-applet-config.json";
@@ -32,8 +33,12 @@ const activeFirebaseConfig = {
   measurementId: metaEnv.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig.measurementId,
 };
 
-const databaseId = metaEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID || (firebaseAppletConfig as any).firestoreDatabaseId;
-const cleanDatabaseId = (databaseId && databaseId !== "(default)") ? databaseId : undefined;
+const envDbId = metaEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID;
+const appletDbId = (firebaseAppletConfig as any).firestoreDatabaseId;
+
+const cleanDatabaseId = (envDbId && envDbId !== "(default)") 
+  ? envDbId 
+  : (appletDbId && appletDbId !== "(default)" ? appletDbId : undefined);
 
 // Initialize Firebase
 const app = initializeApp(activeFirebaseConfig);
@@ -42,21 +47,12 @@ const app = initializeApp(activeFirebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Initialize Firestore
-export const db = getFirestore(app, cleanDatabaseId);
-
-// Enable offline persistence for better user experience
-try {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Firestore offline persistence: Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Firestore offline persistence: The current browser does not support all of the features required to enable persistence.');
-    }
-  });
-} catch (e) {
-  console.warn('Firestore persistence not available:', e);
-}
+// Initialize Firestore with persistent multi-tab local cache
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+}, cleanDatabaseId);
 
 // Signs in the user using Google Auth Popup
 export const signInWithGoogle = async (): Promise<FirebaseUser> => {
@@ -98,8 +94,13 @@ export const getUserFinanceData = async (uid: string): Promise<any | null> => {
       return docSnap.data();
     }
     return null;
-  } catch (error) {
-    console.error("Error fetching user data from Firestore:", error);
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    if (msg.toLowerCase().includes("offline") || msg.toLowerCase().includes("unavailable") || error?.code === "unavailable") {
+      console.warn("Firestore offline or unavailable when fetching user data:", msg);
+    } else {
+      console.error("Error fetching user data from Firestore:", error);
+    }
     throw error;
   }
 };
@@ -109,8 +110,13 @@ export const saveUserFinanceData = async (uid: string, data: any): Promise<void>
   try {
     const docRef = doc(db, "user_finance_data", uid);
     await setDoc(docRef, data, { merge: true });
-  } catch (error) {
-    console.error("Error synchronizing user data with Firestore:", error);
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    if (msg.toLowerCase().includes("offline") || msg.toLowerCase().includes("unavailable") || error?.code === "unavailable") {
+      console.warn("Firestore offline or unavailable when synchronizing data (write will queue locally):", msg);
+    } else {
+      console.error("Error synchronizing user data with Firestore:", error);
+    }
     throw error;
   }
 };
