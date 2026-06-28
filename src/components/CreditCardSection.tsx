@@ -12,6 +12,7 @@ import { Card } from './shared/Card';
 import { DataTable } from './shared/DataTable';
 import { MetricCard } from './shared/MetricCard';
 import { EmptyState } from './shared/EmptyState';
+import ColorPicker from './ColorPicker';
 import {
   CreditCard,
   Plus,
@@ -1324,17 +1325,7 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                   Card Color Code
                 </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={newCardColor}
-                    onChange={(e) => setNewCardColor(e.target.value)}
-                    className="w-10 h-8 rounded-lg cursor-pointer bg-transparent border-0"
-                  />
-                  <span className="text-xs font-mono font-bold text-slate-550 uppercase">
-                    {newCardColor}
-                  </span>
-                </div>
+                <ColorPicker color={newCardColor} onChange={setNewCardColor} />
               </div>
 
               <div className="pt-3 border-t border-slate-50 dark:border-slate-800/60 flex items-center justify-end gap-3">

@@ -161,7 +161,7 @@ function MainApp() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#030712] flex flex-col justify-center items-center">
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-transparent flex flex-col justify-center items-center">
         <div className="w-16 h-16 bg-indigo-600 rounded-2.5xl flex items-center justify-center shadow-xl shadow-indigo-600/15 animate-bounce text-white font-bold text-3xl">
           ₹
         </div>
@@ -189,7 +189,7 @@ function MainApp() {
   const ActiveComponent = activeModule.component;
 
   return (
-    <div id="application-container" className="min-h-screen bg-slate-50 dark:bg-[#070c19] text-slate-800 dark:text-slate-100 flex antialiased overflow-x-hidden max-w-full">
+    <div id="application-container" className="min-h-screen bg-slate-50 dark:bg-transparent text-slate-800 dark:text-slate-100 flex antialiased overflow-x-hidden max-w-full">
       
       {/* MOBILE MENU DRAWER OVERLAY */}
       {isMobileMenuOpen && (
@@ -719,7 +719,7 @@ function MainApp() {
             </main>
 
             <footer id="workspace-footer" className="bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800/80 py-6 text-center text-xs text-slate-400 font-semibold mt-auto shrink-0">
-              <p>PaisaFlow • Comprehensive Capital Management Workspace • Secured via Firebase Cloud Sync</p>
+              <p>PaisaFlow • Simplify your spending. Master your flow. • Secured via Firebase Cloud Sync</p>
             </footer>
           </div>
 

@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import ColorPicker from './ColorPicker';
 
 interface AccountsSectionProps {
   data: FinanceData;
@@ -459,23 +460,8 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Color Theme Accent</label>
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {colorPresets.map(preset => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    onClick={() => setColor(preset.value)}
-                    className="w-6 h-6 rounded-full border border-slate-200 transition-transform relative hover:scale-110 flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: preset.value }}
-                    title={preset.name}
-                  >
-                    {color === preset.value && (
-                      <Check className="w-3.5 h-3.5 text-white stroke-[3px]" />
-                    )}
-                  </button>
-                ))}
-              </div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Color Theme Accent</label>
+              <ColorPicker color={color} onChange={setColor} />
             </div>
 
             {error && (

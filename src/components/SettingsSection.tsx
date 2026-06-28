@@ -880,12 +880,12 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
 
       case 'budget':
         return (
-          <div id="settings-budget-categories-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm h-full flex flex-col justify-between">
-            <div>
+          <div id="settings-budget-categories-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm h-full flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
               {renderCardHeader('budget', FolderPlus, 'Budget Categories', 'Add or prune expense classifications for spend caps.')}
               
               {/* ADD BUDGET CATEGORY FORM */}
-              <form onSubmit={handleAddBudgetCategory} className="flex gap-2 mb-4">
+              <form onSubmit={handleAddBudgetCategory} className="flex gap-2 mb-4 shrink-0">
                 <input
                   type="text"
                   placeholder="e.g. Health, Coffee, Gym"
@@ -902,21 +902,21 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
               </form>
 
               {budgetSuccess && (
-                <div className="mb-3 p-2 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/40 rounded-xl text-[10px] font-bold flex items-center gap-1">
+                <div className="mb-3 p-2 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/40 rounded-xl text-[10px] font-bold flex items-center gap-1 shrink-0">
                   <CheckCircle className="w-3.5 h-3.5" />
                   <span>{budgetSuccess}</span>
                 </div>
               )}
 
               {budgetError && (
-                <div className="mb-3 p-2 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/40 rounded-xl text-[10px] font-bold flex items-center gap-1">
+                <div className="mb-3 p-2 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/40 rounded-xl text-[10px] font-bold flex items-center gap-1 shrink-0">
                   <AlertCircle className="w-3.5 h-3.5" />
                   <span>{budgetError}</span>
                 </div>
               )}
 
               {/* LIST CURRENT BUDGET CATEGORIES */}
-              <div className="space-y-2 mt-4 max-h-[190px] overflow-y-auto pr-1">
+              <div className="space-y-2 mt-4 overflow-y-auto pr-1 flex-1 min-h-[220px] max-h-[480px]">
                 {budgets.map(b => {
                   const count = expenses.filter(exp => exp.category.toLowerCase() === b.category.toLowerCase()).length;
                   
@@ -1031,12 +1031,12 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
 
       case 'assets':
         return (
-          <div id="settings-asset-categories-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm h-full flex flex-col justify-between">
-            <div>
+          <div id="settings-asset-categories-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm h-full flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
               {renderCardHeader('assets', Coins, 'Asset Holding Categories', 'Add or restructure classification modules for wealth tracking.')}
               
               {/* ADD CATEGORY FORM */}
-              <form onSubmit={handleAddCategory} className="flex gap-2 mb-4">
+              <form onSubmit={handleAddCategory} className="flex gap-2 mb-4 shrink-0">
                 <input
                   type="text"
                   placeholder="e.g. Crypto, Real Estate, Art"
@@ -1053,7 +1053,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
               </form>
 
               {/* LIST CURRENT CATEGORIES */}
-              <div className="space-y-2 mt-4 max-h-[190px] overflow-y-auto pr-1">
+              <div className="space-y-2 mt-4 overflow-y-auto pr-1 flex-1 min-h-[220px] max-h-[480px]">
                 {currentCategories.map(cat => {
                   const count = investments.filter(inv => inv.type.toLowerCase() === cat.toLowerCase() || inv.type === cat).length;
                   
@@ -1128,13 +1128,13 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
 
       case 'recovery':
         return (
-          <div id="settings-recovery-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm h-full flex flex-col justify-between">
-            <div>
+          <div id="settings-recovery-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm h-full flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
               {renderCardHeader('recovery', Database, 'Recovery & Backup Center', 'Restore old browser sessions, export backups, or bypass cloud sync.')}
               
-              <div className="space-y-4">
+              <div className="space-y-4 flex-1 flex flex-col min-h-0">
                 {/* LOCAL-FIRST OVERRIDE TOGGLE */}
-                <div className="p-4 bg-amber-50/25 dark:bg-amber-950/10 rounded-2xl border border-amber-100 dark:border-amber-900/40">
+                <div className="p-4 bg-amber-50/25 dark:bg-amber-950/10 rounded-2xl border border-amber-100 dark:border-amber-900/40 shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <h4 className="text-xs font-extrabold text-amber-700 dark:text-amber-400 flex items-center gap-1.5 mb-1">
@@ -1158,7 +1158,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                 </div>
 
                 {/* SUB-TABS */}
-                <div className="flex border-b border-slate-100 dark:border-slate-800 gap-2 p-1 bg-slate-50 dark:bg-slate-950/60 rounded-xl">
+                <div className="flex border-b border-slate-100 dark:border-slate-800 gap-2 p-1 bg-slate-50 dark:bg-slate-950/60 rounded-xl shrink-0">
                   <button
                     type="button"
                     onClick={() => { scanLocalStorageKeys(); setActiveTabSub('scan'); }}
@@ -1184,7 +1184,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
 
                 {/* SCAN KEYS VIEW */}
                 {activeTabSub === 'scan' && (
-                  <div className="space-y-2 max-h-[170px] overflow-y-auto pr-1">
+                  <div className="space-y-2 overflow-y-auto pr-1 flex-1 min-h-[180px] max-h-[420px]">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Storage Session Keys ({localKeys.length})</span>
                       <button

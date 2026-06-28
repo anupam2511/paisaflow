@@ -26,17 +26,17 @@
 
 /* DARK MODE SCHEME OVERRIDES */
 .dark {
-  --bg-app: #030712;
-  --bg-card: #0b1329;
-  --bg-secondary: #111c44;
-  --bg-tertiary: #1e293b;
-  --border-light: #1e293b;
-  --border-med: #334155;
+  --bg-app: transparent;
+  --bg-card: rgba(13, 20, 38, 0.45);
+  --bg-secondary: rgba(20, 30, 55, 0.35);
+  --bg-tertiary: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.06);
+  --border-med: rgba(255, 255, 255, 0.12);
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --text-muted-dark: #94a3b8;
-  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --text-muted: #8492a6;
+  --text-muted-dark: #cbd5e1;
+  --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 body {
@@ -62,16 +62,27 @@ strong, b, h1, h2, h3, h4, h5, h6, th,
 }
 
 /* CUSTOM TRANSPARENT SECTOR BINDINGS FOR PERFECT DARK THEME SUPPORT */
+.dark html,
 .dark body {
-  background-color: var(--bg-app) !important;
+  background: linear-gradient(225deg, #112240 0%, #070c19 50%, #000000 100%) !important;
+  background-attachment: fixed !important;
+  background-color: transparent !important;
 }
 
-.dark .bg-white {
+.dark .bg-white,
+.dark .dark\:bg-\[\#0b1329\],
+.dark .dark\:bg-\[\#070c19\],
+.dark .dark\:bg-\[\#0f1a36\],
+.dark .dark\:bg-\[\#030712\] {
   background-color: var(--bg-card) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
 }
 
 .dark .bg-slate-50 {
   background-color: var(--bg-secondary) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 .dark .bg-slate-100 {

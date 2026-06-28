@@ -127,7 +127,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
       category: 'Welcome',
       title: 'Welcome to PaisaFlow',
       icon: Sparkles,
-      description: 'Get introduced to the core philosophy and financial vision of PaisaFlow.',
+      description: 'Simplify your spending. Master your flow. Learn the core philosophy and financial vision of PaisaFlow.',
       relatedIds: ['quick_start', 'dashboard_guide', 'net_worth_guide'],
       sections: [
         {
