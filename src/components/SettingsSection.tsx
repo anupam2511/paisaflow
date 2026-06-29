@@ -337,7 +337,9 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
         accentColor,
       },
       investments: [],
-      emis: []
+      emis: [],
+      ccEmis: [],
+      ccTransactions: []
     });
     setPurgeStep(0);
     setPurgeUnderstandCheckbox(false);
@@ -482,6 +484,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
         ];
 
         const fullyStructuredData: FinanceData = {
+          ...parsed,
           accounts: parsed.accounts || [],
           savingGoals: parsed.savingGoals || [],
           incomes: parsed.incomes || [],
@@ -494,9 +497,12 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
             investmentCategories: parsed.preferences?.investmentCategories || fallbackCats,
             themeMode: parsed.preferences?.themeMode || themeMode,
             accentColor: parsed.preferences?.accentColor || accentColor,
+            ...parsed.preferences
           },
           investments: parsed.investments || [],
-          emis: parsed.emis || []
+          emis: parsed.emis || [],
+          ccEmis: parsed.ccEmis || [],
+          ccTransactions: parsed.ccTransactions || []
         };
 
         setFinanceData(fullyStructuredData);
