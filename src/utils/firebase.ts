@@ -11,8 +11,10 @@ import {
 } from "firebase/auth";
 import { 
   initializeFirestore, 
+  getFirestore,
   persistentLocalCache, 
   persistentMultipleTabManager,
+  persistentSingleTabManager,
   doc, 
   getDoc, 
   setDoc 
@@ -47,12 +49,30 @@ const app = initializeApp(activeFirebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Initialize Firestore with persistent multi-tab local cache
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-}, cleanDatabaseId);
+// Initialize Firestore with robust cache fallbacks for mobile, private tabs, and nested iframe environments
+const initFirestore = () => {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    }, cleanDatabaseId);
+  } catch (multiTabError) {
+    console.warn("Firestore persistentMultipleTabManager failed, trying single tab persistent cache:", multiTabError);
+    try {
+      return initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentSingleTabManager({})
+        })
+      }, cleanDatabaseId);
+    } catch (singleTabError) {
+      console.warn("Firestore persistentLocalCache failed entirely, falling back to standard getFirestore:", singleTabError);
+      return getFirestore(app, cleanDatabaseId);
+    }
+  }
+};
+
+export const db = initFirestore();
 
 // Signs in the user using Google Auth Popup
 export const signInWithGoogle = async (): Promise<FirebaseUser> => {

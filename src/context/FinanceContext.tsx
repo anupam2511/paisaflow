@@ -109,6 +109,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   };
 
   const lastSyncedDataRef = React.useRef<string>('');
+  const isCloudSyncActiveRef = React.useRef<boolean>(false);
 
   // Handle Firebase Auth listening (Pure Auth State Management)
   useEffect(() => {
@@ -145,6 +146,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!currentUser) {
       setIsDataLoaded(false);
+      isCloudSyncActiveRef.current = false;
       return;
     }
 
@@ -152,6 +154,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
 
     if (isForcedOffline) {
       // Local fallback if user explicitly forced offline mode
+      isCloudSyncActiveRef.current = false;
       const legacyKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
       const legacyDataStr = localStorage.getItem(legacyKey);
       if (legacyDataStr) {
@@ -175,6 +178,9 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     const docRef = doc(db, "user_finance_data", currentUser);
     
     const unsubscribeSnapshot = onSnapshot(docRef, (snapshot) => {
+      // Set sync status to active upon successfully receiving a server update
+      isCloudSyncActiveRef.current = true;
+      
       if (snapshot.exists()) {
         const dbData = snapshot.data();
         const dbDataStr = JSON.stringify(dbData);
@@ -219,6 +225,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       setIsDataLoaded(true);
     }, (error) => {
       console.warn("Firestore real-time subscription offline or disconnected:", error);
+      // Disable automatic write sync, as we have dropped the real-time cloud connection
+      isCloudSyncActiveRef.current = false;
       
       // Fallback gracefully to offline cache/local storage so the client is never stuck
       const legacyKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
@@ -271,8 +279,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       
       const currentDataStr = JSON.stringify(financeData);
       
-      // Mirror to Firestore securely if not forced offline and there is a real local change
-      if (!forceOffline && currentDataStr !== lastSyncedDataRef.current) {
+      // Mirror to Firestore securely if not forced offline, cloud sync is active, and there is a real local change
+      if (!forceOffline && isCloudSyncActiveRef.current && currentDataStr !== lastSyncedDataRef.current) {
         lastSyncedDataRef.current = currentDataStr;
         saveUserFinanceData(currentUser, financeData).catch(err => {
           const errMsg = err?.message || String(err);
