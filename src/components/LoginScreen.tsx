@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Shield, ShieldCheck, AlertCircle, RefreshCw, Milestone } from 'lucide-react';
 
-const lightLogo = new URL('../assets/images/paisaflow-logo-removebg-preview.png', import.meta.url).href;
-const darkLogo = new URL('../assets/images/paisaflow-dark-logo-removebg-preview.png', import.meta.url).href;
+import lightLogo from "../assets/images/paisaflow-logo-removebg-preview.png";
+import darkLogo from "../assets/images/paisaflow-dark-logo-removebg-preview.png";
 import { signInWithGoogle, signInWithGoogleRedirect } from '../utils/firebase';
 
 export default function LoginScreen() {
@@ -100,7 +100,7 @@ export default function LoginScreen() {
 
             {/* Logo */}
             <img
-              src={darkLogo}
+              src={isDark ? darkLogo : lightLogo}
               alt="PaisaFlow"
               className="
                 w-full
