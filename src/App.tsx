@@ -3,10 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FinanceProvider, useFinance } from './context/FinanceContext';
 import { featureRegistry } from './features/registry';
 import { formatCurrency } from './utils/formatters';
+
+import lightLogo from "./assets/images/paisaflow-logo-removebg-preview.png";
+import darkLogo from "./assets/images/paisaflow-dark-logo-removebg-preview.png";
+import paisaflowLogo from "./assets/images/paisaflow-logo.png";
 
 // Component Imports
 import LoginScreen from './components/LoginScreen';
@@ -122,6 +126,47 @@ function MainApp() {
     handleLogout,
   } = useFinance();
 
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains("dark") ||
+             window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const checkDark = () => {
+      const hasDarkClass = document.documentElement.classList.contains("dark");
+      setIsDark(hasDarkClass);
+    };
+
+    checkDark();
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class") {
+          checkDark();
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMediaChange = () => {
+      checkDark();
+    };
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => {
+      observer.disconnect();
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, []);
+
   const navItems = featureRegistry;
 
   const [expandedCats, setExpandedCats] = React.useState<Record<string, boolean>>({
@@ -162,9 +207,11 @@ function MainApp() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] dark:bg-transparent flex flex-col justify-center items-center">
-        <div className="w-16 h-16 bg-indigo-600 rounded-2.5xl flex items-center justify-center shadow-xl shadow-indigo-600/15 animate-bounce text-white font-bold text-3xl">
-          ₹
-        </div>
+        <img 
+          src={paisaflowLogo} 
+          alt="PaisaFlow" 
+          className="w-16 h-16 object-contain animate-bounce"
+        />
         <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black mt-5 uppercase tracking-widest animate-pulse">
           Verifying Encrypted Space...
         </p>
@@ -209,9 +256,11 @@ function MainApp() {
           {/* Header */}
           <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-md text-white font-bold text-base shrink-0">
-                ₹
-              </div>
+              <img 
+                src={paisaflowLogo} 
+                alt="PaisaFlow" 
+                className="w-8 h-8 object-contain shrink-0"
+              />
               <div>
                 <span className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight block">PaisaFlow</span>
                 <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Capital Suite</span>
@@ -366,9 +415,11 @@ function MainApp() {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Top Brand Block */}
           <div className="p-4 border-b border-slate-50 dark:border-slate-800/50 flex items-center gap-3 shrink-0 h-[73px] overflow-hidden">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/15 text-white font-bold tracking-tight text-xl shrink-0">
-              ₹
-            </div>
+            <img 
+              src={paisaflowLogo} 
+              alt="PaisaFlow" 
+              className="w-10 h-10 object-contain shrink-0"
+            />
             {!isCollapsed && (
               <div className="truncate">
                 <span className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-4 block">PaisaFlow</span>
