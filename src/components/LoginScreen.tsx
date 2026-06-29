@@ -100,7 +100,7 @@ export default function LoginScreen() {
 
             {/* Logo */}
             <img
-              src={isDark ? darkLogo : lightLogo}
+              src={darkLogo}
               alt="PaisaFlow"
               className="
                 w-full
