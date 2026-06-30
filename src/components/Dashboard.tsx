@@ -73,6 +73,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
   // Expenditure Trend graph states
   const [trendDimension, setTrendDimension] = useState<'category' | 'credit_card' | 'bank'>('category');
   const [selectedSubFilter, setSelectedSubFilter] = useState<string>('All');
+  const [trendTimeFilter, setTrendTimeFilter] = useState<string>('All time');
 
   // Investments calculations
   const totalInvestmentsValuation = investments.reduce((sum, inv) => sum + inv.totalInvested, 0);
@@ -756,20 +757,54 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
                 </>
               )}
             </select>
+
+            {/* Time Filter Selection */}
+            <select
+              value={trendTimeFilter}
+              onChange={(e) => setTrendTimeFilter(e.target.value)}
+              className="text-[10px] font-bold border border-slate-200 rounded-lg p-1.5 bg-slate-50 text-slate-600 focus:outline-none"
+            >
+              <option value="All time">All time</option>
+              <option value="Last 1 year">Last 1 year</option>
+              <option value="Last 6 months">Last 6 months</option>
+              <option value="Last 3 months">Last 3 months</option>
+              <option value="Last 30 days">Last 30 days</option>
+            </select>
           </div>
         </div>
 
         {/* Recharts Curve Rendering */}
         <div className="mt-6 w-full h-[320px]">
           {(() => {
-            const uniqueDates = Array.from(new Set(expenses.map(e => e.date))).sort();
+            const filteredExpensesByTime = (() => {
+              if (trendTimeFilter === 'All time') return expenses;
+              const now = new Date();
+              now.setHours(0, 0, 0, 0);
+              const threshold = new Date(now);
+              if (trendTimeFilter === 'Last 30 days') {
+                threshold.setDate(now.getDate() - 30);
+              } else if (trendTimeFilter === 'Last 3 months') {
+                threshold.setMonth(now.getMonth() - 3);
+              } else if (trendTimeFilter === 'Last 6 months') {
+                threshold.setMonth(now.getMonth() - 6);
+              } else if (trendTimeFilter === 'Last 1 year') {
+                threshold.setFullYear(now.getFullYear() - 1);
+              }
+              return expenses.filter(e => {
+                const expDate = new Date(e.date);
+                if (isNaN(expDate.getTime())) return false;
+                return expDate >= threshold;
+              });
+            })();
+
+            const uniqueDates = Array.from(new Set(filteredExpensesByTime.map(e => e.date))).sort();
             const baseDates = uniqueDates.length > 0 ? uniqueDates : [
               '2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', 
               '2026-06-06', '2026-06-07', '2026-06-08', '2026-06-09', '2026-06-10'
             ];
 
             const trendChartData = baseDates.map(dateStr => {
-              const matchingExpenses = expenses.filter(e => {
+              const matchingExpenses = filteredExpensesByTime.filter(e => {
                 if (e.date !== dateStr) return false;
 
                 if (trendDimension === 'category') {
