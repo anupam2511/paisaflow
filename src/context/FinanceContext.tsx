@@ -124,6 +124,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         setUserEmail(null);
         setUserDisplayName(null);
         setIsDataLoaded(false);
+        setFinanceData(sanitizeFinanceData(JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA))));
+        lastSyncedDataRef.current = '';
         localStorage.removeItem('paisaflow_active_user');
       }
       setAuthLoading(false);

@@ -112,11 +112,32 @@ export const getUserFinanceData = async (uid: string): Promise<any | null> => {
   }
 };
 
+// Helper to recursively remove all keys with undefined values to prevent Firestore serialization errors
+const removeUndefined = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => removeUndefined(item));
+  }
+  const cleanObj: any = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const val = obj[key];
+      if (val !== undefined) {
+        cleanObj[key] = removeUndefined(val);
+      }
+    }
+  }
+  return cleanObj;
+};
+
 // Persist user finance data securely in Firestore
 export const saveUserFinanceData = async (uid: string, data: any): Promise<void> => {
   try {
     const docRef = doc(db, "user_finance_data", uid);
-    await setDoc(docRef, data, { merge: true });
+    const cleanedData = removeUndefined(data);
+    await setDoc(docRef, cleanedData, { merge: true });
   } catch (error: any) {
     const msg = error?.message || String(error);
     if (msg.toLowerCase().includes("offline") || msg.toLowerCase().includes("unavailable") || error?.code === "unavailable") {

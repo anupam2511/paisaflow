@@ -3,6 +3,7 @@ import { FinanceData, Preferences, CategoryBudget } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { useFinance } from '../context/FinanceContext';
 import { INITIAL_FINANCE_DATA } from '../data/mockData';
+import { saveUserFinanceData } from '../utils/firebase';
 import {
   Settings,
   Coins,
@@ -44,6 +45,7 @@ interface SettingsSectionProps {
 
 export default function SettingsSection({ data, setFinanceData, userEmail }: SettingsSectionProps) {
   const { preferences, investments = [], expenses = [], budgets = [] } = data;
+  const { currentUser } = useFinance();
 
   // Local state for settings elements
   const [currency, setCurrency] = useState(preferences.currencySymbol);
@@ -418,6 +420,16 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
         };
 
         setFinanceData(fullyStructuredData);
+
+        // Explicitly write the imported data to Cloud Firestore immediately to guarantee absolute synchronicity
+        if (currentUser) {
+          saveUserFinanceData(currentUser, fullyStructuredData).then(() => {
+            console.log("Successfully synchronized imported file backup to Cloud Firestore.");
+          }).catch(err => {
+            console.error("Failed to push imported backup to Cloud Firestore server:", err);
+            setImportError("Data loaded locally, but failed to sync to cloud database. Please check your credentials or connection.");
+          });
+        }
         
         // Sync interactive local state properties
         setCurrency(fullyStructuredData.preferences.currencySymbol);
