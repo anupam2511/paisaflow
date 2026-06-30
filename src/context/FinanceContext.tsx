@@ -160,8 +160,8 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             showToast("Cloud data synchronized in real-time!", "success");
           }
         }
-      } else {
-        // Doc doesn't exist in Firestore yet: load default preset and save to Firestore
+      } else if (!(snapshot as any).metadata?.fromCache) {
+        // Doc doesn't exist on the Firestore server yet: load default preset and save to Firestore
         const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
         const sanitized = sanitizeFinanceData(freshClone);
         setFinanceData(sanitized);

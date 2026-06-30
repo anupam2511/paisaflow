@@ -12,9 +12,7 @@ import {
 import { 
   initializeFirestore, 
   getFirestore,
-  persistentLocalCache, 
-  persistentMultipleTabManager,
-  persistentSingleTabManager,
+  memoryLocalCache,
   doc, 
   getDoc, 
   setDoc 
@@ -49,26 +47,15 @@ const app = initializeApp(activeFirebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Initialize Firestore with robust cache fallbacks for mobile, private tabs, and nested iframe environments
+// Initialize Firestore with memory-only cache for pure real-time synchronization
 const initFirestore = () => {
   try {
     return initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      })
+      localCache: memoryLocalCache()
     }, cleanDatabaseId);
-  } catch (multiTabError) {
-    console.warn("Firestore persistentMultipleTabManager failed, trying single tab persistent cache:", multiTabError);
-    try {
-      return initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentSingleTabManager({})
-        })
-      }, cleanDatabaseId);
-    } catch (singleTabError) {
-      console.warn("Firestore persistentLocalCache failed entirely, falling back to standard getFirestore:", singleTabError);
-      return getFirestore(app, cleanDatabaseId);
-    }
+  } catch (err) {
+    console.warn("Failed to initialize Firestore with options, falling back to default getFirestore:", err);
+    return getFirestore(app, cleanDatabaseId);
   }
 };
 
