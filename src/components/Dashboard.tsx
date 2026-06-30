@@ -178,6 +178,63 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
 
   // Pie chart calculation helper
   let cumulativePercent = 0;
+  const getCategoryColor = (categoryName: string, index: number): string => {
+    const normalized = categoryName.trim().toLowerCase();
+    
+    // Static mapping for common categories to guarantee stable and highly distinct modern colors
+    const staticMap: { [key: string]: string } = {
+      'miscellaneous': '#6b7280', // Slate Gray (neutral catch-all)
+      'other': '#6b7280',
+      'misc': '#6b7280',
+      'shopping': '#ec4899', // Vibrant Pink
+      'electronics': '#0284c7', // Deep Sky Blue
+      'electronics & gadgets': '#0284c7',
+      'food': '#f97316', // Warm Orange
+      'dining': '#f97316',
+      'food & dining': '#f97316',
+      'grocery': '#10b981', // Emerald Green
+      'groceries': '#10b981',
+      'house rent': '#2563eb', // Royal Blue
+      'rent': '#2563eb',
+      'rent & utilities': '#2563eb',
+      'utilities': '#06b6d4', // Cyan
+      'bills & utilities': '#06b6d4',
+      'travel': '#8b5cf6', // Purple/Violet
+      'transport': '#8b5cf6',
+      'travel & transport': '#8b5cf6',
+      'entertainment': '#d946ef', // Fuchsia
+      'leisure': '#d946ef',
+      'gold investment': '#eab308', // Gold Yellow
+      'other investment': '#a855f7', // Medium Violet/Purple
+      'investments': '#a855f7',
+      'investment': '#a855f7',
+      'healthcare': '#ef4444', // Red
+      'medical': '#ef4444',
+      'education': '#6366f1', // Indigo
+      'savings': '#84cc16', // Lime Green
+    };
+
+    if (staticMap[normalized]) {
+      return staticMap[normalized];
+    }
+
+    // Backup array of highly distinct, high-contrast colors for custom/unmapped categories
+    const fallbackColors = [
+      '#f43f5e', // Rose
+      '#a855f7', // Purple
+      '#059669', // Dark Emerald
+      '#b45309', // Amber Brown
+      '#0ea5e9', // Sky Blue
+      '#be185d', // Deep Pink
+      '#0369a1', // Dark Blue
+      '#4d7c0f', // Olive Green
+      '#7c3aed', // Deep Violet
+      '#c026d3', // Dark Fuchsia
+    ];
+
+    return fallbackColors[index % fallbackColors.length];
+  };
+
   const donutData = categorySpends
     .filter(c => c.amount > 0)
     .map((c, idx) => {
@@ -185,22 +242,11 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
       const startPercent = cumulativePercent;
       cumulativePercent += percentage;
       
-      // Distinct high-contrast colors matching sleek modern palette
-      const colors = [
-        '#10b981', // emerald
-        '#3b82f6', // blue
-        '#f59e0b', // amber
-        '#ef4444', // red
-        '#8b5cf6', // purple
-        '#ec4899', // pink
-        '#14b8a6', // teal
-        '#6b7280', // gray
-      ];
       return {
         ...c,
         percentage,
         startPercent,
-        color: colors[idx % colors.length],
+        color: getCategoryColor(c.category, idx),
       };
     });
 
@@ -1027,7 +1073,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
               </div>
               <div className="w-full bg-slate-200/80 dark:bg-slate-800 rounded-full h-2 flex overflow-hidden">
                 <div 
-                  className="bg-amber-450 dark:bg-amber-400 h-2 rounded-l-full" 
+                  className="bg-amber-500 dark:bg-amber-400 h-2 rounded-l-full" 
                   style={{ width: `${totalOutflow > 0 ? (totalLargeExpenses / totalOutflow) * 100 : 0}%` }}
                 ></div>
                 <div 
@@ -1039,6 +1085,9 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
                 <span className="text-amber-600 dark:text-amber-300">{formatCurrency(totalLargeExpenses, preferences)} Large</span>
                 <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(totalStandardExpenses, preferences)} Everyday</span>
               </div>
+              <p className="mt-2 text-[10px] text-slate-400 dark:text-slate-500/90 italic leading-snug">
+                This bar compares high-value "Large" transactions (Amber) against routine "Everyday" expenses (Emerald) as a share of your total spend outflow.
+              </p>
             </div>
 
             {/* Highlighting list of large expenses */}

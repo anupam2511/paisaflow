@@ -334,12 +334,36 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
     setFinanceData(prev => {
       const baseEmis = prev.emis || [];
       let finalEmis;
+      let nextExpenses = [...(prev.expenses || [])];
+
       if (editingEmiId) {
+        const originalEmi = baseEmis.find(item => item.id === editingEmiId);
         finalEmis = baseEmis.map(item => item.id === editingEmiId ? updatedEmi : item);
+
+        if (originalEmi) {
+          // Propagate budget category and name changes to associated expense ledger entries
+          nextExpenses = nextExpenses.map(exp => {
+            const isMatch = exp.description.includes(`EMI Pay: ${originalEmi.name}`) ||
+                            exp.description.startsWith(`EMI Pay: ${originalEmi.name}`);
+            if (isMatch) {
+              let newDesc = exp.description;
+              if (originalEmi.name !== updatedEmi.name) {
+                newDesc = exp.description.replace(`EMI Pay: ${originalEmi.name}`, `EMI Pay: ${updatedEmi.name}`);
+              }
+              return {
+                ...exp,
+                description: newDesc,
+                category: updatedEmi.category,
+                accountId: updatedEmi.accountId
+              };
+            }
+            return exp;
+          });
+        }
       } else {
         finalEmis = [...baseEmis, updatedEmi];
       }
-      return { ...prev, emis: finalEmis };
+      return { ...prev, emis: finalEmis, expenses: nextExpenses };
     });
 
     setOk(editingEmiId ? 'EMI schedule updated successfully!' : 'New EMI schedule activated successfully!');
@@ -1002,10 +1026,6 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                   {budgets.map(b => (
                     <option key={b.category} value={b.category}>🏷️ {b.category}</option>
                   ))}
-                  <option value="Electronics">🏷️ Electronics</option>
-                  <option value="Shopping">🏷️ Shopping</option>
-                  <option value="Rent & Utilities">🏷️ Rent & Utilities</option>
-                  <option value="Miscellaneous">🏷️ Miscellaneous</option>
                 </select>
               </div>
             </div>

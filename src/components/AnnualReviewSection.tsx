@@ -465,10 +465,10 @@ export default function AnnualReviewSection({ data, setCurrentTab }: AnnualRevie
     else if (emiInfo.ratio < 35) score += 20;
     else if (emiInfo.ratio < 50) score += 10;
 
-    if (score >= 90) return { grade: 'A+', label: 'Elite Fiscal Champion', color: 'text-emerald-600 dark:text-emerald-450 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/30' };
+    if (score >= 90) return { grade: 'A+', label: 'Elite Fiscal Champion', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/30' };
     if (score >= 75) return { grade: 'A', label: 'Healthy Compounder', color: 'text-indigo-650 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/30' };
-    if (score >= 55) return { grade: 'B', label: 'Balanced Budgeter', color: 'text-amber-600 dark:text-amber-450 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30' };
-    return { grade: 'C', label: 'Leveraged Exposure Warning', color: 'text-rose-600 dark:text-rose-450 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30' };
+    if (score >= 55) return { grade: 'B', label: 'Balanced Budgeter', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/30' };
+    return { grade: 'C', label: 'Leveraged Exposure Warning', color: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30' };
   }, [savingsRate, creditUtilizationInfo, emiInfo]);
 
   // Copy share card text

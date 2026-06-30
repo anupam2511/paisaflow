@@ -67,6 +67,7 @@ const getCurrencyIcon = (symbol: string) => {
 };
 
 export default function CreditCardSection({ data, setFinanceData, setCurrentTab }: CreditCardSectionProps) {
+  const { budgets = [], preferences } = data;
   const {
     creditCards,
     ccTransactions,
@@ -153,12 +154,18 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
   const [txCardId, setTxCardId] = useState(creditCards[0]?.id || '');
   const [txDesc, setTxDesc] = useState('');
   const [txAmount, setTxAmount] = useState<number | ''>('');
-  const [txCategory, setTxCategory] = useState('Shopping');
+  const [txCategory, setTxCategory] = useState(budgets[0]?.category || 'Shopping');
   const [txDate, setTxDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const [payFromBankId, setPayFromBankId] = useState(bankAccounts[0]?.id || '');
+
+  React.useEffect(() => {
+    if (budgets.length > 0 && !budgets.some(b => b.category === txCategory)) {
+      setTxCategory(budgets[0].category);
+    }
+  }, [budgets, txCategory]);
 
   // Edit Mode tracking for Credit Cards
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
@@ -1467,13 +1474,9 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                     onChange={(e) => setTxCategory(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-705 dark:text-slate-300"
                   >
-                    <option value="Shopping">Shopping</option>
-                    <option value="Food & Dining">Food & Dining</option>
-                    <option value="Rent & Utilities">Rent & Utilities</option>
-                    <option value="Travel & Transport">Travel & Transport</option>
-                    <option value="Entertainment">Entertainment</option>
-                    <option value="Groceries">Groceries</option>
-                    <option value="Miscellaneous">Miscellaneous</option>
+                    {budgets.map(b => (
+                      <option key={b.category} value={b.category}>{b.category}</option>
+                    ))}
                   </select>
                 </div>
               </div>

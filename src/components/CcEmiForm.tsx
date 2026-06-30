@@ -231,6 +231,7 @@ export default function CcEmiForm({
           const updatedEmi: CreditCardEmiMaster = {
             ...schedule,
             id: editingEmiId,
+            category: category || 'Shopping',
             outstandingPrincipal: Math.round(newOutstanding * 100) / 100,
             installments: updatedInstallments,
             status: nextStatusMaster,
@@ -269,6 +270,26 @@ export default function CcEmiForm({
                 nextExpenses = [newExpense, ...nextExpenses];
               }
             }
+
+            // Propagate name and budget category changes to any remaining/updated expenses
+            nextExpenses = nextExpenses.map(exp => {
+              const isMatch = exp.accountId === originalEmi.cardId &&
+                              exp.description.includes(originalEmi.expenseName) &&
+                              exp.description.includes("EMI Payment:");
+              if (isMatch) {
+                let newDesc = exp.description;
+                if (originalEmi.expenseName !== expenseName.trim()) {
+                  newDesc = exp.description.replace(originalEmi.expenseName, expenseName.trim());
+                }
+                return {
+                  ...exp,
+                  description: newDesc,
+                  category: category || 'Shopping',
+                  accountId: cardId
+                };
+              }
+              return exp;
+            });
           }
 
           // 5. Update Credit Card Transactions and Accounts
@@ -315,11 +336,38 @@ export default function CcEmiForm({
             }
           });
 
+          // Propagate name and budget category changes to existing transactions of this CC EMI
+          if (originalEmi) {
+            nextCcTransactions = nextCcTransactions.map(tx => {
+              const isMatch = tx.id.startsWith(`tx_cc_emi-${editingEmiId}-`) ||
+                              (tx.cardId === originalEmi.cardId &&
+                               tx.description.includes(originalEmi.expenseName) &&
+                               tx.description.includes("EMI Payment:"));
+              if (isMatch) {
+                let newDesc = tx.description;
+                if (originalEmi.expenseName !== expenseName.trim()) {
+                  newDesc = tx.description.replace(originalEmi.expenseName, expenseName.trim());
+                }
+                return {
+                  ...tx,
+                  description: newDesc,
+                  category: category || 'Shopping',
+                  cardId: cardId
+                };
+              }
+              return tx;
+            });
+          }
+
         } else {
           // Add newly converted EMI
+          const scheduleWithCategory = {
+            ...schedule,
+            category: category || 'Shopping'
+          };
           const scheduleWithRef = prefilledExpense 
-            ? { ...schedule, convertedFromExpenseId: prefilledExpense.id }
-            : schedule;
+            ? { ...scheduleWithCategory, convertedFromExpenseId: prefilledExpense.id }
+            : scheduleWithCategory;
           updatedList = [...baseCcEmis, scheduleWithRef];
 
           // If converting an existing card purchase (prefilledExpense), we log an emi_conversion transaction
@@ -439,10 +487,6 @@ export default function CcEmiForm({
             {budgets.map(b => (
               <option key={b.category} value={b.category}>{b.category}</option>
             ))}
-            <option value="Electronics">Electronics</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Rent & Utilities">Rent & Utilities</option>
-            <option value="Miscellaneous">Miscellaneous</option>
           </select>
         </div>
 

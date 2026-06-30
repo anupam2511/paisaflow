@@ -166,7 +166,7 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           setFinanceData(sanitizeFinanceData(dbData as any));
           
           if (!isInitialLoad) {
-            showToast("Cloud data synchronized in real-time!", "success");
+            showToast("Changes saved.", "success");
           }
         }
         isInitialLoad = false;
