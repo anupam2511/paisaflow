@@ -158,6 +158,7 @@ export interface Preferences {
   investmentCategories?: string[]; // user-defined investment holding categories
   themeMode?: 'light' | 'dark' | 'system'; // default "light"
   accentColor?: 'blue' | 'emerald' | 'yellow' | 'rose' | 'violet'; // default "blue"
+  emergencyAllocated?: number; // persistent allocated reserve for emergency fund
   netWorthSettings?: {
     categories: NetWorthCategoryConfig[];
   };

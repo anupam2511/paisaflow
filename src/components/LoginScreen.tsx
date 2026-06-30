@@ -61,11 +61,11 @@ export default function LoginScreen() {
     } catch (err: any) {
       console.error("Sign-In failed", err);
       if (err.code === 'auth/popup-blocked') {
-        setErrorMsg('Auth popup has been blocked by your browser. Please click the "Use Google Redirect" button below or click "Open in New Tab" in the top right to log in.');
+        setErrorMsg('Auth popup has been blocked by your browser. Please click "Open in New Tab" in the top right to log in.');
       } else if (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user') {
-        setErrorMsg('The sign-in popup was closed before completion. If popups are blocked or closed too quickly, try click "Use Google Redirect" below!');
+        setErrorMsg('The sign-in popup was closed before completion. Please ensure popups are permitted, or try opening in a new tab.');
       } else {
-        setErrorMsg(err.message || 'Secure authorization failed. Please try the Redirect option below.');
+        setErrorMsg(err.message || 'Secure authorization failed.');
       }
     } finally {
       setIsSigningIn(false);
@@ -85,11 +85,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <div id="login-screen-view" className="min-h-screen bg-[#f8fafc] dark:bg-transparent flex flex-col justify-center items-center px-4 py-12 transition-all duration-350">
+    <div id="login-screen-view" className="min-h-screen bg-[#f8fafc] dark:bg-transparent flex flex-col justify-center items-center px-4 py-4 sm:py-12 transition-all duration-350">
       <motion.div 
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-lg bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/70 dark:border-slate-700/50 p-10 md:p-12 shadow-xl dark:shadow-[0_30px_80px_rgba(0,0,0,.55)] relative overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-[#0F172A] rounded-3xl border border-slate-200/70 dark:border-slate-700/50 p-6 sm:p-10 md:p-12 shadow-xl dark:shadow-[0_30px_80px_rgba(0,0,0,.55)] relative overflow-hidden"
       >
         {/* Subtle glowing ambient elements */}
         <div className="absolute top-0 right-0 w-36 h-36 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
@@ -104,12 +104,14 @@ export default function LoginScreen() {
               alt="PaisaFlow"
               className="
                 w-full
-                max-w-[300px]
+                max-w-[180px]
+                sm:max-w-[300px]
                 h-auto
                 object-contain
                 select-none
                 pointer-events-none
-                mb-14
+                mb-6
+                sm:mb-14
                 transition-all
                 duration-300
               "
@@ -117,36 +119,36 @@ export default function LoginScreen() {
             />
 
             {/* Hero Text */}
-            <div className="mb-12">
-              <h1 className="text-[34px] leading-tight font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <div className="mb-5 sm:mb-12">
+              <h1 className="text-2xl sm:text-[34px] leading-tight font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Simplify your spending.
               </h1>
 
-              <h2 className="text-[34px] leading-tight font-extrabold bg-gradient-to-r from-sky-500 to-emerald-500 bg-clip-text text-transparent mt-1">
+              <h2 className="text-2xl sm:text-[34px] leading-tight font-extrabold bg-gradient-to-r from-sky-500 to-emerald-500 bg-clip-text text-transparent mt-1">
                 Master your flow.
               </h2>
             </div>
 
           </div>
 
-          <p className="text-sm text-slate-500 font-medium text-center mb-8">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium text-center mb-4 sm:mb-8">
               End-to-end encrypted • Private • Cloud synced
           </p>
 
         {/* Security Notification Banner */}
-        <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-6 text-center mb-8">
+        <div className="rounded-2xl sm:rounded-3xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 sm:p-6 text-center mb-5 sm:mb-8">
 
-          <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
 
-            <ShieldCheck className="w-5 h-5 text-emerald-500" />
+            <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
 
-            <span className="text-sm font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+            <span className="text-[10px] sm:text-sm font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
               Verified Secure
             </span>
 
           </div>
 
-          <p className="text-xs leading-6 text-slate-600 dark:text-slate-300 text-center">
+          <p className="text-[11px] sm:text-xs leading-relaxed sm:leading-6 text-slate-600 dark:text-slate-300 text-center">
             Your financial data is encrypted, protected with Google Authentication and securely synchronized across your devices.
           </p>
 
@@ -156,10 +158,11 @@ export default function LoginScreen() {
         <div className="space-y-3">
           <button
             onClick={handleGoogleSignIn}
-            disabled={isSigningIn || isRedirecting}
+            disabled={isSigningIn}
             className={`
               w-full
-              h-14
+              h-12
+              sm:h-14
               rounded-2xl
 
               bg-gradient-to-r
@@ -181,6 +184,7 @@ export default function LoginScreen() {
 
               font-bold
               tracking-wide
+              text-sm
               text-white
 
               flex
@@ -188,16 +192,16 @@ export default function LoginScreen() {
               justify-center
 
               ${
-                  isSigningIn || isRedirecting
+                  isSigningIn
                       ? "opacity-70 cursor-not-allowed"
                       : ""
               }
               `}
           >
             {isSigningIn ? (
-              <RefreshCw className="w-6 h-6 mr-3 animate-spin text-white shrink-0" />
+              <RefreshCw className="w-5 h-5 mr-3 animate-spin text-white shrink-0" />
             ) : (
-              <svg className="w-5 h-5 mr-3 shrink-0" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-3 shrink-0" viewBox="0 0 24 24">
                 <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22c-.22-.67-.35-1.37-.35-2.09z"/>
@@ -205,47 +209,6 @@ export default function LoginScreen() {
               </svg>
             )}
             <span>{isSigningIn ? 'Connecting to Google...' : 'Sign In with Google'}</span>
-          </button>
-
-          <button
-            onClick={handleRedirectSignIn}
-            disabled={isSigningIn || isRedirecting}
-            className={`
-              w-full
-              h-12
-              rounded-2xl
-              border-2
-              border-slate-200/80
-              dark:border-slate-700/60
-              hover:bg-slate-50
-              dark:hover:bg-slate-800/40
-              transition-all
-              duration-200
-              font-bold
-              text-xs
-              text-slate-600
-              dark:text-slate-300
-              flex
-              items-center
-              justify-center
-              ${
-                  isSigningIn || isRedirecting
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-              }
-            `}
-          >
-            {isRedirecting ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin text-slate-400 shrink-0" />
-            ) : (
-              <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22c-.22-.67-.35-1.37-.35-2.09z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-            )}
-            <span>{isRedirecting ? 'Redirecting to Google...' : 'Use Google Redirect (Mobile Fallback)'}</span>
           </button>
 
           <AnimatePresence>

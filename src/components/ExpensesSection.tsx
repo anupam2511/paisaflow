@@ -26,14 +26,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedGoalId, setSelectedGoalId] = useState('');
 
-  const [allocatedEmergency, setAllocatedEmergency] = useState<number>(0);
-  React.useEffect(() => {
-    const activeUser = localStorage.getItem('paisaflow_active_user') || 'default';
-    const persistedValue = localStorage.getItem(`paisaflow_user_${activeUser}_emergency_allocated`);
-    if (persistedValue) {
-      setAllocatedEmergency(parseFloat(persistedValue));
-    }
-  }, []);
+  const allocatedEmergency = preferences.emergencyAllocated || 0;
 
   // Search/Filter states
   const [searchTerm, setSearchTerm] = useState('');

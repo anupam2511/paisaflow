@@ -66,8 +66,6 @@ export interface FinanceContextType {
   toasts: ToastMessage[];
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   removeToast: (id: string) => void;
-  forceOffline: boolean;
-  setForceOffline: (checked: boolean) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -90,14 +88,6 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [autoDebitLogs, setAutoDebitLogs] = useState<string[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [forceOffline, setForceOfflineState] = useState(() => {
-    return localStorage.getItem('paisaflow_force_offline') === 'true';
-  });
-
-  const setForceOffline = (checked: boolean) => {
-    localStorage.setItem('paisaflow_force_offline', checked ? 'true' : 'false');
-    setForceOfflineState(checked);
-  };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -150,35 +140,11 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const isForcedOffline = localStorage.getItem('paisaflow_force_offline') === 'true';
-
-    if (isForcedOffline) {
-      // Local fallback if user explicitly forced offline mode
-      isCloudSyncActiveRef.current = false;
-      const legacyKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
-      const legacyDataStr = localStorage.getItem(legacyKey);
-      if (legacyDataStr) {
-        try {
-          const parsed = JSON.parse(legacyDataStr);
-          setFinanceData(sanitizeFinanceData(parsed));
-        } catch (e) {
-          const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
-          setFinanceData(sanitizeFinanceData(freshClone));
-        }
-      } else {
-        const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
-        setFinanceData(sanitizeFinanceData(freshClone));
-      }
-      setIsDataLoaded(true);
-      return;
-    }
-
     // Subscribe to Firestore changes in real-time
     let isInitialLoad = true;
     const docRef = doc(db, "user_finance_data", currentUser);
     
     const unsubscribeSnapshot = onSnapshot(docRef, (snapshot) => {
-      // Set sync status to active upon successfully receiving a server update
       isCloudSyncActiveRef.current = true;
       
       if (snapshot.exists()) {
@@ -195,62 +161,27 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
-        // Doc doesn't exist in Firestore yet: migrate from legacy local storage or load default preset
-        const legacyKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
-        const legacyDataStr = localStorage.getItem(legacyKey);
-        if (legacyDataStr) {
-          try {
-            const parsed = JSON.parse(legacyDataStr);
-            const sanitized = sanitizeFinanceData(parsed);
-            setFinanceData(sanitized);
-            lastSyncedDataRef.current = JSON.stringify(sanitized);
-            saveUserFinanceData(currentUser, sanitized).catch(err => {
-              console.warn("Failed to write initial legacy migration to Firestore:", err);
-            });
-          } catch (e) {
-            const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
-            setFinanceData(sanitizeFinanceData(freshClone));
-          }
-        } else {
-          const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
-          const sanitized = sanitizeFinanceData(freshClone);
-          setFinanceData(sanitized);
-          lastSyncedDataRef.current = JSON.stringify(sanitized);
-          saveUserFinanceData(currentUser, sanitized).catch(err => {
-            console.warn("Failed to write initial default data to Firestore:", err);
-          });
-        }
+        // Doc doesn't exist in Firestore yet: load default preset and save to Firestore
+        const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
+        const sanitized = sanitizeFinanceData(freshClone);
+        setFinanceData(sanitized);
+        lastSyncedDataRef.current = JSON.stringify(sanitized);
+        saveUserFinanceData(currentUser, sanitized).catch(err => {
+          console.warn("Failed to write initial default data to Firestore:", err);
+        });
       }
       isInitialLoad = false;
       setIsDataLoaded(true);
     }, (error) => {
-      console.warn("Firestore real-time subscription offline or disconnected:", error);
-      // Disable automatic write sync, as we have dropped the real-time cloud connection
+      console.warn("Firestore real-time subscription error:", error);
       isCloudSyncActiveRef.current = false;
-      
-      // Fallback gracefully to offline cache/local storage so the client is never stuck
-      const legacyKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
-      const legacyDataStr = localStorage.getItem(legacyKey);
-      if (legacyDataStr) {
-        try {
-          const parsed = JSON.parse(legacyDataStr);
-          setFinanceData(sanitizeFinanceData(parsed));
-          showToast("Offline mode: loaded cached local storage finance backup.", "info");
-        } catch (e) {
-          const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
-          setFinanceData(sanitizeFinanceData(freshClone));
-        }
-      } else {
-        const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
-        setFinanceData(sanitizeFinanceData(freshClone));
-      }
       setIsDataLoaded(true);
     });
 
     return () => {
       unsubscribeSnapshot();
     };
-  }, [currentUser, forceOffline]);
+  }, [currentUser]);
 
   // Automatically check and process auto-debits on login & whenever spends or investments load/change
   useEffect(() => {
@@ -270,41 +201,30 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, financeData.recurringSpends, financeData.investments, isDataLoaded]);
 
-  // Persist schema modifications instantly per user session
+  // Persist schema modifications instantly to Cloud Firestore
   useEffect(() => {
     if (!currentUser || !isDataLoaded) return;
     try {
-      const userKey = `personal_finance_dashboard_data_user_${currentUser.toLowerCase()}`;
-      localStorage.setItem(userKey, JSON.stringify(financeData));
-      
       const currentDataStr = JSON.stringify(financeData);
       
-      // Mirror to Firestore securely if not forced offline, cloud sync is active, and there is a real local change
-      if (!forceOffline && isCloudSyncActiveRef.current && currentDataStr !== lastSyncedDataRef.current) {
+      // Mirror to Firestore securely and instantly on change
+      if (isCloudSyncActiveRef.current && currentDataStr !== lastSyncedDataRef.current) {
         lastSyncedDataRef.current = currentDataStr;
         saveUserFinanceData(currentUser, financeData).catch(err => {
           const errMsg = err?.message || String(err);
-          if (errMsg.toLowerCase().includes("offline") || errMsg.toLowerCase().includes("unavailable") || err?.code === "unavailable") {
-            console.warn('Firestore duplex Sync deferred (client is offline):', errMsg);
-          } else {
-            console.error('Firestore duplex Sync error:', err);
-          }
+          console.error('Firestore duplex Sync error:', err);
         });
       }
     } catch (e) {
       console.error('Storage sync error:', e);
     }
-  }, [financeData, currentUser, isDataLoaded, forceOffline]);
+  }, [financeData, currentUser, isDataLoaded]);
 
-  // Listen to forceOffline transitions to show informative toasts
+  // Informative Cloud connection listener
   useEffect(() => {
     if (!currentUser || !isDataLoaded) return;
-    if (!forceOffline) {
-      showToast("Connecting to Cloud Firestore...", "info");
-    } else {
-      showToast("Switched to Local-First Offline Mode.", "info");
-    }
-  }, [forceOffline, currentUser, isDataLoaded]);
+    showToast("Connected to Cloud Firestore", "info");
+  }, [currentUser, isDataLoaded]);
 
   const handleLogout = async () => {
     try {
@@ -411,8 +331,6 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         toasts,
         showToast,
         removeToast,
-        forceOffline,
-        setForceOffline,
       }}
     >
       {children}

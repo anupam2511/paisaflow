@@ -39,18 +39,9 @@ export default function EmergencyFundSection({ data, setFinanceData }: Emergency
   // 3. User customized params
   const [coverageMultiplier, setCoverageMultiplier] = useState<number>(6); // Default 6 months of living expenses
   const [customAuxiliary, setCustomAuxiliary] = useState<number>(30000); // e.g. medical emergency buffer
-  const [allocatedReserve, setAllocatedReserve] = useState<number>(() => {
-    // Attempt local storage recall otherwise default to 50% of savings
-    const activeUser = localStorage.getItem('paisaflow_active_user') || 'default';
-    const persistedValue = localStorage.getItem(`paisaflow_user_${activeUser}_emergency_allocated`);
-    return persistedValue ? parseFloat(persistedValue) : Math.round(totalInCheckingSavings * 0.45);
-  });
-
-  // Track state adjustments in localStorage
-  useEffect(() => {
-    const activeUser = localStorage.getItem('paisaflow_active_user') || 'default';
-    localStorage.setItem(`paisaflow_user_${activeUser}_emergency_allocated`, allocatedReserve.toString());
-  }, [allocatedReserve]);
+  const allocatedReserve = preferences.emergencyAllocated !== undefined
+    ? preferences.emergencyAllocated
+    : Math.round(totalInCheckingSavings * 0.45);
 
   const targetBuffer = Math.round((monthlyOutflowEssentials * coverageMultiplier) + customAuxiliary);
   const progressPercent = Math.min(100, Math.round((totalInCheckingSavings / targetBuffer) * 100));
@@ -157,7 +148,16 @@ export default function EmergencyFundSection({ data, setFinanceData }: Emergency
               max={totalInCheckingSavings}
               step="2000"
               value={allocatedReserve}
-              onChange={(e) => setAllocatedReserve(parseInt(e.target.value))}
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                setFinanceData?.(prev => ({
+                  ...prev,
+                  preferences: {
+                    ...prev.preferences,
+                    emergencyAllocated: val
+                  }
+                }));
+              }}
               className="w-full accent-indigo-600 cursor-pointer"
             />
           </div>

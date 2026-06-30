@@ -52,14 +52,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
   const [quickSaveAccId, setQuickSaveAccId] = useState<string>('');
 
   // Sync quick save contribution amount based on goal selections and contribution type
-  const [allocatedEmergency, setAllocatedEmergency] = useState<number>(0);
-  useEffect(() => {
-    const activeUser = localStorage.getItem('paisaflow_active_user') || 'default';
-    const persistedValue = localStorage.getItem(`paisaflow_user_${activeUser}_emergency_allocated`);
-    if (persistedValue) {
-      setAllocatedEmergency(parseFloat(persistedValue));
-    }
-  }, []);
+  const allocatedEmergency = preferences.emergencyAllocated || 0;
   useEffect(() => {
     if (!quickSaveGoalId) {
       setQuickSaveAmount('');
