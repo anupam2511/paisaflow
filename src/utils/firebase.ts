@@ -36,9 +36,17 @@ const activeFirebaseConfig = {
 const envDbId = metaEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID;
 const appletDbId = (firebaseAppletConfig as any).firestoreDatabaseId;
 
+// If we are overriding configuration via custom project environment variables,
+// do not fall back to the AI Studio sandbox database ID (which won't exist in the custom project).
+const isCustomProject = !!(
+  metaEnv.VITE_FIREBASE_PROJECT_ID || 
+  metaEnv.VITE_FIREBASE_API_KEY || 
+  metaEnv.VITE_FIREBASE_APP_ID
+);
+
 const cleanDatabaseId = (envDbId && envDbId !== "(default)") 
   ? envDbId 
-  : (appletDbId && appletDbId !== "(default)" ? appletDbId : undefined);
+  : (isCustomProject ? undefined : (appletDbId && appletDbId !== "(default)" ? appletDbId : undefined));
 
 // Initialize Firebase
 const app = initializeApp(activeFirebaseConfig);

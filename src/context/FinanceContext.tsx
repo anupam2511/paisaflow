@@ -142,14 +142,21 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Set up a 6-second timeout fallback to prevent infinite loading screens
+    const connectionTimeout = setTimeout(() => {
+      console.warn("Firestore connection timed out. Falling back to local state.");
+      setIsDataLoaded(true);
+    }, 6000);
+
     // Subscribe to Firestore changes in real-time
     let isInitialLoad = true;
     const docRef = doc(db, "user_finance_data", currentUser);
     
     const unsubscribeSnapshot = onSnapshot(docRef, (snapshot) => {
-      isCloudSyncActiveRef.current = true;
-      
       if (snapshot.exists()) {
+        clearTimeout(connectionTimeout);
+        isCloudSyncActiveRef.current = true;
+        
         const dbData = snapshot.data();
         const dbDataStr = JSON.stringify(dbData);
         
@@ -162,7 +169,12 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
             showToast("Cloud data synchronized in real-time!", "success");
           }
         }
+        isInitialLoad = false;
+        setIsDataLoaded(true);
       } else if (!(snapshot as any).metadata?.fromCache) {
+        clearTimeout(connectionTimeout);
+        isCloudSyncActiveRef.current = true;
+        
         // Doc doesn't exist on the Firestore server yet: load default preset and save to Firestore
         const freshClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
         const sanitized = sanitizeFinanceData(freshClone);
@@ -171,16 +183,21 @@ export function FinanceProvider({ children }: { children: React.ReactNode }) {
         saveUserFinanceData(currentUser, sanitized).catch(err => {
           console.warn("Failed to write initial default data to Firestore:", err);
         });
+        isInitialLoad = false;
+        setIsDataLoaded(true);
       }
-      isInitialLoad = false;
-      setIsDataLoaded(true);
+      // If snapshot doesn't exist and is from cache (initial empty cache event),
+      // we do not set isDataLoaded=true or active=true; we wait for the server.
     }, (error) => {
+      clearTimeout(connectionTimeout);
       console.warn("Firestore real-time subscription error:", error);
       isCloudSyncActiveRef.current = false;
       setIsDataLoaded(true);
+      showToast(`Cloud sync offline: ${error.message || error}`, "error");
     });
 
     return () => {
+      clearTimeout(connectionTimeout);
       unsubscribeSnapshot();
     };
   }, [currentUser]);
