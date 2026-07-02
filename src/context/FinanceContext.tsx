@@ -32,6 +32,44 @@ const sanitizeFinanceData = (data: FinanceData): FinanceData => {
       return true;
     });
   }
+
+  // Backward compatibility check & live self-healing sync
+  if (Array.isArray(cleanData.expenses) && Array.isArray(cleanData.ccTransactions)) {
+    cleanData.ccTransactions = cleanData.ccTransactions.map(t => {
+      const matchingExpense = cleanData.expenses.find(e => {
+        const directIdMatch = t.id === `tx_${e.id}` || e.id === t.id.replace(/^tx_/, '');
+        if (directIdMatch) return true;
+
+        const isCardMatch = e.accountId === t.cardId;
+        const isAmountMatch = Math.abs(e.amount - t.amount) < 0.01;
+        const isDescSimilar = e.description.toLowerCase().trim() === t.description.toLowerCase().trim() ||
+          e.description.toLowerCase().trim().includes(t.description.toLowerCase().trim()) ||
+          t.description.toLowerCase().trim().includes(e.description.toLowerCase().trim());
+        const isDateMatch = e.date === t.date;
+
+        return isCardMatch && isAmountMatch && (isDateMatch || isDescSimilar);
+      });
+
+      if (matchingExpense) {
+        if (
+          t.date !== matchingExpense.date ||
+          t.description !== matchingExpense.description ||
+          t.category !== matchingExpense.category ||
+          t.amount !== matchingExpense.amount
+        ) {
+          return {
+            ...t,
+            date: matchingExpense.date,
+            description: matchingExpense.description,
+            category: matchingExpense.category || t.category,
+            amount: matchingExpense.amount,
+          };
+        }
+      }
+      return t;
+    });
+  }
+
   return cleanData;
 };
 

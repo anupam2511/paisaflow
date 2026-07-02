@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FinanceData } from '../types';
 import { formatCurrency, formatCompactCurrency } from '../utils/formatters';
 import { 
@@ -72,6 +72,19 @@ export default function ForecastingSection({ data }: ForecastingSectionProps) {
   const [inflationRate, setInflationRate] = useState<number>(6); // 6% Standard CPI index India
   const [liquidGrowthRate, setLiquidGrowthRate] = useState<number>(3.5); // 3.5% Savings Bank Interest
 
+  // Sorting state for Milestones table
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
   // Calculates Compound Interest monthly trajectories
   const generateProjectionData = () => {
     const list = [];
@@ -127,6 +140,37 @@ export default function ForecastingSection({ data }: ForecastingSectionProps) {
   };
 
   const chartData = generateProjectionData();
+  const milestoneRows = useMemo(() => {
+    const list = chartData.filter((_, idx) => idx === 0 || idx % 12 === 0 || idx === chartData.length - 1);
+    if (!sortField) return list;
+    return [...list].sort((a: any, b: any) => {
+      let valA: any = 0;
+      let valB: any = 0;
+      if (sortField === 'monthIndex') {
+        valA = a.monthIndex;
+        valB = b.monthIndex;
+      } else if (sortField === 'CashReserves') {
+        valA = a.CashReserves;
+        valB = b.CashReserves;
+      } else if (sortField === 'InvestmentShares') {
+        valA = a.InvestmentShares;
+        valB = b.InvestmentShares;
+      } else if (sortField === 'Conservative') {
+        valA = a['Conservative Outlook (ROI -3%)'];
+        valB = b['Conservative Outlook (ROI -3%)'];
+      } else if (sortField === 'Balanced') {
+        valA = a['Balanced Net Worth'];
+        valB = b['Balanced Net Worth'];
+      } else if (sortField === 'Optimistic') {
+        valA = a['Optimistic Outlook (ROI +3%)'];
+        valB = b['Optimistic Outlook (ROI +3%)'];
+      }
+
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [chartData, sortField, sortDirection]);
   const endingDataPoint = chartData[chartData.length - 1];
 
   const totalAddedSavings = (expectedIncome - expectedExpenses) * projectionPeriods;
@@ -383,19 +427,41 @@ export default function ForecastingSection({ data }: ForecastingSectionProps) {
         <div className="w-full overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800/80">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">Period Milestone</th>
-                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest text-right">Cash Reserves Base</th>
-                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest text-right">Investments Growth</th>
-                <th className="py-3 px-4 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest text-right">Net Worth (Cons)</th>
-                <th className="py-3 px-4 text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest text-right">Net Worth (Balanced)</th>
-                <th className="py-3 px-4 text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest text-right">Net Worth (Optimistic)</th>
+              <tr className="bg-slate-55 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-widest">
+                <th onClick={() => handleSort('monthIndex')} className="py-3 px-4 cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition duration-150">
+                  <div className="flex items-center gap-1">
+                    Period Milestone {sortField === 'monthIndex' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('CashReserves')} className="py-3 px-4 text-right cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition duration-150">
+                  <div className="flex items-center gap-1 justify-end">
+                    Cash Reserves Base {sortField === 'CashReserves' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('InvestmentShares')} className="py-3 px-4 text-right cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition duration-150">
+                  <div className="flex items-center gap-1 justify-end">
+                    Investments Growth {sortField === 'InvestmentShares' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('Conservative')} className="py-3 px-4 text-right cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition duration-150">
+                  <div className="flex items-center gap-1 justify-end">
+                    Net Worth (Cons) {sortField === 'Conservative' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('Balanced')} className="py-3 px-4 text-right cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition duration-150">
+                  <div className="flex items-center gap-1 justify-end">
+                    Net Worth (Balanced) {sortField === 'Balanced' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('Optimistic')} className="py-3 px-4 text-right cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-800/60 transition duration-150">
+                  <div className="flex items-center gap-1 justify-end">
+                    Net Worth (Optimistic) {sortField === 'Optimistic' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                  </div>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0b1329]">
-              {chartData
-                .filter((_, idx) => idx === 0 || idx % 12 === 0 || idx === chartData.length - 1)
-                .map((row) => (
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0b1329] font-medium">
+              {milestoneRows.map((row) => (
                   <tr key={row.monthIndex} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="py-3 px-4 text-xs font-bold text-slate-700 dark:text-slate-300">
                       {row.monthIndex === 0 ? 'Starting Point' : `Year ${row.monthIndex / 12} (${row.label})`}

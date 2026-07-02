@@ -36,6 +36,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
   const [dateFilterType, setDateFilterType] = useState<string>('all');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'>('date_desc');
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -128,11 +129,25 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
       savingGoalId: selectedGoalId || undefined,
     };
 
+    let newCcTx = null;
+    if (sourceAcc && sourceAcc.type === 'credit_card') {
+      newCcTx = {
+        id: `tx_${newExpense.id}`,
+        cardId: accountId,
+        type: 'purchase' as const,
+        description: description.trim(),
+        amount: amt,
+        date,
+        category,
+      };
+    }
+
     setFinanceData(prev => ({
       ...prev,
       expenses: [newExpense, ...prev.expenses],
       accounts: updatedAccounts,
       savingGoals: updatedGoals,
+      ccTransactions: newCcTx ? [...(prev.ccTransactions || []), newCcTx] : prev.ccTransactions,
     }));
 
     setDescription('');
@@ -192,11 +207,26 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
         })
       : savingGoals;
 
+    const connectedAcc = accounts.find(a => a.id === connectedAccountId);
+    const isCc = connectedAcc?.type === 'credit_card';
+    let filteredCcTransactions = data.ccTransactions || [];
+    if (isCc && targetExpense) {
+      filteredCcTransactions = filteredCcTransactions.filter(t => 
+        t.id !== `tx_${targetExpense.id}` && 
+        !(t.cardId === connectedAccountId &&
+          t.type === 'purchase' &&
+          Math.abs(t.amount - targetExpense.amount) < 0.01 &&
+          t.description === targetExpense.description &&
+          t.date === targetExpense.date)
+      );
+    }
+
     setFinanceData(prev => ({
       ...prev,
       expenses: prev.expenses.filter(exp => exp.id !== id),
       accounts: refundedAccounts,
       savingGoals: updatedGoals,
+      ccTransactions: filteredCcTransactions,
     }));
     setExpenseToDelete(null);
   };
@@ -321,11 +351,114 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
       return exp;
     });
 
+    // Sync ccTransactions
+    let nextCcTransactions = [...(data.ccTransactions || [])];
+    const wasCc = accounts.find(a => a.id === oldAccountId)?.type === 'credit_card';
+    const isCc = targetAcc.type === 'credit_card';
+
+    if (wasCc) {
+      if (isCc) {
+        // Was CC, still CC: Update matching transaction (by ID or field fallback)
+        let found = false;
+        nextCcTransactions = nextCcTransactions.map(t => {
+          const isMatch = t.id === `tx_${editingExpense.id}` ||
+            (t.cardId === oldAccountId &&
+             t.type === 'purchase' &&
+             Math.abs(t.amount - oldAmount) < 0.01 &&
+             (
+               t.date === editingExpense.date ||
+               t.description.toLowerCase().trim() === editingExpense.description.toLowerCase().trim() ||
+               t.description.toLowerCase().trim().includes(editingExpense.description.toLowerCase().trim()) ||
+               editingExpense.description.toLowerCase().trim().includes(t.description.toLowerCase().trim())
+             ));
+          if (isMatch) {
+            found = true;
+            return {
+              ...t,
+              id: t.id || `tx_${editingExpense.id}`,
+              cardId: editAccountId,
+              amount: amt,
+              description: editDescription.trim(),
+              date: editDate,
+              category: editCategory,
+            };
+          }
+          return t;
+        });
+
+        if (!found) {
+          nextCcTransactions.push({
+            id: `tx_${editingExpense.id}`,
+            cardId: editAccountId,
+            type: 'purchase' as const,
+            description: editDescription.trim(),
+            amount: amt,
+            date: editDate,
+            category: editCategory,
+          });
+        }
+      } else {
+        // Was CC, now Bank: Delete the matching transaction
+        nextCcTransactions = nextCcTransactions.filter(t => {
+          const isMatch = t.id === `tx_${editingExpense.id}` ||
+            (t.cardId === oldAccountId &&
+             t.type === 'purchase' &&
+             Math.abs(t.amount - oldAmount) < 0.01 &&
+             (
+               t.date === editingExpense.date ||
+               t.description.toLowerCase().trim() === editingExpense.description.toLowerCase().trim() ||
+               t.description.toLowerCase().trim().includes(editingExpense.description.toLowerCase().trim()) ||
+               editingExpense.description.toLowerCase().trim().includes(t.description.toLowerCase().trim())
+             ));
+          return !isMatch;
+        });
+      }
+    } else {
+      if (isCc) {
+        // Was Bank, now CC: Create a new credit card transaction
+        nextCcTransactions.push({
+          id: `tx_${editingExpense.id}`,
+          cardId: editAccountId,
+          type: 'purchase' as const,
+          description: editDescription.trim(),
+          amount: amt,
+          date: editDate,
+          category: editCategory,
+        });
+      }
+    }
+
+    // Sync ccEmis if any is converted from this expense (with robust backward compatibility mapping)
+    const updatedEmis = (data.ccEmis || []).map(emi => {
+      const isMatch = emi.convertedFromExpenseId === editingExpense.id || (
+        !emi.convertedFromExpenseId &&
+        emi.originalAmount === oldAmount &&
+        emi.cardId === oldAccountId &&
+        (emi.expenseName.toLowerCase().trim() === editingExpense.description.toLowerCase().trim() ||
+         emi.expenseName.toLowerCase().trim().includes(editingExpense.description.toLowerCase().trim()) ||
+         editingExpense.description.toLowerCase().trim().includes(emi.expenseName.toLowerCase().trim()))
+      );
+      if (isMatch) {
+        return {
+          ...emi,
+          convertedFromExpenseId: editingExpense.id, // solidify link for future
+          cardId: editAccountId,
+          expenseName: editDescription.trim(),
+          category: editCategory || emi.category,
+          originalAmount: amt,
+          purchaseDate: editDate,
+        };
+      }
+      return emi;
+    });
+
     setFinanceData(prev => ({
       ...prev,
       expenses: updatedExpenses,
       accounts: updatedAccounts,
       savingGoals: updatedGoals,
+      ccTransactions: nextCcTransactions,
+      ccEmis: updatedEmis,
     }));
 
     setEditingExpense(null);
@@ -389,7 +522,18 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
     return matchesSearch && matchesCategory && matchesAccount && matchesLarge && matchesDate;
   });
 
-  const totalFilteredSpent = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const sortedExpenses = React.useMemo(() => {
+    const list = [...filteredExpenses];
+    return list.sort((a, b) => {
+      if (sortBy === 'date_desc') return b.date.localeCompare(a.date);
+      if (sortBy === 'date_asc') return a.date.localeCompare(b.date);
+      if (sortBy === 'amount_desc') return b.amount - a.amount;
+      if (sortBy === 'amount_asc') return a.amount - b.amount;
+      return 0;
+    });
+  }, [filteredExpenses, sortBy]);
+
+  const totalFilteredSpent = sortedExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
     <div id="expenses-root" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -594,7 +738,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
           </div>
 
           {/* Row 2: Date Filtering controls */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-3.5 pt-3.5 border-t border-slate-100/85 dark:border-slate-800">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3.5 pt-3.5 border-t border-slate-100/85 dark:border-slate-800">
             <div>
               <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Date Period</label>
               <select
@@ -608,6 +752,20 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                 <option value="last_month" className="dark:bg-[#0b1329]">Last Month</option>
                 <option value="billing_cycle" className="dark:bg-[#0b1329]">Billing Statement Cycle</option>
                 <option value="custom" className="dark:bg-[#0b1329]">Custom Date Range</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Sort Ledger By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="w-full text-xs border border-slate-205 dark:border-slate-800 rounded-lg p-2 bg-slate-50 dark:bg-[#0b1329] focus:outline-none focus:border-indigo-500 font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <option value="date_desc" className="dark:bg-[#0b1329]">Date (Newest first)</option>
+                <option value="date_asc" className="dark:bg-[#0b1329]">Date (Oldest first)</option>
+                <option value="amount_desc" className="dark:bg-[#0b1329]">Amount (Highest first)</option>
+                <option value="amount_asc" className="dark:bg-[#0b1329]">Amount (Lowest first)</option>
               </select>
             </div>
 
@@ -674,14 +832,14 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
               ⚠️ High Outgoings Limit Crossings Only (&ge; {formatCurrency(threshold, preferences)})
             </label>
             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">
-              Showing {filteredExpenses.length} entries • Spent: <span className="font-extrabold text-slate-700 dark:text-slate-300">{formatCurrency(totalFilteredSpent, preferences)}</span>
+              Showing {sortedExpenses.length} entries • Spent: <span className="font-extrabold text-slate-700 dark:text-slate-300">{formatCurrency(totalFilteredSpent, preferences)}</span>
             </span>
           </div>
         </div>
 
         {/* LEDGER EXPENSE LIST */}
         <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-          {filteredExpenses.map((exp, index) => {
+          {sortedExpenses.map((exp, index) => {
             const isLarge = exp.amount >= threshold;
             const connectedAcc = accounts.find(a => a.id === exp.accountId);
             

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FinanceData, EmiItem, FinancialAccount, CreditCardEmiMaster } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { 
@@ -663,6 +663,60 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
     return cardMatch && catMatch;
   });
 
+  // CC EMIs sorting state
+  const [ccSortField, setCcSortField] = useState<'startDate' | 'outstandingPrincipal' | 'totalPayable' | null>(null);
+  const [ccSortDirection, setCcSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Loan EMIs sorting state
+  const [loanSortField, setLoanSortField] = useState<'startDate' | 'amount' | 'outstanding' | null>(null);
+  const [loanSortDirection, setLoanSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const sortedCcEmis = useMemo(() => {
+    const list = [...filteredCcEmis];
+    if (!ccSortField) return list;
+    return list.sort((a, b) => {
+      let valA: any = 0;
+      let valB: any = 0;
+      if (ccSortField === 'startDate') {
+        valA = a.startDate;
+        valB = b.startDate;
+      } else if (ccSortField === 'outstandingPrincipal') {
+        valA = a.outstandingPrincipal;
+        valB = b.outstandingPrincipal;
+      } else if (ccSortField === 'totalPayable') {
+        valA = analyzeEmiCost(a).totalPayable;
+        valB = analyzeEmiCost(b).totalPayable;
+      }
+      if (valA < valB) return ccSortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return ccSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredCcEmis, ccSortField, ccSortDirection]);
+
+  const sortedLoanEmis = useMemo(() => {
+    const list = [...filteredEmis];
+    if (!loanSortField) return list;
+    return list.sort((a, b) => {
+      let valA: any = 0;
+      let valB: any = 0;
+      if (loanSortField === 'startDate') {
+        valA = a.startDate;
+        valB = b.startDate;
+      } else if (loanSortField === 'amount') {
+        valA = a.amount;
+        valB = b.amount;
+      } else if (loanSortField === 'outstanding') {
+        const remainsA = a.totalTenure - a.installmentsPaid;
+        const remainsB = b.totalTenure - b.installmentsPaid;
+        valA = a.amount * remainsA;
+        valB = b.amount * remainsB;
+      }
+      if (valA < valB) return loanSortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return loanSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredEmis, loanSortField, loanSortDirection]);
+
   return (
     <div id="emi-section-wrapper" className="space-y-6 text-left">
       
@@ -1045,18 +1099,51 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                 <table className="w-full text-left border-collapse min-w-[800px]">
                   <thead>
                     <tr className="border-b border-slate-100 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                      <th className="pb-3 pl-1">Descriptor / Start date</th>
+                      <th className="pb-3 pl-1 cursor-pointer select-none hover:text-slate-650 transition" onClick={() => {
+                        if (ccSortField === 'startDate') {
+                          setCcSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setCcSortField('startDate');
+                          setCcSortDirection('asc');
+                        }
+                      }}>
+                        <div className="flex items-center gap-1">
+                          Descriptor / Start date {ccSortField === 'startDate' ? (ccSortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                        </div>
+                      </th>
                       <th className="pb-3">Source Card Account</th>
                       <th className="pb-3 text-center">EMI Type</th>
                       <th className="pb-3 text-right">Tenure Progress</th>
-                      <th className="pb-3 text-right">O/S Principal</th>
-                      <th className="pb-3 text-right">Total Payable</th>
+                      <th className="pb-3 text-right cursor-pointer select-none hover:text-slate-650 transition" onClick={() => {
+                        if (ccSortField === 'outstandingPrincipal') {
+                          setCcSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setCcSortField('outstandingPrincipal');
+                          setCcSortDirection('asc');
+                        }
+                      }}>
+                        <div className="flex items-center gap-1 justify-end">
+                          O/S Principal {ccSortField === 'outstandingPrincipal' ? (ccSortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                        </div>
+                      </th>
+                      <th className="pb-3 text-right cursor-pointer select-none hover:text-slate-650 transition" onClick={() => {
+                        if (ccSortField === 'totalPayable') {
+                          setCcSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setCcSortField('totalPayable');
+                          setCcSortDirection('asc');
+                        }
+                      }}>
+                        <div className="flex items-center gap-1 justify-end">
+                          Total Payable {ccSortField === 'totalPayable' ? (ccSortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                        </div>
+                      </th>
                       <th className="pb-3 text-center">Billed Increments</th>
                       <th className="pb-3 text-right pr-1">Ops</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredCcEmis.map((emi) => {
+                    {sortedCcEmis.map((emi) => {
                       const analysis = analyzeEmiCost(emi);
                       const card = accounts.find(a => a.id === emi.cardId);
                       
@@ -1526,18 +1613,51 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                 <table className="w-full text-left border-collapse min-w-[700px] text-xs">
                   <thead>
                     <tr className="border-b border-slate-100 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                      <th className="pb-3 pl-1">Descriptor / Start date</th>
+                      <th className="pb-3 pl-1 cursor-pointer select-none hover:text-slate-650 transition" onClick={() => {
+                        if (loanSortField === 'startDate') {
+                          setLoanSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setLoanSortField('startDate');
+                          setLoanSortDirection('asc');
+                        }
+                      }}>
+                        <div className="flex items-center gap-1">
+                          Descriptor / Start date {loanSortField === 'startDate' ? (loanSortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                        </div>
+                      </th>
                       <th className="pb-3">Source Account</th>
                       <th className="pb-3">Category</th>
-                      <th className="pb-3 text-right">EMI Burden</th>
+                      <th className="pb-3 text-right cursor-pointer select-none hover:text-slate-650 transition" onClick={() => {
+                        if (loanSortField === 'amount') {
+                          setLoanSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setLoanSortField('amount');
+                          setLoanSortDirection('asc');
+                        }
+                      }}>
+                        <div className="flex items-center gap-1 justify-end">
+                          EMI Burden {loanSortField === 'amount' ? (loanSortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                        </div>
+                      </th>
                       <th className="pb-3 text-center">Tenure Progress</th>
-                      <th className="pb-3 text-right">Sunk / Outstanding</th>
+                      <th className="pb-3 text-right cursor-pointer select-none hover:text-slate-650 transition" onClick={() => {
+                        if (loanSortField === 'outstanding') {
+                          setLoanSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setLoanSortField('outstanding');
+                          setLoanSortDirection('asc');
+                        }
+                      }}>
+                        <div className="flex items-center gap-1 justify-end">
+                          Sunk / Outstanding {loanSortField === 'outstanding' ? (loanSortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                        </div>
+                      </th>
                       <th className="pb-3 text-center">Increment Status</th>
                       <th className="pb-3 text-right pr-1">Ops</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredEmis.map((emi) => {
+                    {sortedLoanEmis.map((emi) => {
                       const card = accounts.find(a => a.id === emi.accountId);
                       const progress = Math.round((emi.installmentsPaid / emi.totalTenure) * 100);
                       const remains = emi.totalTenure - emi.installmentsPaid;
@@ -1546,7 +1666,10 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
 
                       return (
                         <tr key={emi.id} className="hover:bg-slate-50/50 transition">
-                          <td className="py-3.5 pl-1 text-left font-black">{emi.name}</td>
+                          <td className="py-3.5 pl-1 text-left font-black">
+                            <div>{emi.name}</div>
+                            <span className="text-[10px] text-slate-400 font-bold block mt-0.5 font-mono">Start: {emi.startDate}</span>
+                          </td>
                           <td className="py-3.5">{card?.institution} - {card?.name}</td>
                           <td className="py-3.5"><span className="bg-slate-100 text-[9px] px-2 py-0.5 rounded font-bold uppercase">{emi.category}</span></td>
                           <td className="py-3.5 text-right font-mono font-bold text-slate-900">{formatCurrency(emi.amount, preferences)}</td>

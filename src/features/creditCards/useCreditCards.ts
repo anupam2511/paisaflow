@@ -44,7 +44,8 @@ export function useCreditCards() {
 
   // Add credit card transaction (purchase, refund, EMI conversion, bill payment)
   const addTransaction = (tx: Omit<CcTransaction, 'id'>, payFromBankAccountId?: string) => {
-    const newId = `tx_cc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const expId = `exp_cc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const newId = `tx_${expId}`;
     const newTx: CcTransaction = {
       ...tx,
       id: newId,
@@ -93,7 +94,7 @@ export function useCreditCards() {
         updatedExpenses = [
           ...prev.expenses,
           {
-            id: `exp_cc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            id: expId,
             description: tx.description,
             amount: tx.amount,
             category: tx.category || 'Shopping',
@@ -141,12 +142,94 @@ export function useCreditCards() {
         return acc;
       });
 
+      // Also delete the mirrored general expense if this was a purchase
+      let updatedExpenses = prev.expenses;
+      if (targetTx.type === 'purchase') {
+        updatedExpenses = prev.expenses.filter((e) => {
+          if (targetTx.id.startsWith('tx_exp_') && e.id === targetTx.id.substring(3)) {
+            return false;
+          }
+          if (e.id === targetTx.id.replace(/^tx_/, '')) {
+            return false;
+          }
+          const isMatch = e.accountId === targetTx.cardId &&
+            Math.abs(e.amount - targetTx.amount) < 0.01 &&
+            e.description === targetTx.description &&
+            e.date === targetTx.date;
+          return !isMatch;
+        });
+      }
+
       return {
         ...prev,
         accounts: updatedAccounts,
         ccTransactions: (prev.ccTransactions || []).filter((t) => t.id !== txId),
+        expenses: updatedExpenses,
       };
     });
+  };
+
+  // Helper to calculate card metrics dynamically from ledger transactions
+  const getCardOutstandingAndStatement = (card: FinancialAccount) => {
+    const cardTransactions = ccTransactions.filter((t) => t.cardId === card.id);
+    if (cardTransactions.length === 0) {
+      return {
+        outstanding: card.balance || 0,
+        statementBalance: card.balance || 0,
+      };
+    }
+
+    // Determine billing cycle
+    const statementDay = card.billingCycleStartDay || 15;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let billDate = new Date(today.getFullYear(), today.getMonth(), statementDay, 0, 0, 0, 0);
+    if (today.getDate() > statementDay) {
+      billDate = new Date(today.getFullYear(), today.getMonth() + 1, statementDay, 0, 0, 0, 0);
+    }
+    const periodEndDate = new Date(billDate.getTime());
+    const periodStartDate = new Date(billDate.getTime());
+    periodStartDate.setMonth(billDate.getMonth() - 1);
+    periodStartDate.setDate(periodStartDate.getDate() + 1);
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const startStr = `${periodStartDate.getFullYear()}-${pad(periodStartDate.getMonth() + 1)}-${pad(periodStartDate.getDate())}`;
+    const endStr = `${periodEndDate.getFullYear()}-${pad(periodEndDate.getMonth() + 1)}-${pad(periodEndDate.getDate())}`;
+
+    let cyclePurchases = 0;
+    let cycleRefunds = 0;
+    let cyclePayments = 0;
+    let cycleConversions = 0;
+
+    let totalPurchases = 0;
+    let totalRefunds = 0;
+    let totalPayments = 0;
+    let totalConversions = 0;
+
+    cardTransactions.forEach(t => {
+      const isCycle = t.date >= startStr && t.date <= endStr;
+      if (t.type === 'purchase') {
+        totalPurchases += t.amount;
+        if (isCycle) cyclePurchases += t.amount;
+      } else if (t.type === 'refund') {
+        totalRefunds += t.amount;
+        if (isCycle) cycleRefunds += t.amount;
+      } else if (t.type === 'bill_payment') {
+        totalPayments += t.amount;
+        if (isCycle) cyclePayments += t.amount;
+      } else if (t.type === 'emi_conversion') {
+        totalConversions += t.amount;
+        if (isCycle) cycleConversions += t.amount;
+      }
+    });
+
+    const calculatedOutstanding = Math.max(0, totalPurchases - totalRefunds - totalPayments - totalConversions);
+    const calculatedStatement = Math.max(0, cyclePurchases - cycleRefunds - cyclePayments - cycleConversions);
+
+    return {
+      outstanding: calculatedOutstanding,
+      statementBalance: calculatedStatement,
+    };
   };
 
   // Helper to calculate card metrics
@@ -162,8 +245,8 @@ export function useCreditCards() {
       0
     );
 
-    const statementBalance = card.balance || 0;
-    let utilized = statementBalance + unbilledEmiPrincipal; // Total Outstanding on this individual card
+    const { outstanding, statementBalance } = getCardOutstandingAndStatement(card);
+    let utilized = outstanding + unbilledEmiPrincipal; // Total Outstanding on this individual card
     let available = Math.max(0, creditLimit - utilized);
 
     let isShared = false;
@@ -191,7 +274,10 @@ export function useCreditCards() {
         );
         
         // Sum normal statement balances for the group
-        const totalGroupNormalUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+        const totalGroupNormalUtilized = sharedGroupCards.reduce((sum, c) => {
+          const { outstanding: out } = getCardOutstandingAndStatement(c);
+          return sum + out;
+        }, 0);
         // Sum unbilled EMI outstanding principal for the group
         const totalGroupUnbilled = sharedGroupCards.reduce((sum, c) => {
           const cCcEmis = (financeData.ccEmis || []).filter(
@@ -217,7 +303,10 @@ export function useCreditCards() {
       const sharedLimit = card.limit || 0;
       const sharedGroupCards = creditCards.filter(c => c.id === card.id || c.linkedGroupId === card.id);
       
-      const totalGroupNormalUtilized = sharedGroupCards.reduce((sum, c) => sum + (c.balance || 0), 0);
+      const totalGroupNormalUtilized = sharedGroupCards.reduce((sum, c) => {
+        const { outstanding: out } = getCardOutstandingAndStatement(c);
+        return sum + out;
+      }, 0);
       const totalGroupUnbilled = sharedGroupCards.reduce((sum, c) => {
         const cCcEmis = (financeData.ccEmis || []).filter(
           (e) => e.cardId === c.id && e.status === 'active'
@@ -313,7 +402,7 @@ export function useCreditCards() {
       return sum + metrics.utilized; // Sum of total outstanding (statement + unbilled EMI)
     }, 0);
 
-    const totalStatementBalance = creditCards.reduce((sum, card) => sum + (card.balance || 0), 0);
+    const totalStatementBalance = creditCards.reduce((sum, card) => sum + getCardMetrics(card).statementBalance, 0);
     const totalUnbilledEmiPrincipal = Math.max(0, totalUtilized - totalStatementBalance);
 
     const totalAvailable = Math.max(0, totalLimit - totalUtilized);

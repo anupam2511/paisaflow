@@ -885,12 +885,12 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                     </select>
                   </div>
                 </div>
-
-                <DataTable<CcTransaction>
+                        <DataTable<CcTransaction>
                   columns={[
                     {
                       header: 'Date',
                       accessor: (item) => <span className="font-mono text-[10px] font-bold text-slate-500">{item.date}</span>,
+                      sortValue: (item) => item.date,
                     },
                     {
                       header: 'Card Account',
@@ -945,7 +945,8 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                           {item.type === 'purchase' ? '' : '-'}{formatCurrency(item.amount, data.preferences)}
                         </span>
                       ),
-                      className: 'text-right'
+                      className: 'text-right',
+                      sortValue: (item) => item.amount,
                     },
                     {
                       header: 'Audit Action',
@@ -1052,7 +1053,8 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                     },
                     {
                       header: 'Outstanding Principal',
-                      accessor: (item) => <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{formatCurrency(item.outstandingPrincipal, data.preferences)}</span>
+                      accessor: (item) => <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{formatCurrency(item.outstandingPrincipal, data.preferences)}</span>,
+                      sortValue: (item) => item.outstandingPrincipal,
                     },
                     {
                       header: 'Next EMI Due',
@@ -1070,7 +1072,8 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                             )}
                           </div>
                         );
-                      }
+                      },
+                      sortValue: (item) => item.installments?.find((i: any) => i.paidStatus === 'unpaid')?.dueDate || '9999-12-31',
                     }
                   ]}
                   data={data.ccEmis || []}

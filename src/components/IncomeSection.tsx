@@ -27,6 +27,19 @@ export default function IncomeSection({ data, setFinanceData }: IncomeSectionPro
   const [ok, setOk] = useState('');
   const [incomeToDelete, setIncomeToDelete] = useState<{ id: string; name: string } | null>(null);
 
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'>('date_desc');
+
+  const sortedIncomes = React.useMemo(() => {
+    const list = [...incomes];
+    return list.sort((a, b) => {
+      if (sortBy === 'date_desc') return b.date.localeCompare(a.date);
+      if (sortBy === 'date_asc') return a.date.localeCompare(b.date);
+      if (sortBy === 'amount_desc') return b.amount - a.amount;
+      if (sortBy === 'amount_asc') return a.amount - b.amount;
+      return 0;
+    });
+  }, [incomes, sortBy]);
+
   const handleAddIncome = (e: React.FormEvent) => {
     e.preventDefault();
     setErr('');
@@ -194,19 +207,34 @@ export default function IncomeSection({ data, setFinanceData }: IncomeSectionPro
 
       {/* INCOME STREAMS LIST */}
       <div className="lg:col-span-8 space-y-4">
-        <div className="flex justify-between items-center bg-white p-6 md:p-7 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 md:p-7 rounded-3xl border border-slate-100 shadow-sm gap-4">
           <div>
             <h2 className="text-base font-bold text-slate-800">Registered Income Ledger</h2>
             <p id="total-income-readout" className="text-xs text-slate-400 mt-0.5">Tracking periodic wage checks or project advances.</p>
           </div>
-          <div className="text-right">
-            <span className="text-[10px] uppercase font-bold text-slate-400 leading-3 block">Total Combined Inflow</span>
-            <span className="text-xl font-black text-emerald-600">{formatCurrency(totalMonthlyIncome, preferences)}</span>
+          <div className="flex items-center gap-4">
+            <div>
+              <label className="block text-[8px] uppercase font-bold text-slate-400 mb-0.5">Sort Ledger By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="text-[11px] border border-slate-200 rounded-lg p-1.5 bg-slate-50 focus:outline-none focus:border-indigo-500 font-bold text-slate-600"
+              >
+                <option value="date_desc">Date (Newest first)</option>
+                <option value="date_asc">Date (Oldest first)</option>
+                <option value="amount_desc">Amount (Highest first)</option>
+                <option value="amount_asc">Amount (Lowest first)</option>
+              </select>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 leading-3 block">Total Combined Inflow</span>
+              <span className="text-xl font-black text-emerald-600">{formatCurrency(totalMonthlyIncome, preferences)}</span>
+            </div>
           </div>
         </div>
 
         <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-          {incomes.map(inc => (
+          {sortedIncomes.map(inc => (
             <div
               key={inc.id}
               className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-xs hover:border-slate-200 transition flex items-center justify-between"

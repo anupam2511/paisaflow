@@ -392,6 +392,29 @@ export default function CcEmiForm({
               }
               return a;
             });
+          } else {
+            // Even if not prefilled, we ALWAYS log an emi_conversion transaction and offset/refund
+            // the full purchase amount from the active credit card balance. This ensures that the
+            // credit card's statement balance does not contain the entire outstanding EMI principal,
+            // but instead only bills the individual monthly EMI installments!
+            const conversionTxId = `tx_cc_conv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            const conversionTx = {
+              id: conversionTxId,
+              cardId: cardId,
+              type: 'emi_conversion' as const,
+              description: `EMI Conversion Offset: ${expenseName.trim()}`,
+              amount: schedule.originalAmount,
+              date: new Date().toISOString().split('T')[0],
+              category: category || 'Shopping',
+            };
+            nextCcTransactions = [conversionTx, ...nextCcTransactions];
+
+            nextAccounts = nextAccounts.map(a => {
+              if (a.id === cardId) {
+                return { ...a, balance: Math.max(0, Math.round((a.balance - schedule.originalAmount) * 100) / 100) };
+              }
+              return a;
+            });
           }
         }
 

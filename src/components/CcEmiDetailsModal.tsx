@@ -47,6 +47,53 @@ export default function CcEmiDetailsModal({
   const analysis = analyzeEmiCost(emi);
 
   const installments = emi.installments || [];
+  const [sortField, setSortField] = React.useState<'dueDate' | 'principal' | 'interest' | 'gstOnInterest' | 'fees' | 'gstOnFees' | 'totalInstallmentAmount' | null>(null);
+  const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: 'dueDate' | 'principal' | 'interest' | 'gstOnInterest' | 'fees' | 'gstOnFees' | 'totalInstallmentAmount') => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedInstallments = React.useMemo(() => {
+    const list = [...installments];
+    if (!sortField) return list;
+    return list.sort((a, b) => {
+      let valA: any = 0;
+      let valB: any = 0;
+      if (sortField === 'dueDate') {
+        valA = a.dueDate;
+        valB = b.dueDate;
+      } else if (sortField === 'principal') {
+        valA = a.principalComponent;
+        valB = b.principalComponent;
+      } else if (sortField === 'interest') {
+        valA = a.interestComponent;
+        valB = b.interestComponent;
+      } else if (sortField === 'gstOnInterest') {
+        valA = a.gstOnInterest;
+        valB = b.gstOnInterest;
+      } else if (sortField === 'fees') {
+        valA = a.processingFee + (a.conversionFee || 0) + a.offerCharge;
+        valB = b.processingFee + (b.conversionFee || 0) + b.offerCharge;
+      } else if (sortField === 'gstOnFees') {
+        valA = a.gstOnProcessingFee + (a.gstOnConversionFee || 0) + a.gstOnOfferCharge;
+        valB = b.gstOnProcessingFee + (b.gstOnConversionFee || 0) + b.gstOnOfferCharge;
+      } else if (sortField === 'totalInstallmentAmount') {
+        valA = a.totalInstallmentAmount;
+        valB = b.totalInstallmentAmount;
+      }
+
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [installments, sortField, sortDirection]);
+
   const totalInstallments = installments.length;
   const paidCount = installments.filter(inst => inst.paidStatus === 'paid').length;
   const remainingTenure = totalInstallments - paidCount;
@@ -473,18 +520,46 @@ export default function CcEmiDetailsModal({
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-150 text-[10px] font-black text-slate-450 uppercase tracking-wider">
                     <th className="py-3 px-4 text-center">Month</th>
-                    <th className="py-3 px-2">Due Date</th>
-                    <th className="py-3 px-2 text-right">Principal component</th>
-                    <th className="py-3 px-2 text-right">Interest component</th>
-                    <th className="py-3 px-2 text-right">GST on Interest</th>
-                    <th className="py-3 px-2 text-right">Fees Added (Month 1)</th>
-                    <th className="py-3 px-2 text-right">GST on Fees</th>
-                    <th className="py-3 px-2 text-right">Net Billed dues</th>
+                    <th className="py-3 px-2 cursor-pointer select-none hover:bg-slate-100 transition duration-150" onClick={() => handleSort('dueDate')}>
+                      <div className="flex items-center gap-1">
+                        Due Date {sortField === 'dueDate' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 text-right cursor-pointer select-none hover:bg-slate-100 transition duration-150" onClick={() => handleSort('principal')}>
+                      <div className="flex items-center gap-1 justify-end">
+                        Principal component {sortField === 'principal' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 text-right cursor-pointer select-none hover:bg-slate-100 transition duration-150" onClick={() => handleSort('interest')}>
+                      <div className="flex items-center gap-1 justify-end">
+                        Interest component {sortField === 'interest' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 text-right cursor-pointer select-none hover:bg-slate-100 transition duration-150" onClick={() => handleSort('gstOnInterest')}>
+                      <div className="flex items-center gap-1 justify-end">
+                        GST on Interest {sortField === 'gstOnInterest' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 text-right cursor-pointer select-none hover:bg-slate-100 transition duration-150" onClick={() => handleSort('fees')}>
+                      <div className="flex items-center gap-1 justify-end">
+                        Fees Added (Month 1) {sortField === 'fees' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 text-right cursor-pointer select-none hover:bg-slate-100 transition duration-150" onClick={() => handleSort('gstOnFees')}>
+                      <div className="flex items-center gap-1 justify-end">
+                        GST on Fees {sortField === 'gstOnFees' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 text-right cursor-pointer select-none hover:bg-slate-100 transition duration-150" onClick={() => handleSort('totalInstallmentAmount')}>
+                      <div className="flex items-center gap-1 justify-end">
+                        Net Billed dues {sortField === 'totalInstallmentAmount' ? (sortDirection === 'asc' ? '▲' : '▼') : '⇅'}
+                      </div>
+                    </th>
                     <th className="py-3 px-4 text-center">Installment status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {installments.map((inst) => {
+                  {sortedInstallments.map((inst) => {
                     const feesSum = inst.processingFee + (inst.conversionFee || 0) + inst.offerCharge;
                     const gstFeesSum = inst.gstOnProcessingFee + (inst.gstOnConversionFee || 0) + inst.gstOnOfferCharge;
                     const isPaid = inst.paidStatus === 'paid';
