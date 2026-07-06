@@ -44,6 +44,7 @@ interface UserManualPanelProps {
   isOpen: boolean;
   onClose: () => void;
   currentTab: string;
+  isInline?: boolean;
 }
 
 // Structured Guide Page definitions
@@ -64,7 +65,7 @@ interface GuidePage {
   relatedIds?: string[];
 }
 
-export default function UserManualPanel({ isOpen, onClose, currentTab }: UserManualPanelProps) {
+export default function UserManualPanel({ isOpen, onClose, currentTab, isInline = false }: UserManualPanelProps) {
   const { preferences, showToast } = useFinance();
   const [searchQuery, setSearchQuery] = useState('');
   const [activePageId, setActivePageId] = useState('welcome');
@@ -108,7 +109,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
         investments: 'investments_guide',
         forecasting: 'forecasting_guide',
         emergency: 'emergency_guide',
-        annual_review: 'annual_review_guide',
+        analytics: 'analytics_guide',
         settings: 'settings_guide',
       };
       const targetPageId = tabToPageMap[currentTab];
@@ -708,7 +709,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
       title: 'Wealth Forecast Engine',
       icon: TrendingUp,
       description: 'Simulating compounding growth, inflation indices, and future wealth scenarios.',
-      relatedIds: ['investments_guide', 'annual_review_guide'],
+      relatedIds: ['investments_guide', 'analytics_guide'],
       sections: [
         {
           title: 'Predictive Wealth Projection',
@@ -793,36 +794,33 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
       ]
     },
     {
-      id: 'annual_review_guide',
+      id: 'analytics_guide',
       category: 'Feature Guides',
-      title: 'Annual Review',
+      title: 'Capital & Spending Analytics',
       icon: Scale,
-      description: 'Year-on-year analysis, true savings rates, and milestone achievements.',
+      description: 'Comprehensive financial trends, category allocations, MoM & YoY growth, and transaction anomaly auditing.',
       relatedIds: ['forecasting_guide', 'settings_guide'],
       sections: [
         {
-          title: 'The Retrospective Financial Ledger',
+          title: 'The Multi-Dimensional Analytics Dashboard',
           type: 'text',
-          content: 'The Annual Review provides a comprehensive retrospective look at your financial performance over the past calendar year. It helps you assess your habits, track progress, and adjust your parameters for the upcoming year.'
+          content: 'The Capital & Spending Analytics dashboard provides visual metrics of your cash flow, including Monthly Expense Trends, Stacked Category Shifts, Income vs Expense side-by-side, and Savings Velocity analysis.'
         },
         {
-          title: 'Key Metrics Analyzed',
+          title: 'Advanced Spend Audits & Anomalies',
           type: 'list',
           content: [
-            'Total Annual Income: Aggregated inflows from salary, freelance, rental, and investment credits.',
-            'True Savings Rate: Calculated strictly as: (Total Annual Income - Total Annual Expenses) / Total Annual Income. Aim for a savings rate of 30% or higher.',
-            'Compounding Growth: Percentage expansion of your investment portfolio and asset holdings over the year.',
-            'Top Spending Categories: Ranks your biggest capital outlays to identify where your budget experienced leakages.'
+            'Potential Duplicate Billing: Scans for multiple identical amounts processed under the same account on the same day.',
+            'Spending Spikes: Flags individual payments that exceed 2.5x the typical category median amount.',
+            'Category Cumulative Surges: Detects months where cumulative category outlays exceed historical monthly averages by more than 50%.'
           ]
         },
         {
-          title: 'Step-by-Step: Reviewing Your Financial Year',
+          title: 'MoM & YoY Performance Reviews',
           type: 'list',
           content: [
-            '1. Open Annual Review: Click "Annual Review" in the left sidebar navigation. You will see a comprehensive retrospective report of your financial year.',
-            '2. Check Key Performance Indicators: Inspect the metrics cards showing Total Annual Income, Annual Expenses, Net Compounding Gains, and your True Savings Rate percentage.',
-            '3. Analyze Category Ratios: View the horizontal bar charts ranking your top 5 biggest spending categories to identify budget leaks.',
-            '4. Reset for the New Year: In the "Actions" section, you can export your annual report data or click the link to go to System Settings to adjust your budgets based on your year-end spending trends.'
+            'Month-over-Month (MoM): Compares the selected month side-by-side with the preceding calendar month to track short-term changes.',
+            'Year-over-Year (YoY): Compares the selected year with the prior year to evaluate long-term financial trends, complete with a shareable PaisaFlow Capital Audit Report Card.'
           ]
         },
         {
@@ -1115,10 +1113,10 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
   return (
     <aside
       id="paisa-flow-help-center-root"
-      className={`fixed top-0 right-0 h-full bg-[#fafbfc] dark:bg-[#030712] border-l border-slate-200 dark:border-slate-800/80 shadow-2xl transition-all duration-300 z-50 flex flex-col print:bg-white print:border-none print:w-full print:h-auto print:static ${
-        isMaximized 
-          ? 'w-full left-0' 
-          : 'w-full md:w-[480px] lg:w-[650px] xl:w-[850px]'
+      className={`bg-[#fafbfc] dark:bg-[#030712] border-l border-slate-200 dark:border-slate-800/80 shadow-2xl transition-all duration-300 flex flex-col print:bg-white print:border-none print:w-full print:h-auto print:static ${
+        isInline
+          ? 'w-full h-[82vh] relative rounded-3xl overflow-hidden border border-slate-150'
+          : `fixed top-0 right-0 h-full z-50 ${isMaximized ? 'w-full left-0' : 'w-full md:w-[480px] lg:w-[650px] xl:w-[850px]'}`
       }`}
     >
       {/* 1. Header Toolbar */}
@@ -1151,13 +1149,15 @@ export default function UserManualPanel({ isOpen, onClose, currentTab }: UserMan
           </button>
           
           {/* Close Trigger */}
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-450 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer border border-slate-100 dark:border-slate-800/80"
-            title="Dismiss Documentation Console"
-          >
-            <X className="w-4.5 h-4.5" />
-          </button>
+          {!isInline && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-450 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer border border-slate-100 dark:border-slate-800/80"
+              title="Dismiss Documentation Console"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+          )}
         </div>
       </div>
 

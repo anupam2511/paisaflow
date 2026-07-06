@@ -5,59 +5,29 @@
 
 import { useFinance } from '../../context/FinanceContext';
 import { FinancialAccount } from '../../types';
+import { accountsService } from '../../services/accounts.service';
 
 export function useAccounts() {
   const { financeData, setFinanceData } = useFinance();
 
-  const accounts = financeData.accounts || [];
+  const accounts = accountsService.getAccounts(financeData);
 
   const addAccount = (account: Omit<FinancialAccount, 'id'>) => {
-    const newId = `acc_${Date.now()}`;
-    const newAccount: FinancialAccount = {
-      ...account,
-      id: newId,
-    };
-
-    setFinanceData((prev) => ({
-      ...prev,
-      accounts: [...prev.accounts, newAccount],
-    }));
+    const { updatedData, newAccount } = accountsService.addAccount(financeData, account);
+    setFinanceData(updatedData);
     return newAccount;
   };
 
   const updateAccount = (id: string, updatedFields: Partial<FinancialAccount>) => {
-    setFinanceData((prev) => ({
-      ...prev,
-      accounts: prev.accounts.map((a) => (a.id === id ? { ...a, ...updatedFields } : a)),
-    }));
+    setFinanceData((prev) => accountsService.updateAccount(prev, id, updatedFields));
   };
 
   const deleteAccount = (id: string) => {
-    setFinanceData((prev) => ({
-      ...prev,
-      accounts: prev.accounts.filter((a) => a.id !== id),
-      // Clean up references in expenses if needed
-      expenses: prev.expenses.map((e) => (e.accountId === id ? { ...e, accountId: '' } : e)),
-    }));
+    setFinanceData((prev) => accountsService.deleteAccount(prev, id));
   };
 
   const transferFunds = (fromId: string, toId: string, amount: number) => {
-    setFinanceData((prev) => {
-      const updatedAccounts = prev.accounts.map((acc) => {
-        if (acc.id === fromId) {
-          return { ...acc, balance: acc.balance - amount };
-        }
-        if (acc.id === toId) {
-          return { ...acc, balance: acc.balance + amount };
-        }
-        return acc;
-      });
-
-      return {
-        ...prev,
-        accounts: updatedAccounts,
-      };
-    });
+    setFinanceData((prev) => accountsService.transferFunds(prev, fromId, toId, amount));
   };
 
   return {

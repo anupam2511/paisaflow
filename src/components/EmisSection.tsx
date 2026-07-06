@@ -1085,11 +1085,11 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
             </div>
 
             {filteredCcEmis.length === 0 ? (
-              <div className="text-center py-12 bg-slate-50/30 rounded-3xl border border-dashed border-slate-150 p-6">
-                <div className="p-2.5 bg-slate-100 text-slate-300 rounded-xl w-fit mx-auto mb-3">
+              <div className="text-center py-12 bg-slate-50/30 dark:bg-slate-900/10 rounded-3xl border border-dashed border-slate-150 dark:border-slate-800 p-6">
+                <div className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-300 rounded-xl w-fit mx-auto mb-3">
                   <CreditCard className="w-6 h-6" />
                 </div>
-                <p className="text-xs font-bold text-slate-700">No active Credit Card EMIs found.</p>
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No active Credit Card EMIs found.</p>
                 <p className="text-[10px] text-slate-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
                   Apply filter criteria overrides or convert credit card receipts from the transaction conveyor above.
                 </p>

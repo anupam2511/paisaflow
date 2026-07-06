@@ -5,53 +5,32 @@
 
 import { useFinance } from '../../context/FinanceContext';
 import { EmiItem, CreditCardEmiMaster } from '../../types';
+import { emisService } from '../../services/emis.service';
 
 export function useEmis() {
   const { financeData, setFinanceData } = useFinance();
 
-  const emis = financeData.emis || [];
-  const ccEmis = financeData.ccEmis || [];
+  const emis = emisService.getEmis(financeData);
+  const ccEmis = emisService.getCcEmis(financeData);
 
   const addEmi = (emi: Omit<EmiItem, 'id'>) => {
-    const newId = `emi_${Date.now()}`;
-    const newEmi: EmiItem = {
-      ...emi,
-      id: newId,
-    };
-
-    setFinanceData((prev) => ({
-      ...prev,
-      emis: [...(prev.emis || []), newEmi],
-    }));
+    const { updatedData, newEmi } = emisService.addEmi(financeData, emi);
+    setFinanceData(updatedData);
     return newEmi;
   };
 
   const deleteEmi = (id: string) => {
-    setFinanceData((prev) => ({
-      ...prev,
-      emis: (prev.emis || []).filter((e) => e.id !== id),
-    }));
+    setFinanceData((prev) => emisService.deleteEmi(prev, id));
   };
 
   const addCcEmi = (ccEmi: Omit<CreditCardEmiMaster, 'id'>) => {
-    const newId = `cc_emi_${Date.now()}`;
-    const newCcEmi: CreditCardEmiMaster = {
-      ...ccEmi,
-      id: newId,
-    };
-
-    setFinanceData((prev) => ({
-      ...prev,
-      ccEmis: [...(prev.ccEmis || []), newCcEmi],
-    }));
+    const { updatedData, newCcEmi } = emisService.addCcEmi(financeData, ccEmi);
+    setFinanceData(updatedData);
     return newCcEmi;
   };
 
   const deleteCcEmi = (id: string) => {
-    setFinanceData((prev) => ({
-      ...prev,
-      ccEmis: (prev.ccEmis || []).filter((c) => c.id !== id),
-    }));
+    setFinanceData((prev) => emisService.deleteCcEmi(prev, id));
   };
 
   const updateCcEmiInstallment = (
@@ -59,18 +38,7 @@ export function useEmis() {
     installmentNumber: number,
     status: 'paid' | 'unpaid'
   ) => {
-    setFinanceData((prev) => ({
-      ...prev,
-      ccEmis: (prev.ccEmis || []).map((emi) => {
-        if (emi.id !== emiId) return emi;
-        return {
-          ...emi,
-          installments: emi.installments.map((inst) =>
-            inst.installmentNumber === installmentNumber ? { ...inst, paidStatus: status } : inst
-          ),
-        };
-      }),
-    }));
+    setFinanceData((prev) => emisService.updateCcEmiInstallment(prev, emiId, installmentNumber, status));
   };
 
   return {

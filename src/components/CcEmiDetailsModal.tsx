@@ -208,7 +208,7 @@ export default function CcEmiDetailsModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           
           {/* THREE COLUMN DETAILS SUMMARY */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/50 p-5 rounded-2xl border border-slate-150/70">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/50 dark:bg-slate-900/30 p-5 rounded-2xl border border-slate-150/70 dark:border-slate-800/80">
             {/* Purchase & Card Details */}
             <div className="space-y-3 border-b md:border-b-0 md:border-r border-slate-150 pb-4 md:pb-0 md:pr-6">
               <h4 className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Purchase Info & Card</h4>
@@ -368,7 +368,7 @@ export default function CcEmiDetailsModal({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             {/* LIABILITY REDUCTION / PROJECTION CHART (2 COLS) */}
-            <div className="lg:col-span-2 bg-slate-50/40 p-5 rounded-2xl border border-slate-150 flex flex-col justify-between">
+            <div className="lg:col-span-2 bg-slate-50/40 dark:bg-slate-900/30 p-5 rounded-2xl border border-slate-150 dark:border-slate-800/60 flex flex-col justify-between">
               <div>
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-1">
                   <TrendingDown className="w-4 h-4 text-indigo-600" />

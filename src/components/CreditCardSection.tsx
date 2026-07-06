@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useCreditCards } from '../features/creditCards/useCreditCards';
 import { useFinance } from '../context/FinanceContext';
 import { formatCurrency } from '../utils/formatters';
+import { UtilizationBar } from './finance/UtilizationBar';
 import { CcTransaction, CreditCardEmiMaster } from '../types';
 import { Card } from './shared/Card';
 import { DataTable } from './shared/DataTable';
@@ -370,24 +371,13 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                   </div>
 
                   <div className="mt-4">
-                    <div className="flex justify-between text-[10px] font-black uppercase mb-1">
-                      <span className="text-slate-400">Utilization Rate</span>
-                      <span className={overall.overallPercent > 30 ? 'text-rose-500' : 'text-emerald-500'}>
-                        {overall.overallPercent.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-2">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          overall.overallPercent > 40
-                            ? 'bg-rose-500'
-                            : overall.overallPercent > 30
-                            ? 'bg-amber-400'
-                            : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${Math.min(100, overall.overallPercent)}%` }}
-                      ></div>
-                    </div>
+                    <UtilizationBar
+                      value={overall.totalUtilized}
+                      limit={overall.totalLimit}
+                      warningThreshold={30}
+                      dangerThreshold={40}
+                      showLabels={true}
+                    />
                     <div className="flex items-center gap-1.5 mt-2">
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">Status:</span>
                       <div 
@@ -544,15 +534,13 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
 
                           {/* Mini Progress Bar */}
                           <div className="mt-3 relative z-10">
-                            <div className="w-full bg-slate-100 dark:bg-slate-900/50 rounded-full h-1">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${Math.min(100, metrics.utilizationPercent)}%`,
-                                  backgroundColor: card.color || '#4f46e5'
-                                }}
-                              ></div>
-                            </div>
+                            <UtilizationBar
+                              value={metrics.utilized}
+                              limit={metrics.creditLimit}
+                              warningThreshold={30}
+                              dangerThreshold={75}
+                              showLabels={false}
+                            />
                           </div>
                         </div>
                       );

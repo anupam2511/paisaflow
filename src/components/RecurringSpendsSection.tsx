@@ -475,7 +475,7 @@ export default function RecurringSpendsSection({ data, setFinanceData }: Recurri
                   key={cycle}
                   type="button"
                   onClick={() => setBillingCycle(cycle)}
-                  className={`text-[10px] capitalize font-bold py-2 px-1 rounded-md border transition ${billingCycle === cycle ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-slate-50 border-slate-150 text-slate-500 hover:text-slate-800'}`}
+                  className={`text-[10px] capitalize font-bold py-2 px-1 rounded-md border transition cursor-pointer ${billingCycle === cycle ? 'bg-indigo-50 border-indigo-300 dark:bg-indigo-950/45 dark:border-indigo-900/80 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50 dark:bg-slate-900/40 border-slate-150 dark:border-slate-805 text-slate-505 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-200'}`}
                 >
                   {cycle}
                 </button>
@@ -484,7 +484,7 @@ export default function RecurringSpendsSection({ data, setFinanceData }: Recurri
           </div>
 
           {/* Variable Billing Date Checkbox Toggle */}
-          <div className="flex items-start gap-2.5 bg-indigo-50 p-3.5 rounded-2xl border border-indigo-100 mb-1">
+          <div className="flex items-start gap-2.5 bg-indigo-50 dark:bg-indigo-950/20 p-3.5 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 mb-1">
             <input
               type="checkbox"
               id="isVariableDate"

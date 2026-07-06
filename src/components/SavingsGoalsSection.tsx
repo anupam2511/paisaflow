@@ -651,7 +651,7 @@ export default function SavingsGoalsSection({ data, setFinanceData }: SavingsGoa
                 <option value="">-- Choose Savings Target --</option>
                 {savingGoals.map(g => (
                   <option key={g.id} value={g.id}>
-                    {g.name} ({preferences.currencySymbol}{(g.targetAmount - g.currentAmount).toLocaleString('en-IN')} left)
+                    {g.name} ({formatCurrency(g.targetAmount - g.currentAmount, preferences)} left)
                   </option>
                 ))}
               </select>

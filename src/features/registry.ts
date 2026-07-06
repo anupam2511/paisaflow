@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 // Component Imports
-import Dashboard from '../components/Dashboard';
+import Dashboard from './dashboard/Dashboard';
 import NetWorthSection from '../components/NetWorthSection';
 import AccountsSection from '../components/AccountsSection';
 import CreditCardSection from '../components/CreditCardSection';
@@ -38,7 +38,7 @@ import InvestmentsSection from '../components/InvestmentsSection';
 import ForecastingSection from '../components/ForecastingSection';
 import EmergencyFundSection from '../components/EmergencyFundSection';
 import SettingsSection from '../components/SettingsSection';
-import AnnualReviewSection from '../components/AnnualReviewSection';
+import AnalyticsSection from '../components/AnalyticsSection';
 
 export interface FeatureModule {
   id: string;
@@ -61,6 +61,6 @@ export const featureRegistry: FeatureModule[] = [
   { id: 'investments', label: 'Investments Portfolio', icon: Coins, component: InvestmentsSection },
   { id: 'forecasting', label: 'Wealth Forecast', icon: TrendingUp, component: ForecastingSection },
   { id: 'emergency', label: 'Emergency Shield', icon: ShieldAlert, component: EmergencyFundSection },
-  { id: 'annual_review', label: 'Annual Review', icon: Award, component: AnnualReviewSection },
+  { id: 'analytics', label: 'Analytics', icon: Award, component: AnalyticsSection },
   { id: 'settings', label: 'System Settings', icon: Settings, component: SettingsSection },
 ];

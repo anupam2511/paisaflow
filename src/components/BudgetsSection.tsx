@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { FinanceData, CategoryBudget } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { UtilizationBar } from './finance/UtilizationBar';
 import { 
   ShieldCheck, 
   Flame, 
@@ -213,15 +214,17 @@ export default function BudgetsSection({ data, setFinanceData }: BudgetsSectionP
             <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 dark:text-slate-400">Total Monthly budget shield</span>
             <Scale className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <p className="relative z-10 text-xl font-bold mt-2 text-slate-900 dark:text-white">{formatCurrency(totalAllSpends, preferences)} <span className="text-sm font-normal text-slate-500 dark:text-slate-400 font-sans">spent of {formatCurrency(totalAllBudgets, preferences)}</span></p>
-          <div className="relative z-10 w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div 
-              className={`h-1.5 rounded-full ${totalAllSpends > totalAllBudgets ? 'bg-rose-500' : 'bg-emerald-400'}`}
-              style={{ width: `${Math.min(100, totalAllBudgets > 0 ? (totalAllSpends / totalAllBudgets) * 100 : 0)}%` }}
-            ></div>
+          <div className="relative z-10 mt-3">
+            <UtilizationBar
+              value={totalAllSpends}
+              limit={totalAllBudgets}
+              warningThreshold={75}
+              dangerThreshold={85}
+              showLabels={true}
+            />
           </div>
           <p className="relative z-10 text-[10px] text-slate-500 dark:text-slate-400 mt-2.5 font-semibold leading-relaxed font-sans">
-            Overall budget utilization is at {(((totalAllBudgets > 0 ? totalAllSpends / totalAllBudgets : 0) * 100)).toFixed(0)}%. Maintain below 85% for positive savings growth capacity.
+            Maintain overall budget utilization below 85% for positive savings growth capacity.
           </p>
         </div>
       </div>
@@ -279,16 +282,13 @@ export default function BudgetsSection({ data, setFinanceData }: BudgetsSectionP
                   </div>
 
                   <div className="mt-4">
-                    <div className="flex justify-between text-[11px] text-slate-400 mb-1 font-semibold">
-                      <span>Utilization Rate ({item.pct.toFixed(0)}%)</span>
-                      <span>Cap: {formatCurrency(item.limit, preferences)}</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-500 ${barColorClass}`}
-                        style={{ width: `${Math.min(100, item.pct)}%` }}
-                      ></div>
-                    </div>
+                    <UtilizationBar
+                      value={item.totalSpent}
+                      limit={item.limit}
+                      warningThreshold={75}
+                      dangerThreshold={100}
+                      showLabels={true}
+                    />
                   </div>
                 </div>
 

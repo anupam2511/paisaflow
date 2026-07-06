@@ -6,10 +6,10 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
-import { useFinance, ToastMessage } from '../../context/FinanceContext';
+import { useSettings, ToastMessage } from '../../context/SettingsContext';
 
 export function ToastContainer() {
-  const { toasts, removeToast } = useFinance();
+  const { toasts, removeToast } = useSettings();
 
   return (
     <div 

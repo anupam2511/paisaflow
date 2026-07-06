@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { FinanceData, Expense, FinancialAccount } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { CurrencyValue } from './finance/CurrencyValue';
 import { getActiveBillingCycleForDate } from '../utils/billing';
 import { ShieldAlert, Plus, Trash2, Pencil, Search, Filter, SlidersHorizontal, Settings, Info, CheckCircle, ArrowDownRight } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -625,7 +626,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                 <option value="" className="dark:bg-[#0b1329]">-- No Linked Goal --</option>
                 {savingGoals.map(g => (
                   <option key={g.id} value={g.id} className="dark:bg-[#0b1329]">
-                    {g.name} (Current: {preferences.currencySymbol}{g.currentAmount.toLocaleString('en-IN')})
+                    {g.name} (Current: {formatCurrency(g.currentAmount, preferences)})
                   </option>
                 ))}
               </select>
@@ -652,11 +653,11 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                   }`}>
                     {isReservesBreachedAfterSpend ? (
                       <span className="font-semibold block leading-relaxed">
-                        ⚠️ Reserve Alert: This expense of {preferences.currencySymbol}{inputAmt.toLocaleString()} will dip your total bank balance ({preferences.currencySymbol}{postSpendBankCash.toLocaleString()}) below your set Emergency Reserve of {preferences.currencySymbol}{allocatedEmergency.toLocaleString()}!
+                        ⚠️ Reserve Alert: This expense of <CurrencyValue value={inputAmt} /> will dip your total bank balance (<CurrencyValue value={postSpendBankCash} />) below your set Emergency Reserve of <CurrencyValue value={allocatedEmergency} />!
                       </span>
                     ) : (
                       <span className="font-semibold block leading-relaxed">
-                        🛡️ Shield Guard Active: Your set emergency fund of {preferences.currencySymbol}{allocatedEmergency.toLocaleString()} remains completely safe. Remaining free cash cushion: {preferences.currencySymbol}{(postSpendBankCash - allocatedEmergency).toLocaleString()}.
+                        🛡️ Shield Guard Active: Your set emergency fund of <CurrencyValue value={allocatedEmergency} /> remains completely safe. Remaining free cash cushion: <CurrencyValue value={postSpendBankCash - allocatedEmergency} />.
                       </span>
                     )}
                   </div>
@@ -1050,7 +1051,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                   <option value="" className="dark:bg-[#0b1329]">-- No Linked Goal --</option>
                   {savingGoals.map(g => (
                     <option key={g.id} value={g.id} className="dark:bg-[#0b1329]">
-                      {g.name} (Current: {preferences.currencySymbol}{g.currentAmount.toLocaleString('en-IN')})
+                      {g.name} (Current: {formatCurrency(g.currentAmount, preferences)})
                     </option>
                   ))}
                 </select>

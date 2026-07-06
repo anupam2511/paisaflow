@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FinanceData } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { UtilizationBar } from './finance/UtilizationBar';
 import { 
   ShieldAlert, 
   HelpCircle, 
@@ -95,7 +96,7 @@ export default function EmergencyFundSection({ data, setFinanceData }: Emergency
                   className={`text-[10.5px] py-2 px-1.5 rounded-xl border font-bold transition duration-200 cursor-pointer ${
                     coverageMultiplier === m
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-800 text-slate-500 hover:bg-slate-100'
+                      : 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   {m} Months
@@ -230,22 +231,12 @@ export default function EmergencyFundSection({ data, setFinanceData }: Emergency
           <div className="bg-white dark:bg-[#0b1329] border border-slate-150 dark:border-slate-800 p-5 rounded-2xl shadow-xs space-y-3">
             <div className="flex justify-between items-center text-xs">
               <span className="font-bold text-slate-700 dark:text-slate-300">Reserves Shield Progress Meter</span>
-              <span className="font-mono font-black text-indigo-600 dark:text-indigo-400">{progressPercent}% Funded</span>
             </div>
-
-            <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-3 overflow-hidden">
-              <div 
-                className={`h-3 rounded-full transition-all duration-300 ${
-                  progressPercent >= 100 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-indigo-600'
-                }`}
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-
-            <div className="flex justify-between text-[10.5px] text-slate-400 pt-0.5 leading-relaxed font-semibold">
-              <span>0% (Vulnerable)</span>
-              <span>100% Secure ({formatCurrency(targetBuffer, preferences)})</span>
-            </div>
+            <UtilizationBar
+              value={totalInCheckingSavings}
+              limit={targetBuffer}
+              showLabels={true}
+            />
           </div>
 
         </div>

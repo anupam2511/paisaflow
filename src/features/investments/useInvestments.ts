@@ -5,38 +5,25 @@
 
 import { useFinance } from '../../context/FinanceContext';
 import { Investment } from '../../types';
+import { investmentsService } from '../../services/investments.service';
 
 export function useInvestments() {
   const { financeData, setFinanceData } = useFinance();
 
-  const investments = financeData.investments || [];
+  const investments = investmentsService.getInvestments(financeData);
 
   const addInvestment = (investment: Omit<Investment, 'id'>) => {
-    const newId = `inv_${Date.now()}`;
-    const newInvestment: Investment = {
-      ...investment,
-      id: newId,
-    };
-
-    setFinanceData((prev) => ({
-      ...prev,
-      investments: [...(prev.investments || []), newInvestment],
-    }));
+    const { updatedData, newInvestment } = investmentsService.addInvestment(financeData, investment);
+    setFinanceData(updatedData);
     return newInvestment;
   };
 
   const deleteInvestment = (id: string) => {
-    setFinanceData((prev) => ({
-      ...prev,
-      investments: (prev.investments || []).filter((i) => i.id !== id),
-    }));
+    setFinanceData((prev) => investmentsService.deleteInvestment(prev, id));
   };
 
   const updateInvestment = (id: string, updatedFields: Partial<Investment>) => {
-    setFinanceData((prev) => ({
-      ...prev,
-      investments: (prev.investments || []).map((i) => (i.id === id ? { ...i, ...updatedFields } : i)),
-    }));
+    setFinanceData((prev) => investmentsService.updateInvestment(prev, id, updatedFields));
   };
 
   return {
