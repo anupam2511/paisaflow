@@ -41,7 +41,7 @@ export interface Preferences {
   largeExpenseThreshold: number; // default 4000
   investmentCategories?: string[]; // user-defined investment holding categories
   themeMode?: 'light' | 'dark' | 'system'; // default "light"
-  accentColor?: 'blue' | 'emerald' | 'yellow' | 'rose' | 'violet'; // default "blue"
+  accentColor?: 'blue' | 'emerald' | 'yellow' | 'rose' | 'violet' | 'silver' | 'purple' | 'pink' | 'neon_green' | 'sky_blue'; // default "blue"
   emergencyAllocated?: number; // persistent allocated reserve for emergency fund
   netWorthSettings?: {
     categories: NetWorthCategoryConfig[];

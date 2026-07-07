@@ -602,13 +602,13 @@ export default function SavingsGoalsSection({ data, setFinanceData }: SavingsGoa
             </div>
 
             {formErr && (
-              <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-[10px] text-rose-600 font-semibold flex items-center gap-1">
+              <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-[10px] text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400 font-semibold flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> {formErr}
               </div>
             )}
             {formOk && (
-              <div className="p-2.5 bg-teal-50 border border-teal-100 rounded-lg text-[10px] text-teal-700 font-semibold flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5 text-teal-600" /> {formOk}
+              <div className="p-2.5 bg-teal-50 border border-teal-100 rounded-lg text-[10px] text-teal-700 dark:bg-teal-950/20 dark:border-teal-900/30 dark:text-teal-400 font-semibold flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" /> {formOk}
               </div>
             )}
 
@@ -740,13 +740,13 @@ export default function SavingsGoalsSection({ data, setFinanceData }: SavingsGoa
             </div>
 
             {contribErr && (
-              <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-[10px] text-rose-600 font-semibold flex items-center gap-1">
+              <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-lg text-[10px] text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400 font-semibold flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> {contribErr}
               </div>
             )}
             {contribOk && (
-              <div className="p-2.5 bg-teal-50 border border-teal-100 rounded-lg text-[10px] text-teal-700 font-semibold flex items-center gap-1 flex-col items-start leading-tight">
-                <div className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-teal-600" /> Done!</div>
+              <div className="p-2.5 bg-teal-50 border border-teal-100 rounded-lg text-[10px] text-teal-700 dark:bg-teal-950/20 dark:border-teal-900/30 dark:text-teal-400 font-semibold flex items-center gap-1 flex-col items-start leading-tight">
+                <div className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" /> Done!</div>
                 <span>{contribOk}</span>
               </div>
             )}
@@ -930,13 +930,13 @@ export default function SavingsGoalsSection({ data, setFinanceData }: SavingsGoa
       {/* CUSTOM CONFIRMATION DELETION MODAL */}
       {goalToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-slate-100/80 animate-scale-up">
-            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-4 border border-rose-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-slate-100/80 dark:border-slate-800/50 animate-scale-up">
+            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mb-4 border border-rose-100 dark:border-rose-900/30">
               <Trash2 className="w-6 h-6 animate-pulse" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 font-sans tracking-tight">Delete Savings Milestone?</h3>
-            <p className="text-xs text-slate-500 mt-2.5 leading-relaxed font-medium">
-              Are you sure you want to delete the savings goal <span className="font-bold text-slate-1000">"{goalToDelete.name}"</span>? 
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-sans tracking-tight">Delete Savings Milestone?</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2.5 leading-relaxed font-medium">
+              Are you sure you want to delete the savings goal <span className="font-bold text-slate-1000 dark:text-slate-200">"{goalToDelete.name}"</span>? 
               This removes the target from active monthly charts and progress tracking. Any simulated reserves previously allocated will be released.
             </p>
             <div className="flex gap-3 mt-6">

@@ -81,23 +81,23 @@ export default function FinancialOverview({ data, setCurrentTab }: FinancialOver
           animate={{ opacity: 1, y: 0 }}
           className={`p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-sm font-sans transition-all duration-200 ${
             isReserveBreached 
-              ? 'bg-rose-50 border-rose-200 text-rose-900' 
-              : 'bg-indigo-50/80 border-indigo-150 text-indigo-950'
+              ? 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-300' 
+              : 'bg-indigo-50/80 border-indigo-150 text-indigo-950 dark:bg-indigo-950/20 dark:border-indigo-900/30 dark:text-indigo-300'
           }`}
         >
           <div className="flex items-center gap-2.5">
             <div className={`p-2 rounded-xl shrink-0 ${
               isReserveBreached 
-                ? 'bg-rose-100 text-rose-700' 
-                : 'bg-indigo-100 text-indigo-700'
+                ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' 
+                : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
             }`}>
               <ShieldAlert className="w-5 h-5 animate-pulse" />
             </div>
             <div>
               <span className={`text-[9px] uppercase font-extrabold px-2 py-0.5 rounded ${
                 isReserveBreached 
-                  ? 'bg-rose-100 text-rose-800' 
-                  : 'bg-indigo-100 text-indigo-850'
+                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300' 
+                  : 'bg-indigo-100 text-indigo-850 dark:bg-indigo-900/40 dark:text-indigo-300'
               }`}>
                 {isReserveBreached ? '⚠️ Core Shield Breached' : '🛡️ Emergency Fund Shield Secured'}
               </span>
@@ -113,8 +113,8 @@ export default function FinancialOverview({ data, setCurrentTab }: FinancialOver
             onClick={() => setCurrentTab('emergency')}
             className={`px-3 py-1.5 rounded-lg font-bold text-[11px] border cursor-pointer hover:shadow-xs transition shrink-0 ${
               isReserveBreached 
-                ? 'bg-rose-600 border-rose-600 text-white hover:bg-rose-700' 
-                : 'bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-50'
+                ? 'bg-rose-600 border-rose-600 text-white hover:bg-rose-700 dark:bg-rose-700 dark:border-rose-700 dark:hover:bg-rose-800' 
+                : 'bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-900'
             }`}
           >
             Adjust Shield Reserves &rarr;

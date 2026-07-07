@@ -111,11 +111,22 @@ export default function BudgetsSection({ data, setFinanceData }: BudgetsSectionP
     setCategoryToDelete(null);
   };
 
+  // Find the active month prefix (e.g. "2026-07"). Falls back to latest expense if current calendar month has no data.
+  const today = new Date();
+  const currentMonthPrefix = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+  const hasCurrentMonthData = expenses.some(e => e.date.startsWith(currentMonthPrefix));
+  const activeMonthPrefix = hasCurrentMonthData 
+    ? currentMonthPrefix 
+    : (() => {
+        const dates = expenses.map(e => e.date).filter(Boolean).sort();
+        return dates.length > 0 ? dates[dates.length - 1].slice(0, 7) : currentMonthPrefix;
+      })();
+
   // Detailed spend analysis per category
   const budgetAverages = budgets.map(b => {
-    // Collect spent
+    // Collect spent - only include manual spends from the active month
     const manualSpendsSum = expenses
-      .filter(e => e.category.toLowerCase() === b.category.toLowerCase())
+      .filter(e => e.category.toLowerCase() === b.category.toLowerCase() && e.date.startsWith(activeMonthPrefix))
       .reduce((sum, e) => sum + e.amount, 0);
 
     const subscriptionSpendsSum = recurringSpends

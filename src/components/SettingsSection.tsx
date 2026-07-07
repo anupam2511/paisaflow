@@ -52,7 +52,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
   const [threshold, setThreshold] = useState(preferences.largeExpenseThreshold.toString());
   const [newCategory, setNewCategory] = useState('');
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(preferences.themeMode || 'light');
-  const [accentColor, setAccentColor] = useState<'blue' | 'emerald' | 'yellow' | 'rose' | 'violet'>(preferences.accentColor || 'blue');
+  const [accentColor, setAccentColor] = useState<'blue' | 'emerald' | 'yellow' | 'rose' | 'violet' | 'silver' | 'purple' | 'pink' | 'neon_green' | 'sky_blue'>(preferences.accentColor || 'blue');
 
   // GitHub Live continuous sync engine state
   const [gitOwner, setGitOwner] = useState(() => localStorage.getItem('pm_git_owner') || 'anupam2511');
@@ -783,6 +783,11 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                       { name: 'emerald', label: 'Green', color: 'bg-emerald-500' },
                       { name: 'rose', label: 'Rose', color: 'bg-rose-500' },
                       { name: 'violet', label: 'Violet', color: 'bg-violet-500' },
+                      { name: 'silver', label: 'Silver', color: 'bg-[#D9DADB]' },
+                      { name: 'purple', label: 'Purple', color: 'bg-[#B100CD]' },
+                      { name: 'pink', label: 'Pink', color: 'bg-[#FF6EC7]' },
+                      { name: 'neon_green', label: 'Neon Green', color: 'bg-[#2CFF05]' },
+                      { name: 'sky_blue', label: 'Sky Blue', color: 'bg-[#8FD9FB]' },
                     ].map(opt => (
                       <button
                         key={opt.name}

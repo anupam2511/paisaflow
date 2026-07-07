@@ -159,6 +159,9 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
   const eligibleExpenses = data.expenses.filter(exp => {
     const isCc = accounts.find(a => a.id === exp.accountId)?.type === 'credit_card';
     const isLarge = exp.amount >= 4000;
+    // Ensure the expense itself is not an EMI payment or installment
+    const isEmiPayment = (exp.description || '').toLowerCase().includes('emi payment') || 
+                         (exp.category || '').toLowerCase().includes('emi');
     // Ensure it hasn't already been mapped as an active CC EMI
     const isAlreadyConverted = ccEmis.some(e => 
       e.convertedFromExpenseId === exp.id || (
@@ -168,7 +171,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
         (e.expenseName.toLowerCase().includes(exp.description.toLowerCase()) || exp.description.toLowerCase().includes(e.expenseName.toLowerCase()))
       )
     );
-    return isCc && isLarge && !isAlreadyConverted;
+    return isCc && isLarge && !isEmiPayment && !isAlreadyConverted;
   });
 
   // --- ACTIONS FOR STANDARD EMIS ---

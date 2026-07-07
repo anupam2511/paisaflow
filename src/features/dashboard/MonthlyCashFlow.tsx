@@ -13,7 +13,6 @@ import {
   HelpCircle, 
   ShieldAlert, 
   CheckCircle, 
-  TrendingUp,
   Info
 } from 'lucide-react';
 import { 
@@ -47,14 +46,26 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [breakdownType, setBreakdownType] = useState<'category' | 'account'>('category');
 
-  // Trend graph states
-  const [trendDimension, setTrendDimension] = useState<'category' | 'credit_card' | 'bank'>('category');
-  const [selectedSubFilter, setSelectedSubFilter] = useState<string>('All');
-  const [trendTimeFilter, setTrendTimeFilter] = useState<string>('All time');
+  // Find the active month prefix (e.g. "2026-07"). Falls back to latest expense if current calendar month has no data.
+  const today = new Date();
+  const currentMonthPrefix = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+  const hasCurrentMonthData = expenses.some(e => e.date.startsWith(currentMonthPrefix));
+  const activeMonthPrefix = hasCurrentMonthData 
+    ? currentMonthPrefix 
+    : (() => {
+        const dates = expenses.map(e => e.date).filter(Boolean).sort();
+        return dates.length > 0 ? dates[dates.length - 1].slice(0, 7) : currentMonthPrefix;
+      })();
 
-  // Basic monthly calculations
-  const totalIncome = incomes.reduce((sum, inc) => sum + inc.amount, 0);
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  // Basic monthly calculations filtered by active month
+  const totalIncome = incomes
+    .filter(inc => !inc.date || inc.date.startsWith(activeMonthPrefix))
+    .reduce((sum, inc) => sum + inc.amount, 0);
+
+  const totalExpenses = expenses
+    .filter(exp => exp.date.startsWith(activeMonthPrefix))
+    .reduce((sum, exp) => sum + exp.amount, 0);
+
   const totalRecurring = recurringSpends
     .filter(rec => rec.isActive)
     .reduce((sum, rec) => sum + rec.amount, 0);
@@ -73,10 +84,10 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
   const totalOutflow = totalExpenses + totalRecurring + totalActiveEmiMonthlyBurden;
   const netMonthlyFlow = totalIncome - totalOutflow;
 
-  // Spends by Category
+  // Spends by Category filtered to active month
   const categorySpends = budgets.map(b => {
     const amount = expenses
-      .filter(e => e.category.toLowerCase() === b.category.toLowerCase())
+      .filter(e => e.category.toLowerCase() === b.category.toLowerCase() && e.date.startsWith(activeMonthPrefix))
       .reduce((sum, exp) => sum + exp.amount, 0) +
       recurringSpends
       .filter(r => r.isActive && r.category.toLowerCase() === b.category.toLowerCase())
@@ -91,10 +102,10 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
 
   const totalSpendForChart = categorySpends.reduce((sum, c) => sum + c.amount, 0);
 
-  // Spends by Account / Card
+  // Spends by Account / Card filtered to active month
   const accountSpends = accounts.map(acc => {
     const amount = expenses
-      .filter(e => e.accountId === acc.id)
+      .filter(e => e.accountId === acc.id && e.date.startsWith(activeMonthPrefix))
       .reduce((sum, exp) => sum + exp.amount, 0) +
       recurringSpends
       .filter(r => r.isActive && r.accountId === acc.id)
@@ -122,60 +133,60 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
       };
     });
 
-  // Large Expenses calculations
+  // Large Expenses calculations filtered to active month
   const threshold = preferences.largeExpenseThreshold || 20000;
-  const largeExpenses = expenses.filter(e => e.amount >= threshold);
+  const largeExpenses = expenses.filter(e => e.amount >= threshold && e.date.startsWith(activeMonthPrefix));
   const totalLargeExpenses = largeExpenses.reduce((sum, e) => sum + e.amount, 0);
   const totalStandardExpenses = totalExpenses - totalLargeExpenses;
 
   return (
     <div className="space-y-6">
       {/* COMPACT ACTIVE MONTHLY GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         {/* INCOME */}
-        <div className="bg-white p-4 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
+        <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-100/90 dark:border-slate-800/80 flex flex-col justify-between shadow-2xs">
           <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider">Inflow</span>
           <div className="mt-2">
-            <span className="text-[10px] text-slate-400 block font-medium uppercase">Expected Inflow</span>
-            <p className="text-base font-black text-slate-800 font-mono">{formatCurrency(totalIncome, preferences)}</p>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-medium uppercase">Expected Inflow</span>
+            <p className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 font-mono">{formatCurrency(totalIncome, preferences)}</p>
           </div>
         </div>
 
         {/* EXPENSES */}
-        <div className="bg-white p-4 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
+        <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-100/90 dark:border-slate-800/80 flex flex-col justify-between shadow-2xs">
           <span className="text-[9px] font-extrabold text-rose-600 uppercase tracking-wider">Outflow</span>
           <div className="mt-2">
-            <span className="text-[10px] text-slate-400 block font-medium uppercase">Variable Spend</span>
-            <p className="text-base font-black text-slate-800 font-mono">{formatCurrency(totalExpenses, preferences)}</p>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-medium uppercase">Variable Spend</span>
+            <p className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 font-mono">{formatCurrency(totalExpenses, preferences)}</p>
           </div>
         </div>
 
         {/* EMIs */}
-        <div className="bg-white p-4 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
+        <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-100/90 dark:border-slate-800/80 flex flex-col justify-between shadow-2xs">
           <span className="text-[9px] font-extrabold text-indigo-600 uppercase tracking-wider">Debt Load</span>
           <div className="mt-2">
-            <span className="text-[10px] text-slate-400 block font-medium uppercase">EMI Obligations</span>
-            <p className="text-base font-black text-slate-800 font-mono">{formatCurrency(totalActiveEmiMonthlyBurden, preferences)}</p>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-medium uppercase">EMI Obligations</span>
+            <p className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 font-mono">{formatCurrency(totalActiveEmiMonthlyBurden, preferences)}</p>
           </div>
         </div>
 
         {/* SUBSCRIPTIONS */}
-        <div className="bg-white p-4 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
+        <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-100/90 dark:border-slate-800/80 flex flex-col justify-between shadow-2xs">
           <span className="text-[9px] font-extrabold text-violet-600 uppercase tracking-wider">Fixed Overhead</span>
           <div className="mt-2">
-            <span className="text-[10px] text-slate-400 block font-medium uppercase">Subscriptions</span>
-            <p className="text-base font-black text-slate-800 font-mono">{formatCurrency(totalRecurring, preferences)}</p>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-medium uppercase">Subscriptions</span>
+            <p className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 font-mono">{formatCurrency(totalRecurring, preferences)}</p>
           </div>
         </div>
 
         {/* BUDGET & SURPLUS */}
-        <div className="bg-white p-4 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
+        <div className="bg-white dark:bg-slate-950 p-4 rounded-xl border border-slate-100/90 dark:border-slate-800/80 flex flex-col justify-between shadow-2xs col-span-2 md:col-span-1 xl:col-span-1">
           <span className={`text-[9px] font-extrabold uppercase tracking-wider ${netMonthlyFlow >= 0 ? 'text-teal-600' : 'text-rose-600'}`}>
             {netMonthlyFlow >= 0 ? 'Surplus' : 'Deficit'}
           </span>
           <div className="mt-2">
-            <span className="text-[10px] text-slate-400 block font-medium uppercase">Net Cash Flow</span>
-            <p className={`text-base font-black font-mono ${netMonthlyFlow >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-medium uppercase">Net Cash Flow</span>
+            <p className={`text-sm sm:text-base font-black font-mono ${netMonthlyFlow >= 0 ? 'text-slate-800 dark:text-slate-100' : 'text-rose-600'}`}>
               {formatCurrency(netMonthlyFlow, preferences)}
             </p>
           </div>
@@ -425,237 +436,6 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
               Full Ledger &rarr;
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* DYNAMIC EXPENDITURE TREND CURVE VISUALIZER */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-50">
-          <div>
-            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-indigo-500 animate-pulse" />
-              Dynamic Expenditure Trend Curve
-            </h2>
-            <p className="text-[11px] text-slate-400">
-              Segment parameters to plot direct chronological capital outflow trends.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex bg-slate-50 p-0.5 rounded-lg border border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setTrendDimension('category');
-                  setSelectedSubFilter('All');
-                }}
-                className={`text-[9px] font-bold px-2 py-1 rounded transition duration-200 ${trendDimension === 'category' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}
-              >
-                Category
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setTrendDimension('credit_card');
-                  setSelectedSubFilter('All');
-                }}
-                className={`text-[9px] font-bold px-2 py-1 rounded transition duration-200 ${trendDimension === 'credit_card' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}
-              >
-                Card
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setTrendDimension('bank');
-                  setSelectedSubFilter('All');
-                }}
-                className={`text-[9px] font-bold px-2 py-1 rounded transition duration-200 ${trendDimension === 'bank' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-400 hover:text-slate-700'}`}
-              >
-                Bank
-              </button>
-            </div>
-
-            <select
-              value={selectedSubFilter}
-              onChange={(e) => setSelectedSubFilter(e.target.value)}
-              className="text-[10px] font-bold border border-slate-200 rounded p-1 bg-slate-50 text-slate-600 focus:outline-none"
-            >
-              {trendDimension === 'category' && (
-                <>
-                  <option value="All">All Categories</option>
-                  {budgets.map(b => (
-                    <option key={b.category} value={b.category}>{b.category}</option>
-                  ))}
-                </>
-              )}
-              {trendDimension === 'credit_card' && (
-                <>
-                  <option value="All">All Cards</option>
-                  {accounts.filter(a => a.type === 'credit_card').map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </>
-              )}
-              {trendDimension === 'bank' && (
-                <>
-                  <option value="All">All Bank Accounts</option>
-                  {accounts.filter(a => a.type === 'bank').map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </>
-              )}
-            </select>
-
-            <select
-              value={trendTimeFilter}
-              onChange={(e) => setTrendTimeFilter(e.target.value)}
-              className="text-[10px] font-bold border border-slate-200 rounded p-1 bg-slate-50 text-slate-600 focus:outline-none"
-            >
-              <option value="All time">All time</option>
-              <option value="Last 1 year">Last 1 year</option>
-              <option value="Last 6 months">Last 6 months</option>
-              <option value="Last 3 months">Last 3 months</option>
-              <option value="Last 30 days">Last 30 days</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-4 w-full h-[220px]">
-          {(() => {
-            const filteredExpensesByTime = (() => {
-              if (trendTimeFilter === 'All time') return expenses;
-              const now = new Date();
-              now.setHours(0, 0, 0, 0);
-              const threshold = new Date(now);
-              if (trendTimeFilter === 'Last 30 days') {
-                threshold.setDate(now.getDate() - 30);
-              } else if (trendTimeFilter === 'Last 3 months') {
-                threshold.setMonth(now.getMonth() - 3);
-              } else if (trendTimeFilter === 'Last 6 months') {
-                threshold.setMonth(now.getMonth() - 6);
-              } else if (trendTimeFilter === 'Last 1 year') {
-                threshold.setFullYear(now.getFullYear() - 1);
-              }
-              return expenses.filter(e => {
-                const expDate = new Date(e.date);
-                if (isNaN(expDate.getTime())) return false;
-                return expDate >= threshold;
-              });
-            })();
-
-            const uniqueDates = Array.from(new Set(filteredExpensesByTime.map(e => e.date))).sort();
-            const baseDates = uniqueDates.length > 0 ? uniqueDates : [
-              '2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', 
-              '2026-06-06', '2026-06-07', '2026-06-08', '2026-06-09', '2026-06-10'
-            ];
-
-            const trendChartData = baseDates.map(dateStr => {
-              const matchingExpenses = filteredExpensesByTime.filter(e => {
-                if (e.date !== dateStr) return false;
-
-                if (trendDimension === 'category') {
-                  if (selectedSubFilter === 'All') return true;
-                  return e.category.toLowerCase() === selectedSubFilter.toLowerCase();
-                } else if (trendDimension === 'credit_card') {
-                  const card = accounts.find(a => a.id === e.accountId);
-                  if (!card || card.type !== 'credit_card') return false;
-                  if (selectedSubFilter === 'All') return true;
-                  return card.id === selectedSubFilter;
-                } else {
-                  const bank = accounts.find(a => a.id === e.accountId);
-                  if (!bank || bank.type !== 'bank') return false;
-                  if (selectedSubFilter === 'All') return true;
-                  return bank.id === selectedSubFilter;
-                }
-              });
-
-              const sum = matchingExpenses.reduce((total, exp) => total + exp.amount, 0);
-
-              let dateLabel = dateStr;
-              try {
-                const parts = dateStr.split('-');
-                if (parts.length === 3) {
-                  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                  const monthIdx = parseInt(parts[1], 10) - 1;
-                  const dayNum = parseInt(parts[2], 10);
-                  if (monthIdx >= 0 && monthIdx < 12) {
-                    dateLabel = `${monthNames[monthIdx]} ${dayNum}`;
-                  }
-                }
-              } catch (err) {}
-
-              return {
-                rawDate: dateStr,
-                label: dateLabel,
-                amount: sum,
-              };
-            });
-
-            const allZero = trendChartData.every(item => item.amount === 0);
-
-            if (allZero && expenses.length === 0) {
-              return (
-                <div className="flex flex-col items-center justify-center h-full border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/20 dark:bg-slate-900/10 p-4">
-                  <TrendingUp className="w-6 h-6 text-slate-300 animate-pulse" />
-                  <p className="text-[10px] text-slate-400 mt-1 font-semibold">No transactions detected under selection.</p>
-                </div>
-              );
-            }
-
-            return (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendChartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="label" 
-                    stroke="#94a3b8" 
-                    fontSize={9} 
-                    tickLine={false} 
-                    axisLine={false} 
-                    dy={5}
-                    className="font-semibold font-sans"
-                  />
-                  <YAxis 
-                    stroke="#94a3b8" 
-                    fontSize={9} 
-                    tickLine={false} 
-                    axisLine={false} 
-                    width={45}
-                    tickFormatter={(v) => formatCompactCurrency(v, preferences)}
-                  />
-                  <Tooltip 
-                    content={({ active, payload, label }: any) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-slate-900 border border-slate-800 text-white p-2.5 rounded-lg shadow-md text-xs font-sans">
-                            <p className="font-bold text-slate-400">{label}</p>
-                            <p className="text-xs font-black text-indigo-300 mt-0.5">
-                              Day spend: {formatCurrency(payload[0].value, preferences)}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="amount" 
-                    stroke="#6366f1" 
-                    strokeWidth={2} 
-                    fillOpacity={1} 
-                    fill="url(#trendGradient)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            );
-          })()}
         </div>
       </div>
     </div>

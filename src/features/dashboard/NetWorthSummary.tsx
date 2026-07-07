@@ -12,9 +12,10 @@ import { getFriendlyTypeLabel, standardInvestmentCategories } from './dashboard.
 interface NetWorthSummaryProps {
   data: FinanceData;
   setCurrentTab: (tab: string) => void;
+  className?: string;
 }
 
-export default function NetWorthSummary({ data, setCurrentTab }: NetWorthSummaryProps) {
+export default function NetWorthSummary({ data, setCurrentTab, className = '' }: NetWorthSummaryProps) {
   const { investments = [], preferences } = data;
 
   const totalInvestmentsValuation = investments.reduce((sum, inv) => sum + inv.totalInvested, 0);
@@ -31,41 +32,41 @@ export default function NetWorthSummary({ data, setCurrentTab }: NetWorthSummary
   }).filter(item => item.amount > 0);
 
   return (
-    <div id="dashboard-investments-row" className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-3 border-b border-slate-50 mb-4 gap-3">
+    <div id="dashboard-investments-row" className={`bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-100/85 dark:border-slate-800/80 shadow-2xs ${className}`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-3 border-b border-slate-100 dark:border-slate-850 mb-4 gap-3 shrink-0">
         <div>
-          <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-            <Coins className="w-4 h-4 text-indigo-500" />
-            Wealth Asset Holdings & Weights
+          <h2 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wider">
+            <Coins className="w-3.5 h-3.5 text-amber-500" />
+            Wealth Holdings
           </h2>
-          <p className="text-[11px] text-slate-400 mt-0.5 font-sans">Weight allocations and total distributed value inside holding portfolios.</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-sans font-medium">Distributed weights inside holding portfolios</p>
         </div>
         <button 
           onClick={() => setCurrentTab('investments')}
-          className="text-[10px] text-indigo-600 hover:underline font-extrabold"
+          className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline font-black uppercase tracking-wider cursor-pointer"
         >
-          Adjust Holdings &rarr;
+          View Assets &rarr;
         </button>
       </div>
 
       {investments.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 space-y-2">
-            <h3 className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Asset Investment Index</h3>
-            <div className="max-h-[160px] overflow-y-auto pr-1 space-y-2">
-              {investments.slice(0, 4).map(inv => {
+        <div className="space-y-4 flex-1 flex flex-col justify-between">
+          <div className="space-y-2 flex-1 flex flex-col">
+            <h3 className="text-[9px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest shrink-0">Asset Investment Index</h3>
+            <div className="max-h-[160px] overflow-y-auto pr-1 space-y-2 flex-1">
+              {investments.slice(0, 3).map(inv => {
                 const pct = totalInvestmentsValuation > 0 ? (inv.totalInvested / totalInvestmentsValuation) * 100 : 0;
                 return (
-                  <div key={inv.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100/70 hover:border-slate-200 transition-colors flex items-center justify-between text-xs font-sans">
+                  <div key={inv.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100/70 dark:border-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700 transition-colors flex items-center justify-between text-xs font-sans">
                     <div>
-                      <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 block w-fit mb-1">
+                      <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 block w-fit mb-1">
                         {getFriendlyTypeLabel(inv.type)}
                       </span>
-                      <h4 className="font-extrabold text-slate-700">{inv.name}</h4>
+                      <h4 className="font-extrabold text-slate-700 dark:text-slate-350">{inv.name}</h4>
                     </div>
                     <div className="text-right">
-                      <span className="font-black text-slate-800 block font-mono">{formatCurrency(inv.totalInvested, preferences)}</span>
-                      <span className="text-[9px] text-slate-400 block font-bold">{pct.toFixed(1)}% Weight</span>
+                      <span className="font-black text-slate-800 dark:text-slate-100 block font-mono">{formatCurrency(inv.totalInvested, preferences)}</span>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500 block font-bold">{pct.toFixed(0)}% Weight</span>
                     </div>
                   </div>
                 );
@@ -73,21 +74,21 @@ export default function NetWorthSummary({ data, setCurrentTab }: NetWorthSummary
             </div>
           </div>
 
-          <div className="lg:col-span-5 space-y-2.5">
-            <h3 className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Asset Class Allocation</h3>
+          <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-850 shrink-0">
+            <h3 className="text-[9px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest">Allocation</h3>
             <div className="space-y-2">
               {groupedInvestments.slice(0, 3).map(group => (
                 <div key={group.category} className="space-y-1">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-bold text-slate-600">{group.category}</span>
-                    <div className="flex items-center gap-1.5 font-mono font-bold text-slate-800">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="font-bold text-slate-600 dark:text-slate-400">{group.category}</span>
+                    <div className="flex items-center gap-1.5 font-mono font-bold text-slate-800 dark:text-slate-250">
                       <span>{formatCurrency(group.amount, preferences)}</span>
-                      <span className="text-slate-400 text-[9px] font-semibold">({group.pct.toFixed(0)}%)</span>
+                      <span className="text-slate-400 dark:text-slate-500 text-[8px] font-semibold">({group.pct.toFixed(0)}%)</span>
                     </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
                     <div 
-                      className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" 
+                      className="bg-amber-500 h-1 rounded-full transition-all duration-500" 
                       style={{ width: `${group.pct}%` }}
                     ></div>
                   </div>

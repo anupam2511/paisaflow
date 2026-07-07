@@ -241,7 +241,8 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
             'Outstanding Credits: Aggregated debt currently owed across all credit card liabilities.',
             'Net Worth Summary: Calculated live as [Total Bank Reserves] - [Total Credit Card Debt]. A positive figure is highlighted in emerald green, indicating capital solvency.',
             'Spend Distribution: Visual interactive charts showcasing real-time category ratios in a 30-day window.',
-            'System Alerts: Real-time warnings highlighting overspent budget caps, credit utilization crossing 30%, or upcoming subscriptions due within 48 hours.'
+            'Priority Intelligence Alerts: Real-time warnings highlighting overspent budget caps, credit utilization crossing 30%, or upcoming subscriptions due within 48 hours. This card features a collapsible "System Guard" accordion to minimize clutter.',
+            'Chronological Capital Outflow Trend: An expansive, full-width trend graph displaying spend curve projections, aligning beautifully below the aligned Portfolio Allocation and Large Expense trackers.'
           ]
         },
         {
@@ -254,9 +255,11 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
           type: 'list',
           content: [
             '1. View Current Net Worth: Read the top row of cards. The "Net Worth" card shows your true net position. Green text means positive net assets, and red text warns of negative net position.',
-            '2. Change Graph Filters: Scroll to "Spend Distribution". In the top-right corner of the pie chart panel, click the "Category", "Credit Card", or "Bank" tab. Clicking "Credit Card" will instantly redraw the chart and list to show your spend ratio across all cards!',
-            '3. Move Cash to Goals: Locate the "Quick Allocate to Savings" widget. Click the "Source Account" dropdown and select "HDFC Savings". Click the "Target Milestone" dropdown and select "Emergency Fund". Type "5000" in the "Amount" box and click "Process Allocation". This instantly moves money on the dashboard and logs a ledger transaction!',
-            '4. Review Actionable Alerts: Look at the "Actionable Notifications" card. Check if any card has crossed the 30% CUR, if a budget cap has overspent, or if a subscription is due. Click on the card to go directly to that tab and take action.'
+            '2. Minimize Intelligence Alerts: Tap the header of "Priority Intelligence Alerts" to collapse or expand the alerts deck using the smooth accordion transition.',
+            '3. Change Graph Filters: Scroll to "Spend Distribution". In the top-right corner of the pie chart panel, click the "Category", "Credit Card", or "Bank" tab. Clicking "Credit Card" will instantly redraw the chart and list to show your spend ratio across all cards!',
+            '4. Move Cash to Goals: Locate the "Quick Allocate to Savings" widget. Click the "Source Account" dropdown and select "HDFC Savings". Click the "Target Milestone" dropdown and select "Emergency Fund". Type "5000" in the "Amount" box and click "Process Allocation". This instantly moves money on the dashboard and logs a ledger transaction!',
+            '5. Analyze Capital Outflow Trends: Scroll to the bottom of the dashboard to examine the full-screen direct trend metrics on the "Chronological Capital Outflow Trend" curve, complete with customizable monthly filter bounds.',
+            '6. Review Actionable Alerts: Look at the "Actionable Notifications" card. Check if any card has crossed the 30% CUR, if a budget cap has overspent, or if a subscription is due. Click on the card to go directly to that tab and take action.'
           ]
         }
       ]
@@ -440,7 +443,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
         {
           title: 'Spend Bounds & Discipline Envelopes',
           type: 'text',
-          content: 'Budgets define your spending boundaries. PaisaFlow employs a classic category-envelope method, letting you cap maximum monthly outlays across critical channels like Groceries, Dining Out, Entertainment, Utilities, Transport, and Healthcare.'
+          content: 'Budgets define your spending boundaries. PaisaFlow employs a classic category-envelope method, letting you cap maximum monthly outlays across critical channels like Groceries, Dining Out, Entertainment, Utilities, Transport, and Healthcare. Importantly, all budget calculations, progress meters, category-specific spend checks, and checkmark indicators are strictly scoped to the active calendar month rather than overall historic accumulations. This ensures that your monthly envelopes represent exact current-period speedometers.'
         },
         {
           title: 'Alert Thresholds',
@@ -456,9 +459,10 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
           type: 'list',
           content: [
             '1. View Active Envelopes: Click "Budget Caps" in the sidebar. You will see a grid of all budget categories, showing current monthly spending progress.',
-            '2. Edit an Individual Category Cap: Locate the category you want to adjust (e.g. "Dining Out"). Click the grey "Edit" pencil icon in the top-right corner of that category card. The card will switch to an editing input field.',
-            '3. Enter Budget Amount: Type your custom monthly spending limit (e.g. "8000") directly in the input box. Click the checkmark icon or click "Save Cap" to commit the changes. The progress bar will re-render instantly to show your new limit!',
-            '4. Test Your Budget Tracking: Click "Expense Ledger" in the sidebar. Click "Add Transaction". Log a "Dine Out at Taj" transaction for ₹4,500 under the "Dining Out" category. Go back to Budget Caps. You will see the Dining Out progress bar jump forward, changing colors dynamically based on how close you are to the limit!'
+            '2. Verify Monthly Isolation: Note that the progress meters and checks only register transactions dated within the current month, preserving strict isolation for monthly budgeting cycles.',
+            '3. Edit an Individual Category Cap: Locate the category you want to adjust (e.g. "Dining Out"). Click the grey "Edit" pencil icon in the top-right corner of that category card. The card will switch to an editing input field.',
+            '4. Enter Budget Amount: Type your custom monthly spending limit (e.g. "8000") directly in the input box. Click the checkmark icon or click "Save Cap" to commit the changes. The progress bar will re-render instantly to show your new limit!',
+            '5. Test Your Budget Tracking: Click "Expense Ledger" in the sidebar. Click "Add Transaction". Log a "Dine Out at Taj" transaction for ₹4,500 under the "Dining Out" category. Go back to Budget Caps. You will see the Dining Out progress bar jump forward, changing colors dynamically based on how close you are to the limit!'
           ]
         },
         {
@@ -850,7 +854,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
           content: [
             'Global Currency: Switch symbols (₹, $, €, £) instantly. Balances and histories adapt immediately.',
             'High-Spend Threshold: Set the trigger value (default ₹5,000) that flags large transactions in your ledger for easy auditing.',
-            'Theme Accents: Change primary visual colors (Sapphire, Emerald, Gold, Ruby, Violet) and switch light/dark mode.',
+            'Theme Accents: Change primary visual colors (Sapphire, Emerald, Gold, Ruby, Violet, or new premium Silver, Purple, Pink, Neon Green, Sky Blue theme modes) and switch light/dark mode.',
             'Backup & Restore: Export your complete database schema into a portable JSON file, or restore existing archives with a single click.'
           ]
         },
@@ -861,7 +865,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
             '1. Open Settings Screen: Click "Settings" in the left navigation sidebar.',
             '2. Change Global Currency Notation: Locate the "Global Currency" card. Click the dropdown menu showing the active currency symbol (e.g. "₹"). Select "$ (USD)", "€ (EUR)", or "£ (GBP)". The entire interface will instantly switch all currency notations to your choice!',
             '3. Adjust Auditing Flags: Locate the "High-Spend Threshold" card. Click the numeric input box, type "10000", and click out. Any transaction logged in your ledger that exceeds ₹10,000 will be automatically flagged with an amber warning badge for rapid weekly audits.',
-            '4. Customize Branding Color Scheme: Under the "Accent Theme" card, click on the colored circular chips (Sapphire, Emerald, Gold, Ruby, Violet). Click the "Dark Mode" toggle switch to convert the interface to a high-contrast dark theme.',
+            '4. Customize Branding Color Scheme: Under the "Accent Theme" card, click on the colored circular chips (Sapphire, Emerald, Gold, Ruby, Violet, or premium Silver, Purple, Pink, Neon Green, Sky Blue options). Click the "Dark Mode" toggle switch to convert the interface to a high-contrast dark theme.',
             '5. Download Full DB Backup: Locate the "Backup & Restore" panel. Click the blue "Export Data Backup" button. A portable JSON text file containing your complete ledger history will immediately download to your device!',
             '6. Restore from a Backup File: Click the grey "Import/Restore" button. In the system file selector, click and select your previously saved PaisaFlow JSON backup file. Click "Open". The database restores your full accounts and history instantly.',
             '7. Erase All Workspace Data: To clear everything and start fresh, click the red "Hard Data Reset" button. Read the warnings, click all confirmation checkboxes, and click "Erase All Data". This returns the workspace to clean factory defaults.'
