@@ -635,7 +635,7 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                           <div className="mt-4 pt-3.5 border-t border-white/10 grid grid-cols-3 gap-2 text-[10px] text-white/80 font-medium">
                             <div>
                               <span className="text-[8px] text-white/50 uppercase font-black tracking-wider block leading-none mb-1">Billing Period</span>
-                              <span className="font-mono text-[9px] truncate block leading-tight">{selectedCardMetrics.billingCycle}</span>
+                              <span className="font-mono text-[9px] truncate block leading-tight" title={selectedCardMetrics.billingCycle}>{selectedCardMetrics.billingCycle}</span>
                             </div>
                             <div className="text-center">
                               <span className="text-[8px] text-white/50 uppercase font-black tracking-wider block leading-none mb-1">Next Statement</span>
@@ -890,7 +890,7 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                               className="w-2.5 h-2.5 rounded-md shrink-0 shadow-xs"
                               style={{ backgroundColor: card?.color || '#2563eb' }}
                             ></span>
-                            <span className="font-bold text-slate-700 dark:text-slate-200 truncate max-w-xs block">
+                            <span className="font-bold text-slate-700 dark:text-slate-200 truncate max-w-xs block" title={card?.name || 'Unknown Card'}>
                               {card?.name || 'Unknown Card'}
                             </span>
                           </div>

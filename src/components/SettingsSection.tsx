@@ -608,8 +608,8 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
         <div className="flex items-center gap-2.5 min-w-0">
           <IconComponent className="w-5.5 h-5.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
           <div className="min-w-0">
-            <h2 className="text-sm md:text-base font-extrabold text-slate-800 dark:text-slate-100 truncate">{title}</h2>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate">{subtitle}</p>
+            <h2 className="text-sm md:text-base font-extrabold text-slate-800 dark:text-slate-100 truncate" title={title}>{title}</h2>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold truncate" title={subtitle}>{subtitle}</p>
           </div>
         </div>
 
@@ -682,7 +682,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                     Large Outgoings Alert Threshold
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-3 text-slate-400 text-xs font-extrabold">{currency}</span>
+                    <span className="absolute left-3.5 top-3 text-slate-400 dark:text-slate-300 text-xs font-extrabold pointer-events-none z-10">{currency}</span>
                     <input
                       type="number"
                       placeholder="e.g. 4000"
@@ -800,7 +800,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                         }`}
                       >
                         <span className={`w-3 h-3 rounded-full ${opt.color} shadow-xs shrink-0`}></span>
-                        <span className="text-[9px] font-bold scale-90 truncate max-w-full">{opt.label}</span>
+                        <span className="text-[9px] font-bold scale-90 truncate max-w-full" title={opt.label}>{opt.label}</span>
                       </button>
                     ))}
                   </div>

@@ -951,7 +951,7 @@ export default function InvestmentsSection({ data, setFinanceData }: Investments
                     </h3>
 
                     {inv.notes && (
-                      <p className="text-xs text-slate-500 italic max-w-full truncate">{inv.notes}</p>
+                      <p className="text-xs text-slate-500 italic max-w-full truncate" title={inv.notes}>{inv.notes}</p>
                     )}
 
                     {/* SIP Top-Up or Record Month's Pay Actions inside card */}

@@ -824,9 +824,9 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                       <div className="text-left">
                         <div className="flex items-center gap-1">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: card?.color || '#000' }} />
-                          <span className="text-[9px] text-slate-450 dark:text-slate-400 font-bold truncate max-w-[120px]">{card?.name}</span>
+                          <span className="text-[9px] text-slate-450 dark:text-slate-400 font-bold truncate max-w-[120px]" title={card?.name}>{card?.name}</span>
                         </div>
-                        <h5 className="text-[11.5px] text-slate-800 dark:text-slate-200 font-black mt-1.5 truncate max-w-[190px]">{exp.description}</h5>
+                        <h5 className="text-[11.5px] text-slate-800 dark:text-slate-200 font-black mt-1.5 truncate max-w-[190px]" title={exp.description}>{exp.description}</h5>
                         <span className="text-[9.5px] text-slate-400 dark:text-slate-550 font-medium">{exp.date}</span>
                       </div>
                       <div className="flex justify-between items-center mt-3 border-t border-slate-50 dark:border-slate-800 pt-2">

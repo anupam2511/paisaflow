@@ -11,32 +11,32 @@
 
 :root {
   /* LIGHT MODE SCHEME */
-  --bg-app: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-secondary: #f1f5f9;
-  --bg-tertiary: #e2e8f0;
-  --border-light: #f1f5f9;
-  --border-med: #e2e8f0;
-  --text-primary: #0f172a;
+  --bg-app: #eef2f6;
+  --bg-card: #eef2f6;
+  --bg-secondary: #e6edf4;
+  --bg-tertiary: #d1d9e6;
+  --border-light: rgba(255, 255, 255, 0.5);
+  --border-med: rgba(163, 177, 198, 0.35);
+  --text-primary: #1e293b;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
   --text-muted-dark: #64748b;
-  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --card-shadow: 6px 6px 14px #c8d0e7, -6px -6px 14px #ffffff;
 }
 
 /* DARK MODE SCHEME OVERRIDES */
 .dark {
-  --bg-app: transparent;
-  --bg-card: rgba(13, 20, 38, 0.45);
-  --bg-secondary: rgba(20, 30, 55, 0.35);
+  --bg-app: #04051a;
+  --bg-card: #0c0e2a;
+  --bg-secondary: #06071e;
   --bg-tertiary: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.06);
-  --border-med: rgba(255, 255, 255, 0.12);
-  --text-primary: #f8fafc;
+  --border-light: rgba(99, 102, 241, 0.16);
+  --border-med: rgba(99, 102, 241, 0.28);
+  --text-primary: #ffffff;
   --text-secondary: #cbd5e1;
   --text-muted: #8492a6;
   --text-muted-dark: #cbd5e1;
-  --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  --card-shadow: 8px 8px 24px rgba(1, 2, 8, 0.8), -8px -8px 24px rgba(99, 102, 241, 0.12);
 }
 
 body {
@@ -61,28 +61,85 @@ strong, b, h1, h2, h3, h4, h5, h6, th,
   letter-spacing: 0.015em !important;
 }
 
-/* CUSTOM TRANSPARENT SECTOR BINDINGS FOR PERFECT DARK THEME SUPPORT */
+/* CUSTOM GRADIENT BACKGROUND FOR GLOWING BRIGHT DARK BLUE THEME */
 .dark html,
 .dark body {
-  background: linear-gradient(225deg, #112240 0%, #070c19 50%, #000000 100%) !important;
-  background-attachment: fixed !important;
-  background-color: transparent !important;
+  background: #020311 !important;
+  background-color: #020311 !important;
+}
+
+/* Automatic Neumorphic styling for all card elements */
+body:not(.dark) .bg-white:not([class*="/"]),
+body:not(.dark) [class*="bg-white"]:not([class*="/"]) {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-light) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 .dark .bg-white,
 .dark .dark\:bg-\[\#0b1329\],
 .dark .dark\:bg-\[\#070c19\],
 .dark .dark\:bg-\[\#0f1a36\],
-.dark .dark\:bg-\[\#030712\] {
+.dark .dark\:bg-\[\#030712\],
+.dark .dark\:bg-\[\#0F172A\] {
   background-color: var(--bg-card) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
+  border-color: var(--border-light) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 .dark .bg-slate-50 {
   background-color: var(--bg-secondary) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Sidebars / Side menus */
+body:not(.dark) aside {
+  background-color: var(--bg-card) !important;
+  border-right: 1px solid var(--border-med) !important;
+  box-shadow: 4px 0 15px rgba(163, 177, 198, 0.25) !important;
+}
+
+.dark aside,
+.dark aside.dark\:bg-\[\#0b1329\] {
+  background: radial-gradient(circle at 15% 10%, #151786 0%, #070928 42%, #020311 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-right-color: var(--border-light) !important;
+}
+
+/* Headers */
+body:not(.dark) header {
+  background-color: var(--bg-app) !important;
+  border-bottom: 1px solid var(--border-med) !important;
+}
+
+.dark header,
+.dark header.dark\:bg-\[\#0b1329\] {
+  background: radial-gradient(circle at 15% 10%, #151786 0%, #070928 42%, #020311 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom-color: var(--border-light) !important;
+}
+
+/* Footers */
+body:not(.dark) footer {
+  background-color: var(--bg-secondary) !important;
+  border-top: 1px solid var(--border-med) !important;
+}
+
+.dark footer,
+.dark footer.dark\:bg-slate-950 {
+  background: radial-gradient(circle at 15% 10%, #151786 0%, #070928 42%, #020311 100%) !important;
+  border-top-color: var(--border-light) !important;
+}
+
+body:not(.dark) .bg-slate-100,
+body:not(.dark) .bg-slate-150,
+body:not(.dark) .bg-slate-200 {
+  background-color: var(--bg-secondary) !important;
 }
 
 .dark .bg-slate-100 {
@@ -157,23 +214,129 @@ strong, b, h1, h2, h3, h4, h5, h6, th,
   box-shadow: var(--card-shadow) !important;
 }
 
-/* Form overrides in dark mode */
+/* Form overrides for Neumorphic Inset/Recessed style */
+input, 
+select, 
+textarea {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-med) !important;
+  color: var(--text-primary) !important;
+  box-shadow: inset 2px 2px 5px rgba(163, 177, 198, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.7) !important;
+  border-radius: 12px !important;
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Ensure left padding utility classes on inputs always win over the default input padding override */
+input.pl-5 { padding-left: 1.25rem !important; }
+input.pl-6 { padding-left: 1.5rem !important; }
+input.pl-7 { padding-left: 1.75rem !important; }
+input.pl-8 { padding-left: 2rem !important; }
+input.pl-9 { padding-left: 2.25rem !important; }
+input.pl-10 { padding-left: 2.5rem !important; }
+
 .dark input, 
 .dark select, 
 .dark textarea {
   background-color: var(--bg-secondary) !important;
-  border-color: var(--border-med) !important;
+  border-color: rgba(99, 102, 241, 0.08) !important;
   color: var(--text-primary) !important;
+  box-shadow: inset 4px 4px 10px rgba(1, 2, 6, 0.92), inset -4px -4px 10px rgba(99, 102, 241, 0.08) !important;
+}
+
+input:focus, 
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: inset 1px 1px 3px rgba(163, 177, 198, 0.2), inset -1px -1px 3px rgba(255, 255, 255, 0.4), 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
 }
 
 .dark input:focus, 
-.dark select:focus {
-  border-color: var(--color-indigo-600) !important;
+.dark select:focus,
+.dark textarea:focus {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+  box-shadow: inset 2px 2px 5px rgba(1, 2, 6, 0.8), inset -2px -2px 5px rgba(99, 102, 241, 0.04), 0 0 0 3px rgba(99, 102, 241, 0.3) !important;
 }
 
 .dark option {
-  background-color: var(--bg-card) !important;
+  background-color: #080f20 !important;
   color: var(--text-primary) !important;
+}
+
+/* Custom Neumorphic utility classes */
+.neumorphic-inset {
+  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.8) !important;
+}
+.dark .neumorphic-inset {
+  box-shadow: inset 4px 4px 10px rgba(1, 2, 6, 0.95), inset -4px -4px 10px rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Neumorphic buttons */
+button.bg-indigo-600,
+button.bg-indigo-500,
+button.bg-primary {
+  box-shadow: 4px 4px 10px rgba(79, 70, 229, 0.35), -4px -4px 10px rgba(255, 255, 255, 0.5) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.dark button.bg-indigo-600,
+.dark button.bg-indigo-500,
+.dark button.bg-primary {
+  box-shadow: 4px 4px 12px rgba(1, 2, 6, 0.7), -4px -4px 12px rgba(99, 102, 241, 0.2) !important;
+}
+button.bg-indigo-600:hover,
+button.bg-indigo-500:hover,
+button.bg-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 5px 5px 12px rgba(79, 70, 229, 0.45), -5px -5px 12px rgba(255, 255, 255, 0.6) !important;
+}
+.dark button.bg-indigo-600:hover,
+.dark button.bg-indigo-500:hover,
+.dark button.bg-primary:hover {
+  box-shadow: 5px 5px 15px rgba(1, 2, 6, 0.8), -5px -5px 15px rgba(99, 102, 241, 0.28) !important;
+}
+button.bg-indigo-600:active,
+button.bg-indigo-500:active,
+button.bg-primary:active {
+  transform: translateY(1px) !important;
+  box-shadow: inset 3px 3px 6px rgba(1, 2, 6, 0.2), inset -3px -3px 6px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* General secondary buttons */
+button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]) {
+  box-shadow: 4px 4px 10px rgba(163, 177, 198, 0.3), -4px -4px 10px rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]) {
+  box-shadow: 4px 4px 10px rgba(1, 2, 6, 0.6), -4px -4px 10px rgba(99, 102, 241, 0.1) !important;
+}
+button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 5px 5px 12px rgba(163, 177, 198, 0.4), -5px -5px 12px rgba(255, 255, 255, 0.9) !important;
+}
+.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):hover {
+  box-shadow: 5px 5px 12px rgba(1, 2, 6, 0.8), -5px -5px 12px rgba(99, 102, 241, 0.15) !important;
+}
+button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):active {
+  transform: translateY(1px) !important;
+  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.8) !important;
+}
+.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):active {
+  box-shadow: inset 4px 4px 10px rgba(1, 2, 6, 0.95), inset -4px -4px 10px rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Reset neumorphic button shadows inside colored/dark cards and translucent components */
+.text-white button,
+button[class*="bg-white/"],
+[class*="bg-white/"] button {
+  box-shadow: none !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+.text-white button:hover,
+button[class*="bg-white/"]:hover,
+[class*="bg-white/"] button:hover {
+  background-color: rgba(255, 255, 255, 0.25) !important;
 }
 
 .dark .divide-slate-100 > * + * {

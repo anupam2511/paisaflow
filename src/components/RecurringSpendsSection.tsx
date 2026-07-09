@@ -625,7 +625,7 @@ export default function RecurringSpendsSection({ data, setFinanceData }: Recurri
               >
                 <div>
                   <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md truncate max-w-[120px]">
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md truncate max-w-[120px]" title={sub.category}>
                       {sub.category}
                     </span>
                     <div className="flex items-center gap-1.5">

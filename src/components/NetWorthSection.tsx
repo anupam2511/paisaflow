@@ -666,7 +666,7 @@ export default function NetWorthSection({ data, setFinanceData, setCurrentTab }:
                     <div key={item.name} className="flex items-center justify-between text-[10px] font-bold text-slate-650 dark:text-slate-350">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: assetColors[idx % assetColors.length] }}></span>
-                        <span className="truncate max-w-[120px]">{item.name}</span>
+                        <span className="truncate max-w-[120px]" title={item.name}>{item.name}</span>
                       </div>
                       <span className="font-mono text-slate-500 dark:text-slate-400">{pct.toFixed(0)}%</span>
                     </div>

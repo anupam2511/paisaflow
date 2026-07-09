@@ -219,14 +219,14 @@ export default function Sidebar() {
                             }`}
                           >
                             <ItemIcon className="w-3.5 h-3.5 shrink-0" />
-                            <div className="truncate min-w-0">
+                            <div className="truncate min-w-0" title={labelDetails.title}>
                               <span className="text-xs font-semibold block leading-tight">
                                 {labelDetails.title}
                               </span>
                               {labelDetails.subtitle && (
                                 <span className={`text-[9px] block truncate leading-none mt-0.5 ${
                                   isActive ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'
-                                }`}>
+                                }`} title={labelDetails.subtitle}>
                                   {labelDetails.subtitle}
                                 </span>
                               )}
@@ -299,9 +299,9 @@ export default function Sidebar() {
               className="w-10 h-10 object-contain shrink-0"
             />
             {!isCollapsed && (
-              <div className="truncate">
-                <span className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-4 block">PaisaFlow</span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mt-0.5">Secure Wealth Space</span>
+              <div className="truncate" title="PaisaFlow - Secure Wealth Space">
+                <span className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-4 block" title="PaisaFlow">PaisaFlow</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mt-0.5" title="Secure Wealth Space">Secure Wealth Space</span>
               </div>
             )}
           </div>
@@ -405,14 +405,14 @@ export default function Sidebar() {
                                 }`}
                               >
                                 <ItemIcon className="w-3.5 h-3.5 shrink-0" />
-                                <div className="truncate min-w-0">
+                                <div className="truncate min-w-0" title={labelDetails.title}>
                                   <span className="text-xs font-semibold block leading-tight">
                                     {labelDetails.title}
                                   </span>
                                   {labelDetails.subtitle && (
                                     <span className={`text-[9px] block truncate leading-none mt-0.5 ${
                                       isActive ? 'text-white/70' : 'text-slate-400 dark:text-slate-500'
-                                    }`}>
+                                    }`} title={labelDetails.subtitle}>
                                       {labelDetails.subtitle}
                                     </span>
                                   )}

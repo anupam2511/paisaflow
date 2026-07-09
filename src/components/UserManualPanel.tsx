@@ -1230,7 +1230,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
                           }`}
                         >
                           <PageIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                          <span className="text-xs truncate leading-tight">{page.title}</span>
+                          <span className="text-xs truncate leading-tight" title={page.title}>{page.title}</span>
                         </button>
                       );
                     })}
@@ -1254,6 +1254,7 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
                     key={id}
                     onClick={() => setActivePageId(id)}
                     className="w-full text-left text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 truncate block py-0.5"
+                    title={matched.title}
                   >
                     • {matched.title}
                   </button>
@@ -1277,26 +1278,8 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
               <span className="text-indigo-600 dark:text-indigo-400">{activePage.title}</span>
             </div>
 
-            {/* Quick Actions (Copy URL, Print, Expand All) */}
+            {/* Quick Actions (Expand All) */}
             <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => handleCopyLink(activePage.id)}
-                className="p-1.5 rounded-lg border border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
-                title="Copy Article Link"
-              >
-                {copiedSectionId === activePage.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>Copy Link</span>
-              </button>
-
-              <button
-                onClick={handlePrint}
-                className="p-1.5 rounded-lg border border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
-                title="Print Friendly View"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print</span>
-              </button>
-
               {activePage.id === 'faqs' && (
                 <button
                   onClick={toggleExpandAllFaqs}
@@ -1572,10 +1555,10 @@ export default function UserManualPanel({ isOpen, onClose, currentTab, isInline 
                           <RIcon className="w-3.5 h-3.5" />
                           <span>{rPage.category}</span>
                         </div>
-                        <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 truncate w-full">
+                        <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-100 truncate w-full" title={rPage.title}>
                           {rPage.title}
                         </h4>
-                        <p className="text-[10px] text-slate-400 font-medium line-clamp-2 leading-relaxed">
+                        <p className="text-[10px] text-slate-400 font-medium line-clamp-2 leading-relaxed" title={rPage.description}>
                           {rPage.description}
                         </p>
                       </button>

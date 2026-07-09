@@ -277,9 +277,9 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                       onMouseLeave={() => setHoveredCategory(null)}
                       className={`flex justify-between items-center py-1 px-1.5 rounded-lg transition-colors ${hoveredCategory === slice.category ? 'bg-slate-50' : ''}`}
                     >
-                      <div className="flex items-center gap-1.5 truncate">
+                      <div className="flex items-center gap-1.5 truncate" title={slice.category}>
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: slice.color }}></span>
-                        <span className="text-xs text-slate-650 font-medium truncate">{slice.category}</span>
+                        <span className="text-xs text-slate-650 font-medium truncate" title={slice.category}>{slice.category}</span>
                       </div>
                       <div className="text-right shrink-0">
                         <span className="text-xs font-semibold text-slate-800 block">{formatCurrency(slice.amount, preferences)}</span>
@@ -304,7 +304,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                               <span className="text-[8px] font-extrabold text-slate-450 uppercase tracking-wider block">
                                 {acc.institution}
                               </span>
-                              <span className="text-xs font-bold text-slate-750 leading-tight truncate">
+                              <span className="text-xs font-bold text-slate-750 leading-tight truncate" title={acc.name}>
                                 {acc.name.includes(' - ') ? acc.name.split(' - ').slice(1).join(' - ') : acc.name}
                               </span>
                             </div>
@@ -412,8 +412,8 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                       key={`${exp.id}_${index}`}
                       className="p-2 rounded-xl border border-slate-50 dark:border-slate-800/40 bg-slate-50/40 dark:bg-slate-900/30 flex items-center justify-between text-[11px] hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      <div className="truncate pr-2">
-                        <span className="font-bold text-slate-800 block truncate leading-tight">{exp.description}</span>
+                      <div className="truncate pr-2" title={exp.description}>
+                        <span className="font-bold text-slate-800 block truncate leading-tight" title={exp.description}>{exp.description}</span>
                         <span className="text-[9px] text-slate-455 dark:text-slate-400 font-semibold block mt-0.5">{exp.category} • Paid with {connectedAccName}</span>
                       </div>
                       <div className="text-right shrink-0">

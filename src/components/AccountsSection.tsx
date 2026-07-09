@@ -417,7 +417,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                     Required Minimum Balance (MAB Amount)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">{preferences.currencySymbol}</span>
+                    <span className="absolute left-3 top-2.5 text-xs text-slate-400 dark:text-slate-300 font-bold pointer-events-none z-10">{preferences.currencySymbol}</span>
                     <input
                       type="number"
                       value={minimumAverageBalance}
@@ -442,7 +442,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                   Current Book Balance
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">{preferences.currencySymbol}</span>
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 dark:text-slate-300 font-bold pointer-events-none z-10">{preferences.currencySymbol}</span>
                   <input
                     type="number"
                     value={balance}
@@ -540,7 +540,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Amount to Shift</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">{preferences.currencySymbol}</span>
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 dark:text-slate-300 font-bold pointer-events-none z-10">{preferences.currencySymbol}</span>
                   <input
                     type="number"
                     value={transferAmount}
@@ -618,10 +618,10 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                       </span>
                     </div>
                     <div className="flex flex-col min-w-0" title={acc.name}>
-                      <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider truncate mb-0.5">
+                      <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider truncate mb-0.5" title={acc.institution}>
                         {acc.institution}
                       </span>
-                      <h3 className="text-base font-black tracking-tight leading-tight truncate w-full">
+                      <h3 className="text-base font-black tracking-tight leading-tight truncate w-full" title={getCleanDescriptor(acc.name, acc.institution)}>
                         {getCleanDescriptor(acc.name, acc.institution)}
                       </h3>
                     </div>

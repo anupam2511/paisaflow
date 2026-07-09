@@ -47,7 +47,7 @@ export function CurrencyInput({
         {label}
       </label>
       <div className="relative">
-        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold font-mono text-xs">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-300 font-bold font-mono text-xs pointer-events-none z-10">
           {currencySymbol}
         </span>
         <input

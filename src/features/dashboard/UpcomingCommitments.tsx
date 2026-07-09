@@ -210,7 +210,7 @@ export default function UpcomingCommitments({ data, setFinanceData, setCurrentTa
                       ? `Paid ${goal.paidInstallments}/${goal.totalInstallments} (${progressPct.toFixed(0)}%)` 
                       : `${progressPct.toFixed(0)}% Complete`}
                   </span>
-                  <span className="text-indigo-600 font-bold truncate">
+                  <span className="text-indigo-600 font-bold truncate" title={remaining > 0 ? `Need ${formatCurrency(remaining, preferences)}` : 'Completed 🎯'}>
                     {remaining > 0 ? `Need ${formatCurrency(remaining, preferences)}` : 'Completed 🎯'}
                   </span>
                 </div>
