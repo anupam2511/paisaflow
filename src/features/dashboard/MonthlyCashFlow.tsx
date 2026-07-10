@@ -413,11 +413,11 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                       className="p-2 rounded-xl border border-slate-50 dark:border-slate-800/40 bg-slate-50/40 dark:bg-slate-900/30 flex items-center justify-between text-[11px] hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       <div className="truncate pr-2" title={exp.description}>
-                        <span className="font-bold text-slate-800 block truncate leading-tight" title={exp.description}>{exp.description}</span>
-                        <span className="text-[9px] text-slate-455 dark:text-slate-400 font-semibold block mt-0.5">{exp.category} • Paid with {connectedAccName}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block truncate leading-tight" title={exp.description}>{exp.description}</span>
+                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-semibold block mt-0.5">{exp.category} • Paid with {connectedAccName}</span>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-bold text-slate-800 block font-mono">{formatCurrency(exp.amount, preferences)}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block font-mono">{formatCurrency(exp.amount, preferences)}</span>
                         <span className="text-[8px] text-slate-400 font-bold block">{exp.date}</span>
                       </div>
                     </div>
@@ -427,7 +427,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-50 flex items-center justify-between text-[11px] text-slate-455 dark:text-slate-400 relative z-10">
+          <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 relative z-10">
             <span>Automatic large outflow flags active.</span>
             <button 
               onClick={() => setCurrentTab('transactions')}

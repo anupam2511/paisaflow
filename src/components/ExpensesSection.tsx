@@ -847,17 +847,17 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
             return (
               <div
                 key={`${exp.id}_${index}`}
-                className={`p-4 bg-white dark:bg-slate-900/50 border rounded-2xl shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center justify-between ${isLarge ? 'border-amber-205 dark:border-amber-550/30 bg-amber-50/15 dark:bg-amber-950/10' : 'border-slate-100 dark:border-slate-800/80'}`}
+                className={`p-4 bg-white dark:bg-slate-900/50 border rounded-2xl shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center justify-between ${isLarge ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/15 dark:bg-amber-950/20' : 'border-slate-100 dark:border-slate-800/80'}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${isLarge ? 'bg-amber-100 text-amber-700 dark:bg-amber-955/20 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
+                  <div className={`p-2 rounded-lg ${isLarge ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
                     <ArrowDownRight className="w-4.5 h-4.5" />
                   </div>
                   <div>
                     <span className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                       {exp.description}
                       {isLarge && (
-                        <span className="text-[9px] bg-amber-100 border border-amber-200 dark:border-amber-900/60 text-amber-805 dark:text-amber-400 font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Cost crosses large threshold limit set.">
+                        <span className="text-[9px] bg-amber-50 border border-amber-200 dark:border-amber-900/30 text-amber-800 font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Cost crosses large threshold limit set.">
                           ⚠️ Highly Expensive
                         </span>
                       )}

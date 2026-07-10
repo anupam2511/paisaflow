@@ -272,7 +272,7 @@ export default function Sidebar() {
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="py-2.5 bg-white dark:bg-[#070c19] hover:bg-rose-50 dark:hover:bg-rose-955/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-450 border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-900/40 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer group"
+                  className="py-2.5 bg-white dark:bg-[#070c19] hover:bg-rose-50 dark:hover:bg-rose-905/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-900/40 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer group"
                   title="Secure Logout"
                 >
                   <LogOut className="w-4 h-4 group-hover:scale-105 transition-transform text-rose-500" />
@@ -360,7 +360,7 @@ export default function Sidebar() {
                       <button
                         onClick={() => setExpandedCats(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
                         className={`w-full flex items-center justify-between text-left py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition duration-150 cursor-pointer ${
-                          hasActiveChild ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-650 dark:text-slate-355'
+                          hasActiveChild ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-600 dark:text-slate-400'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
@@ -457,7 +457,7 @@ export default function Sidebar() {
 
               <button
                 onClick={handleLogout}
-                className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-955/20 border border-slate-200 dark:border-slate-800 transition cursor-pointer relative group"
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-900/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 border border-slate-200 dark:border-slate-800 transition cursor-pointer relative group"
                 title="Lock and Logout Space"
               >
                 <LogOut className="w-4 h-4" />
@@ -508,7 +508,7 @@ export default function Sidebar() {
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="py-2 bg-white dark:bg-[#070c19] hover:bg-rose-50 dark:hover:bg-rose-955/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-405 border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-900/40 rounded-xl transition flex flex-col items-center justify-center cursor-pointer group"
+                    className="py-2 bg-white dark:bg-[#070c19] hover:bg-rose-50 dark:hover:bg-rose-905/20 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-100 dark:border-slate-800 hover:border-rose-200 dark:hover:border-rose-900/40 rounded-xl transition flex flex-col items-center justify-center cursor-pointer group"
                     title="Secure Logout"
                   >
                     <LogOut className="w-4 h-4 group-hover:scale-105 transition-transform text-rose-500" />

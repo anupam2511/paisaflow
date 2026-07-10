@@ -695,7 +695,7 @@ export default function NetWorthSection({ data, setFinanceData, setCurrentTab }:
             className="w-full px-5 py-4 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-800/50 flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
           >
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider font-extrabold">
-              <Landmark className="w-4 h-4 text-emerald-555" /> 
+              <Landmark className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> 
               <span>Assets Balance Sheet</span>
             </div>
             <div className="flex items-center gap-3">
@@ -818,7 +818,7 @@ export default function NetWorthSection({ data, setFinanceData, setCurrentTab }:
             className="w-full px-5 py-4 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-800/50 flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
           >
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider font-extrabold">
-              <ShieldAlert className="w-4 h-4 text-rose-555" /> 
+              <ShieldAlert className="w-4 h-4 text-rose-500 dark:text-rose-400" /> 
               <span>Liabilities Ledger</span>
             </div>
             <div className="flex items-center gap-3">

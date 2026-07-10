@@ -32,11 +32,16 @@
   --bg-tertiary: rgba(255, 255, 255, 0.08);
   --border-light: rgba(99, 102, 241, 0.16);
   --border-med: rgba(99, 102, 241, 0.28);
-  --text-primary: #ffffff;
+  --text-primary: #ebebeb;
   --text-secondary: #cbd5e1;
   --text-muted: #8492a6;
   --text-muted-dark: #cbd5e1;
   --card-shadow: 8px 8px 24px rgba(1, 2, 8, 0.8), -8px -8px 24px rgba(99, 102, 241, 0.12);
+}
+
+.dark .text-white,
+.dark .dark\:text-white {
+  color: #ebebeb !important;
 }
 
 body {
@@ -475,3 +480,15 @@ tr.hover\:bg-slate-50:hover,
 .dark .hover\:bg-slate-50:hover {
   background-color: rgba(99, 102, 241, 0.08) !important;
 }
+
+/* Date Picker styling for Dark Mode to make the calendar icon visible */
+.dark input[type="date"],
+.dark input[type="datetime-local"] {
+  color-scheme: dark !important;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+

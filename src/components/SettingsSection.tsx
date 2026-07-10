@@ -204,6 +204,20 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
   const [purgeUnderstandCheckbox, setPurgeUnderstandCheckbox] = useState(false);
 
   const hasCustomData = () => {
+    const isSystemEmpty = 
+      (data.accounts?.length || 0) === 0 &&
+      (data.expenses?.length || 0) === 0 &&
+      (data.incomes?.length || 0) === 0 &&
+      (data.savingGoals?.length || 0) === 0 &&
+      (!data.investments || data.investments.length === 0) &&
+      (!data.emis || data.emis.length === 0) &&
+      (!data.ccEmis || data.ccEmis.length === 0) &&
+      (!data.ccTransactions || data.ccTransactions.length === 0);
+
+    if (isSystemEmpty) {
+      return false;
+    }
+
     const accountsChanged = JSON.stringify(data.accounts) !== JSON.stringify(INITIAL_FINANCE_DATA.accounts);
     const expensesChanged = JSON.stringify(data.expenses) !== JSON.stringify(INITIAL_FINANCE_DATA.expenses);
     const savingGoalsChanged = JSON.stringify(data.savingGoals) !== JSON.stringify(INITIAL_FINANCE_DATA.savingGoals);
@@ -214,24 +228,74 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
     return accountsChanged || expensesChanged || savingGoalsChanged || budgetsChanged || investmentsChanged || !!isRecChanged;
   };
 
-  const handleTriggerReset = () => {
-    if (hasCustomData()) {
-      setResetStep(1); // Double confirmation required
-    } else {
-      setResetStep(2); // Single confirmation is enough
-    }
-  };
-
   const handleFinalReset = () => {
     const freshDeepClone = JSON.parse(JSON.stringify(INITIAL_FINANCE_DATA));
+    
+    // Preserve current custom preference values so they don't get forced back to defaults
+    if (!freshDeepClone.preferences) {
+      freshDeepClone.preferences = {};
+    }
+    freshDeepClone.preferences.themeMode = themeMode;
+    freshDeepClone.preferences.accentColor = accentColor;
+    freshDeepClone.preferences.currencySymbol = currency;
+    freshDeepClone.preferences.largeExpenseThreshold = parseFloat(threshold) || 4000;
+
     setFinanceData(freshDeepClone);
+    
+    // Explicitly synchronize local states
+    setCurrency(freshDeepClone.preferences.currencySymbol);
+    setThreshold(freshDeepClone.preferences.largeExpenseThreshold.toString());
+    setThemeMode(freshDeepClone.preferences.themeMode);
+    setAccentColor(freshDeepClone.preferences.accentColor);
+
     setResetStep(0);
     setUnderstandCheckbox(false);
     setAlertOk('All default finance data has been restored to factory specs!');
     setTimeout(() => setAlertOk(''), 4000);
   };
 
+  const handleTriggerReset = () => {
+    const isSystemEmpty = 
+      (data.accounts?.length || 0) === 0 &&
+      (data.expenses?.length || 0) === 0 &&
+      (data.incomes?.length || 0) === 0 &&
+      (data.savingGoals?.length || 0) === 0 &&
+      (!data.investments || data.investments.length === 0) &&
+      (!data.emis || data.emis.length === 0) &&
+      (!data.ccEmis || data.ccEmis.length === 0) &&
+      (!data.ccTransactions || data.ccTransactions.length === 0) &&
+      (!data.budgets || data.budgets.length === 0) &&
+      (!data.recurringSpends || data.recurringSpends.length === 0);
+
+    if (isSystemEmpty) {
+      setResetStep(2); // Ask once for confirmation (Step 2 modal)
+    } else if (hasCustomData()) {
+      setResetStep(1); // Ask for double confirmation (Step 1 modal)
+    } else {
+      setAlertErr('The default seed data is already loaded and active!');
+      setTimeout(() => setAlertErr(''), 4000);
+    }
+  };
+
   const handleTriggerPurge = () => {
+    const isSystemEmpty = 
+      (data.accounts?.length || 0) === 0 &&
+      (data.expenses?.length || 0) === 0 &&
+      (data.incomes?.length || 0) === 0 &&
+      (data.savingGoals?.length || 0) === 0 &&
+      (!data.investments || data.investments.length === 0) &&
+      (!data.emis || data.emis.length === 0) &&
+      (!data.ccEmis || data.ccEmis.length === 0) &&
+      (!data.ccTransactions || data.ccTransactions.length === 0) &&
+      (!data.budgets || data.budgets.length === 0) &&
+      (!data.recurringSpends || data.recurringSpends.length === 0);
+
+    if (isSystemEmpty) {
+      setAlertErr('The system database is already completely wiped out!');
+      setTimeout(() => setAlertErr(''), 4000);
+      return;
+    }
+
     setPurgeStep(1); // Always trigger double confirmation for a total purge of data
   };
 
@@ -249,6 +313,23 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
         investmentCategories: [],
         themeMode,
         accentColor,
+        netWorthSettings: {
+          categories: [
+            { key: 'bank_accounts', label: 'Bank accounts', isManual: false, manualValue: 0 },
+            { key: 'cash', label: 'Cash', isManual: true, manualValue: 0 },
+            { key: 'mutual_funds', label: 'Mutual funds', isManual: false, manualValue: 0 },
+            { key: 'stocks', label: 'Stocks', isManual: false, manualValue: 0 },
+            { key: 'ppf', label: 'PPF', isManual: false, manualValue: 0 },
+            { key: 'nps', label: 'NPS', isManual: true, manualValue: 0 },
+            { key: 'gold', label: 'Gold', isManual: false, manualValue: 0 },
+            { key: 'epf', label: 'EPF', isManual: true, manualValue: 0 },
+            { key: 'ssy', label: 'SSY', isManual: true, manualValue: 0 },
+            { key: 'fixed_deposits', label: 'Fixed deposits', isManual: true, manualValue: 0 },
+            { key: 'credit_cards', label: 'Credit card outstanding', isManual: false, manualValue: 0 },
+            { key: 'emis', label: 'EMIs', isManual: false, manualValue: 0 },
+            { key: 'loans', label: 'Loans', isManual: false, manualValue: 0 }
+          ]
+        }
       },
       investments: [],
       emis: [],
@@ -1024,6 +1105,21 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
             <div>
               {renderCardHeader('maintenance', RotateCcw, 'System Data Maintenance', 'Restore default metrics or clear the database safely.')}
               
+              {/* Submission Alerts */}
+              {alertErr && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/40 rounded-xl text-xs flex items-center gap-1.5 font-bold mb-4">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{alertErr}</span>
+                </div>
+              )}
+
+              {alertOk && (
+                <div className="p-3 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/40 rounded-xl text-xs flex items-center gap-1.5 font-bold mb-4">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  <span>{alertOk}</span>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div className="p-4 bg-indigo-50/20 dark:bg-indigo-950/15 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/30">
                   <h3 className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 mb-1.5 bg-indigo-50/80 dark:bg-indigo-950/50 px-2 py-1 rounded-lg border border-indigo-100/60 dark:border-indigo-900/40 w-fit">
@@ -1299,14 +1395,14 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
       {/* DOUBLE CONFIRMATION MODAL - STEP 1 */}
       {resetStep === 1 && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-slate-150 text-left">
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 border border-amber-100">
+          <div className="bg-white dark:bg-[#0b1329] rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-slate-150 dark:border-slate-800/80 text-left">
+            <div className="w-12 h-12 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mb-4 border border-amber-100 dark:border-amber-900/30">
               <ShieldAlert className="w-6 h-6 shrink-0" />
             </div>
-            <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-2.5 py-1 rounded-md uppercase tracking-wider">Warning: Step 1 of 2</span>
-            <h3 className="text-base font-extrabold text-slate-900 tracking-tight mt-3">Custom Data Detected</h3>
-            <p className="text-xs text-slate-500 mt-2.5 leading-relaxed font-medium">
-              We detected <strong className="text-slate-800 font-extrabold">customized transactions, updated account balances, or active commitments</strong>. Restoring original prefilled default seeds will erase these changes permanently.
+            <span className="text-[9px] bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 font-black px-2.5 py-1 rounded-md uppercase tracking-wider">Warning: Step 1 of 2</span>
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mt-3">Custom Data Detected</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300 mt-2.5 leading-relaxed font-medium">
+              We detected <strong className="text-slate-800 dark:text-slate-200 font-extrabold">customized transactions, updated account balances, or active commitments</strong>. Restoring original prefilled default seeds will erase these changes permanently.
             </p>
             <div className="flex gap-3 mt-6">
               <button
@@ -1317,7 +1413,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
               </button>
               <button
                 onClick={() => setResetStep(0)}
-                className="flex-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-705 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer"
+                className="flex-1 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer"
               >
                 Cancel Reset
               </button>
@@ -1329,25 +1425,25 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
       {/* DOUBLE CONFIRMATION MODAL - STEP 2 */}
       {resetStep === 2 && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-rose-150 text-left animate-scale-up">
-            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-4 border border-rose-100">
+          <div className="bg-white dark:bg-[#0b1329] rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-rose-150 dark:border-rose-950/40 text-left animate-scale-up">
+            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mb-4 border border-rose-100 dark:border-rose-900/30">
               <Lock className="w-6 h-6 shrink-0 animate-pulse" />
             </div>
-            <span className="text-[9px] bg-rose-100 text-rose-800 font-black px-2.5 py-1 rounded-md uppercase tracking-wider">Critical: Final Step</span>
-            <h3 className="text-base font-extrabold text-slate-900 tracking-tight mt-3">Wipe & Override with Defaults?</h3>
-            <p className="text-xs text-slate-500 mt-2.5 leading-relaxed font-medium">
+            <span className="text-[9px] bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-400 font-black px-2.5 py-1 rounded-md uppercase tracking-wider">Critical: Final Step</span>
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mt-3">Wipe & Override with Defaults?</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300 mt-2.5 leading-relaxed font-medium">
               This action is completely irreversible. All your current custom financial logs, budget margins, and cards will be dropped and replaced with system default seed metrics.
             </p>
 
-            <div className="flex items-start gap-2.5 bg-rose-50/40 p-3 rounded-xl border border-rose-100/50 my-4">
+            <div className="flex items-start gap-2.5 bg-rose-50/40 dark:bg-rose-950/10 p-3 rounded-xl border border-rose-100/50 dark:border-rose-900/20 my-4">
               <input
                 type="checkbox"
                 id="understandCheckbox"
                 checked={understandCheckbox}
                 onChange={(e) => setUnderstandCheckbox(e.target.checked)}
-                className="mt-0.5 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer h-4 w-4 shrink-0 shadow-xs"
+                className="mt-0.5 rounded border-rose-300 dark:border-rose-800 text-rose-600 focus:ring-rose-500 cursor-pointer h-4 w-4 shrink-0 shadow-xs"
               />
-              <label htmlFor="understandCheckbox" className="text-[11px] text-slate-600 font-semibold select-none cursor-pointer leading-relaxed">
+              <label htmlFor="understandCheckbox" className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold select-none cursor-pointer leading-relaxed">
                 Confirm: I understand that overriding active capital pools will restore factory datasets. All customized history is discarded.
               </label>
             </div>
@@ -1359,7 +1455,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                 className={`flex-1 text-xs font-extrabold py-3 px-4 rounded-xl transition duration-150 shadow-sm flex items-center justify-center gap-1 ${
                   understandCheckbox 
                     ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer active:scale-[0.98]' 
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                 }`}
               >
                 <RotateCcw className="w-3.5 h-3.5 shrink-0" /> Restructure Now
@@ -1369,7 +1465,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                   setResetStep(0);
                   setUnderstandCheckbox(false);
                 }}
-                className="flex-1 text-xs bg-slate-100 hover:bg-slate-205 text-slate-700 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer"
+                className="flex-1 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer"
               >
                 Keep My Data
               </button>
@@ -1381,16 +1477,16 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
       {/* PURGE DOUBLE CONFIRMATION MODAL - STEP 1 */}
       {purgeStep === 1 && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-rose-100 text-left animate-scale-up">
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 border border-amber-100">
+          <div className="bg-white dark:bg-[#0b1329] rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-rose-100 dark:border-rose-950/40 text-left animate-scale-up">
+            <div className="w-12 h-12 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mb-4 border border-amber-100 dark:border-amber-900/30">
               <ShieldAlert className="w-6 h-6 shrink-0" />
             </div>
-            <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-2.5 py-1 rounded-md uppercase tracking-wider font-sans">Wipe All Records: Step 1 of 2</span>
-            <h3 className="text-base font-extrabold text-slate-900 tracking-tight mt-3">Wipe & Purge Entire Database?</h3>
-            <p className="text-xs text-slate-500 mt-2.5 leading-relaxed font-semibold">
-              You are selecting a <span className="text-rose-600 font-extrabold">Complete Purge</span> of the database. This will delete all your bank accounts, cards, logged transaction entries, savings targets, investments, budgets, active commitments, and EMIs.
+            <span className="text-[9px] bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 font-black px-2.5 py-1 rounded-md uppercase tracking-wider font-sans">Wipe All Records: Step 1 of 2</span>
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mt-3">Wipe & Purge Entire Database?</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300 mt-2.5 leading-relaxed font-semibold">
+              You are selecting a <span className="text-rose-600 dark:text-rose-400 font-extrabold">Complete Purge</span> of the database. This will delete all your bank accounts, cards, logged transaction entries, savings targets, investments, budgets, active commitments, and EMIs.
             </p>
-            <p className="text-xs text-slate-400 mt-2 font-medium">
+            <p className="text-xs text-slate-400 dark:text-slate-400 mt-2 font-medium">
               You will be left with an entirely blank dashboard and you must set up all your assets, cards, and budgets by yourself.
             </p>
             <div className="flex gap-3 mt-6">
@@ -1402,7 +1498,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
               </button>
               <button
                 onClick={() => setPurgeStep(0)}
-                className="flex-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
+                className="flex-1 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
               >
                 No, Keep Everything
               </button>
@@ -1414,25 +1510,25 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
       {/* PURGE DOUBLE CONFIRMATION MODAL - STEP 2 */}
       {purgeStep === 2 && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-rose-100 text-left animate-scale-up">
-            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-4 border border-rose-100">
+          <div className="bg-white dark:bg-[#0b1329] rounded-3xl max-w-md w-full p-6 md:p-8 shadow-xl border border-rose-100 dark:border-rose-950/40 text-left animate-scale-up">
+            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mb-4 border border-rose-100 dark:border-rose-900/30">
               <Lock className="w-6 h-6 shrink-0 animate-pulse" />
             </div>
-            <span className="text-[9px] bg-rose-100 text-rose-805 font-black px-2.5 py-1 rounded-md uppercase tracking-wider font-sans">Critical Action: Final Step</span>
-            <h3 className="text-base font-extrabold text-red-600 tracking-tight mt-3">Confirm Complete Purge</h3>
-            <p className="text-xs text-slate-500 mt-2.5 leading-relaxed font-semibold">
+            <span className="text-[9px] bg-rose-100 dark:bg-rose-950/40 text-rose-800 dark:text-rose-400 font-black px-2.5 py-1 rounded-md uppercase tracking-wider font-sans">Critical Action: Final Step</span>
+            <h3 className="text-base font-extrabold text-red-600 dark:text-red-400 tracking-tight mt-3">Confirm Complete Purge</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-350 mt-2.5 leading-relaxed font-semibold">
               There is no way to restore your records once this process concludes. Every expense ledger, card, bank balance, and target tracker is deleted irreversibly.
             </p>
 
-            <div className="flex items-start gap-2.5 bg-rose-50/40 p-3 rounded-xl border border-rose-100/50 my-4">
+            <div className="flex items-start gap-2.5 bg-rose-50/40 dark:bg-rose-950/10 p-3 rounded-xl border border-rose-100/50 dark:border-rose-900/20 my-4">
               <input
                 type="checkbox"
                 id="purgeUnderstandCheckbox"
                 checked={purgeUnderstandCheckbox}
                 onChange={(e) => setPurgeUnderstandCheckbox(e.target.checked)}
-                className="mt-0.5 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer h-4 w-4 shrink-0 shadow-xs"
+                className="mt-0.5 rounded border-rose-300 dark:border-rose-800 text-rose-600 focus:ring-rose-500 cursor-pointer h-4 w-4 shrink-0 shadow-xs"
               />
-              <label htmlFor="purgeUnderstandCheckbox" className="text-[11px] text-slate-600 font-semibold select-none cursor-pointer leading-relaxed">
+              <label htmlFor="purgeUnderstandCheckbox" className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold select-none cursor-pointer leading-relaxed">
                 Confirm: I am absolutely sure. Wipe all user-defined values, accounts, plans, logs, and categories completely.
               </label>
             </div>
@@ -1444,7 +1540,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                 className={`flex-1 text-xs font-extrabold py-3 px-4 rounded-xl transition duration-150 shadow-sm flex items-center justify-center gap-1 ${
                   purgeUnderstandCheckbox 
                     ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer active:scale-[0.98]' 
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                 }`}
               >
                 <Trash2 className="w-3.5 h-3.5 shrink-0" /> Wipe Entire System
@@ -1454,7 +1550,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                   setPurgeStep(0);
                   setPurgeUnderstandCheckbox(false);
                 }}
-                className="flex-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
+                className="flex-1 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3 px-4 rounded-xl transition duration-150 cursor-pointer active:scale-[0.98]"
               >
                 Cancel Purge
               </button>

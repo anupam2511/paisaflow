@@ -928,7 +928,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                 </span>
                 <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-2.5">Upfront Merchant Discounts</h3>
               </div>
-              <p className="text-xl lg:text-2xl font-black text-emerald-655 mt-1 font-mono tracking-tight leading-none">
+              <p className="text-xl lg:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 font-mono tracking-tight leading-none">
                 {formatCurrency(totalCcMerchantDiscountSaved, preferences)}
               </p>
             </div>
@@ -1599,7 +1599,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
                 <select
                   value={selectedCategoryFilter}
                   onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                  className="text-[11px] border border-slate-200 rounded-lg p-2 bg-slate-50 font-bold text-slate-655"
+                  className="text-[11px] border border-slate-200 dark:border-slate-800 rounded-lg p-2 bg-slate-50 dark:bg-slate-900 font-bold text-slate-700 dark:text-slate-300"
                 >
                   <option value="all">🏷️ All Spend Categories</option>
                   {budgets.map(b => (

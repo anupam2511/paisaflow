@@ -123,7 +123,7 @@ export default function InsightsPanel({ insights, setCurrentTab }: InsightsPanel
           </div>
           <div>
             <h3 className="font-bold text-slate-800 dark:text-slate-100 text-xs">Your Finances are in Perfect Harmony!</h3>
-            <p className="text-[11px] text-slate-455 dark:text-slate-400 max-w-sm mx-auto mt-0.5 leading-relaxed">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-0.5 leading-relaxed">
               No high card utilization, overspent category budgets, upcoming overdue installments, or lagging savings goals detected. Excellent job maintaining your ledger!
             </p>
           </div>

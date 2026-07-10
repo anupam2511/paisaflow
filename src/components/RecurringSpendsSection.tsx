@@ -580,7 +580,7 @@ export default function RecurringSpendsSection({ data, setFinanceData }: Recurri
           </div>
 
           {err && (
-            <div className="p-2.5 bg-rose-50 dark:bg-rose-950/25 border border-rose-100 dark:border-rose-900/40 rounded-xl text-[10px] text-rose-600 dark:text-rose-455 dark:text-rose-400 font-semibold flex items-center gap-1 transition-all">
+            <div className="p-2.5 bg-rose-50 dark:bg-rose-950/25 border border-rose-100 dark:border-rose-900/40 rounded-xl text-[10px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1 transition-all">
               <ShieldAlert className="w-3.5 h-3.5 shrink-0" /> {err}
             </div>
           )}

@@ -4,11 +4,12 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Eye, ChevronUp, ChevronDown } from 'lucide-react';
+import { Pipette, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface ColorPickerProps {
   color: string; // hex color e.g., "#2563eb"
   onChange: (hex: string) => void;
+  position?: 'top' | 'bottom';
 }
 
 // Color conversion helpers
@@ -80,7 +81,7 @@ function hsvToRgb(h: number, s: number, v: number) {
   };
 }
 
-export default function ColorPicker({ color, onChange }: ColorPickerProps) {
+export default function ColorPicker({ color, onChange, position = 'bottom' }: ColorPickerProps) {
   const [showPicker, setShowPicker] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const svPanelRef = useRef<HTMLDivElement>(null);
@@ -248,7 +249,7 @@ export default function ColorPicker({ color, onChange }: ColorPickerProps) {
               min="0"
               max="255"
               onChange={(e) => handleRgbChange('r', e.target.value)}
-              className="w-full text-center border border-slate-200 dark:border-slate-700/60 rounded-md p-1.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 bg-transparent focus:outline-none focus:border-indigo-500"
+              className="w-full text-center border border-slate-200 dark:border-slate-700/60 rounded-md py-1 px-0.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 bg-transparent focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase">R</span>
           </div>
@@ -259,7 +260,7 @@ export default function ColorPicker({ color, onChange }: ColorPickerProps) {
               min="0"
               max="255"
               onChange={(e) => handleRgbChange('g', e.target.value)}
-              className="w-full text-center border border-slate-200 dark:border-slate-700/60 rounded-md p-1.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 bg-transparent focus:outline-none focus:border-indigo-500"
+              className="w-full text-center border border-slate-200 dark:border-slate-700/60 rounded-md py-1 px-0.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 bg-transparent focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase">G</span>
           </div>
@@ -270,7 +271,7 @@ export default function ColorPicker({ color, onChange }: ColorPickerProps) {
               min="0"
               max="255"
               onChange={(e) => handleRgbChange('b', e.target.value)}
-              className="w-full text-center border border-slate-200 dark:border-slate-700/60 rounded-md p-1.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 bg-transparent focus:outline-none focus:border-indigo-500"
+              className="w-full text-center border border-slate-200 dark:border-slate-700/60 rounded-md py-1 px-0.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 bg-transparent focus:outline-none focus:border-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase">B</span>
           </div>
@@ -293,7 +294,7 @@ export default function ColorPicker({ color, onChange }: ColorPickerProps) {
   };
 
   return (
-    <div className="relative inline-block" ref={containerRef}>
+    <div className={`relative inline-block ${showPicker ? 'z-30' : 'z-auto'}`} ref={containerRef}>
       {/* Small Outer Preview trigger button that replicates the user row */}
       <div className="flex items-center gap-2.5">
         <button
@@ -313,7 +314,11 @@ export default function ColorPicker({ color, onChange }: ColorPickerProps) {
       {/* Popover Card */}
       {showPicker && (
         <div 
-          className="absolute left-0 mt-2.5 z-50 bg-white dark:bg-[#0c142c] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)] flex flex-col gap-3.5 select-none w-[260px] animate-fade-in"
+          className={`absolute left-0 z-50 bg-white dark:bg-[#0c142c] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.18)] flex flex-col gap-3.5 select-none w-[260px] animate-fade-in ${
+            position === 'top' 
+              ? 'bottom-full mb-2.5 origin-bottom' 
+              : 'top-full mt-2.5 origin-top'
+          }`}
           style={{ contentVisibility: 'auto' }}
         >
           {/* Saturation / Value Area */}
@@ -350,9 +355,9 @@ export default function ColorPicker({ color, onChange }: ColorPickerProps) {
               type="button"
               onClick={handleEyeDropper}
               className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-              title="EyeDropper Tool"
+              title="Color Picker Tool"
             >
-              <Eye className="w-4.5 h-4.5" />
+              <Pipette className="w-4.5 h-4.5" />
             </button>
 
             {/* Circular Active Preview */}

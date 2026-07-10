@@ -354,7 +354,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
       <div className="lg:col-span-4 space-y-6">
         
         {/* ADD/EDIT ACCOUNT FORM */}
-        <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm h-fit">
+        <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm h-fit relative z-20">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-50 mb-4">
             <Landmark className="w-5 h-5 text-indigo-600" />
             <h2 className="text-lg font-bold text-slate-800">
@@ -461,7 +461,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
 
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Color Theme Accent</label>
-              <ColorPicker color={color} onChange={setColor} />
+              <ColorPicker color={color} onChange={setColor} position="top" />
             </div>
 
             {error && (
@@ -497,7 +497,7 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
 
         {/* SELF TRANSFER PORTAL */}
         {bankAccounts.length >= 2 && (
-          <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm relative z-10">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-50 mb-3">
               <ArrowRightLeft className="w-5 h-5 text-indigo-600 animate-pulse" />
               <h2 className="text-base font-bold text-slate-800">Bank-to-Bank Transfer</h2>
