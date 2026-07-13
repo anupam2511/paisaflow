@@ -21,6 +21,7 @@ export function useForecasting() {
       .reduce((sum, inc) => sum + inc.amount, 0);
 
     const monthlyExpenses = financeData.expenses
+      .filter((exp) => exp.category.toLowerCase() !== 'transfer')
       .reduce((sum, exp) => sum + exp.amount, 0); // basic total historical
 
     return {

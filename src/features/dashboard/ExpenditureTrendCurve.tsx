@@ -142,6 +142,7 @@ export default function ExpenditureTrendCurve({ data }: ExpenditureTrendCurvePro
               timeThreshold.setFullYear(now.getFullYear() - 1);
             }
             return expenses.filter(e => {
+              if (e.category && e.category.toLowerCase() === 'transfer') return false;
               const expDate = new Date(e.date);
               if (isNaN(expDate.getTime())) return false;
               return expDate >= timeThreshold;

@@ -266,10 +266,11 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
       id: `exp-transfer-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
       description: `Self-Transfer: ${srcAcc.institution} → ${destAcc.institution}`,
       amount: amt,
-      category: 'Miscellaneous',
+      category: 'Transfer',
       date: new Date().toISOString().split('T')[0],
       accountId: transferSource,
       isRecurring: false,
+      targetAccountId: transferTarget,
     };
 
     setFinanceData(prev => ({

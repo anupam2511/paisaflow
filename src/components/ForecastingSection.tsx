@@ -47,7 +47,8 @@ export default function ForecastingSection({ data }: ForecastingSectionProps) {
     incomes.filter(i => i.frequency === 'one-time').reduce((sum, i) => sum + (i.amount / 12), 0); // amortized one-time inflows
 
   // Dynamic monthly expenses + EMIs + Subscriptions
-  const baseMonthlyExpenses = expenses.reduce((sum, e) => sum + e.amount, 0) / Math.max(1, (expenses.length > 0 ? 3 : 1)); // average over 3 months or general
+  const actualExpensesOnly = expenses.filter(e => e.category.toLowerCase() !== 'transfer');
+  const baseMonthlyExpenses = actualExpensesOnly.reduce((sum, e) => sum + e.amount, 0) / Math.max(1, (actualExpensesOnly.length > 0 ? 3 : 1)); // average over 3 months or general
   const baseSubscriptions = recurringSpends.filter(s => s.isActive).reduce((sum, s) => sum + s.amount, 0);
   const baseEmis = (data.emis || []).filter(e => e.isActive).reduce((sum, e) => sum + e.amount, 0);
   const baseTotalExpenses = (baseMonthlyExpenses > 0 ? baseMonthlyExpenses : 15000) + baseSubscriptions + baseEmis;

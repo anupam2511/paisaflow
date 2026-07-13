@@ -103,6 +103,20 @@ export const creditCardsService = {
           isRecurring: false,
         },
       ];
+    } else if (tx.type === 'bill_payment') {
+      updatedExpenses = [
+        ...financeData.expenses,
+        {
+          id: expId,
+          description: tx.description || 'Credit Card Bill Payment',
+          amount: tx.amount,
+          category: 'Transfer',
+          date: tx.date,
+          accountId: payFromBankAccountId || tx.cardId,
+          isRecurring: false,
+          targetAccountId: tx.cardId,
+        },
+      ];
     }
 
     return {
@@ -119,6 +133,17 @@ export const creditCardsService = {
   deleteTransaction(financeData: FinanceData, txId: string): FinanceData {
     const targetTx = (financeData.ccTransactions || []).find((t) => t.id === txId);
     if (!targetTx) return financeData;
+
+    const matchingExpense = financeData.expenses.find((e) => {
+      if (targetTx.id.startsWith('tx_exp_') && e.id === targetTx.id.substring(3)) return true;
+      if (e.id === targetTx.id.replace(/^tx_/, '')) return true;
+      return (e.category === 'Transfer' || e.accountId === targetTx.cardId) &&
+        Math.abs(e.amount - targetTx.amount) < 0.01 &&
+        e.description === targetTx.description &&
+        e.date === targetTx.date;
+    });
+
+    const payFromBankAccountId = matchingExpense?.accountId;
 
     const updatedAccounts = financeData.accounts.map((acc) => {
       if (acc.id === targetTx.cardId) {
@@ -137,11 +162,19 @@ export const creditCardsService = {
           balance: Math.max(0, updatedBal),
         };
       }
+
+      if (targetTx.type === 'bill_payment' && payFromBankAccountId && acc.id === payFromBankAccountId) {
+        return {
+          ...acc,
+          balance: acc.balance + targetTx.amount, // refund bank balance
+        };
+      }
+
       return acc;
     });
 
     let updatedExpenses = financeData.expenses;
-    if (targetTx.type === 'purchase') {
+    if (targetTx.type === 'purchase' || targetTx.type === 'bill_payment') {
       updatedExpenses = financeData.expenses.filter((e) => {
         if (targetTx.id.startsWith('tx_exp_') && e.id === targetTx.id.substring(3)) {
           return false;
@@ -149,7 +182,7 @@ export const creditCardsService = {
         if (e.id === targetTx.id.replace(/^tx_/, '')) {
           return false;
         }
-        const isMatch = e.accountId === targetTx.cardId &&
+        const isMatch = (e.accountId === targetTx.cardId || e.category === 'Transfer') &&
           Math.abs(e.amount - targetTx.amount) < 0.01 &&
           e.description === targetTx.description &&
           e.date === targetTx.date;

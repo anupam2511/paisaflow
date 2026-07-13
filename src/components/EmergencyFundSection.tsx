@@ -26,7 +26,8 @@ export default function EmergencyFundSection({ data, setFinanceData }: Emergency
   const { accounts, expenses, recurringSpends, preferences } = data;
 
   // 1. Calculate dynamic actual monthly outflow
-  const baseMonthlyExpenses = expenses.reduce((sum, e) => sum + e.amount, 0) / Math.max(1, (expenses.length > 0 ? 3 : 1)); // avg over 3 months or similar
+  const actualExpensesOnly = expenses.filter(e => e.category.toLowerCase() !== 'transfer');
+  const baseMonthlyExpenses = actualExpensesOnly.reduce((sum, e) => sum + e.amount, 0) / Math.max(1, (actualExpensesOnly.length > 0 ? 3 : 1)); // avg over 3 months or similar
   const baseSubscriptions = recurringSpends.filter(s => s.isActive).reduce((sum, s) => sum + s.amount, 0);
   const baseEmis = (data.emis || []).filter(e => e.isActive).reduce((sum, e) => sum + e.amount, 0);
   

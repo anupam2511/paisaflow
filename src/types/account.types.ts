@@ -27,6 +27,7 @@ export interface FinancialAccount {
   paymentDueDay?: number;        // e.g. Day of the month when payment is due
   mabRequired?: boolean;         // Has Minimum Average Balance requirement
   minimumAverageBalance?: number;// Required minimal balance amount
+  initialBalance?: number;        // Billed balance outstanding during initial setup
 }
 
 export interface NetWorthCategoryConfig {

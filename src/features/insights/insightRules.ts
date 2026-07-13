@@ -40,7 +40,7 @@ export function calculateMonthlyTotals(data: FinanceData) {
     .reduce((sum, inc) => sum + inc.amount, 0);
 
   const totalExpenses = expenses
-    .filter(exp => exp.date.startsWith(activeMonthPrefix))
+    .filter(exp => exp.date.startsWith(activeMonthPrefix) && exp.category.toLowerCase() !== 'transfer')
     .reduce((sum, exp) => sum + exp.amount, 0);
 
   const totalRecurring = recurringSpends
@@ -306,6 +306,7 @@ export const savingsRateTrendRule: InsightRule = {
     });
 
     expenses.forEach(exp => {
+      if (exp.category && exp.category.toLowerCase() === 'transfer') return;
       const month = (exp.date || '').slice(0, 7); // YYYY-MM
       if (month && month.length === 7) {
         if (!monthData[month]) monthData[month] = { income: 0, outflow: 0 };

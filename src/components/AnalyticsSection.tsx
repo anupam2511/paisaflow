@@ -129,6 +129,7 @@ export default function AnalyticsSection({ data, setCurrentTab, initialSubTab }:
     
     expenses.forEach(exp => {
       if (!exp.date) return;
+      if (exp.category && exp.category.toLowerCase() === 'transfer') return;
       const mStr = exp.date.slice(0, 7);
       if (monthMap[mStr]) {
         monthMap[mStr].expense += exp.amount;
@@ -326,7 +327,7 @@ export default function AnalyticsSection({ data, setCurrentTab, initialSubTab }:
       category: string;
     }> = [];
 
-    const activeExpenses = expenses.filter(e => e.date && e.date.startsWith(selectedYear));
+    const activeExpenses = expenses.filter(e => e.date && e.date.startsWith(selectedYear) && e.category.toLowerCase() !== 'transfer');
     
     // Double charge detection
     const seenTx = new Map<string, typeof expenses[0]>();

@@ -314,6 +314,24 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
     }
 
     if (editingCardId) {
+      // Calculate transactions sum for this card so we can backport the initial balance correctly
+      const cardTransactions = (ccTransactions || []).filter((t: any) => t.cardId === editingCardId);
+      let txSum = 0;
+      cardTransactions.forEach((t: any) => {
+        if (t.type === 'purchase') {
+          txSum += t.amount;
+        } else if (t.type === 'refund') {
+          txSum -= t.amount;
+        } else if (t.type === 'bill_payment') {
+          txSum -= t.amount;
+        } else if (t.type === 'emi_conversion') {
+          txSum -= t.amount;
+        }
+      });
+
+      const enteredOutstanding = Number(newCardInitialBalance);
+      const computedInitialBalance = Math.max(0, enteredOutstanding - txSum);
+
       setFinanceData((prev: any) => ({
         ...prev,
         accounts: prev.accounts.map((a: any) => 
@@ -326,7 +344,8 @@ export default function CreditCardSection({ data, setFinanceData, setCurrentTab 
                 color: newCardColor,
                 billingCycleStartDay: newCardBillingDay,
                 paymentDueDay: newCardDueDay,
-                balance: Number(newCardInitialBalance),
+                balance: enteredOutstanding,
+                initialBalance: computedInitialBalance,
                 isMainCard: isMain,
                 linkedGroupId: isMain ? '' : linkedId,
               }

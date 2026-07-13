@@ -26,6 +26,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedGoalId, setSelectedGoalId] = useState('');
+  const [targetAccountId, setTargetAccountId] = useState('');
 
   const allocatedEmergency = preferences.emergencyAllocated || 0;
 
@@ -51,6 +52,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
   const [editAccountId, setEditAccountId] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editGoalId, setEditGoalId] = useState('');
+  const [editTargetAccountId, setEditTargetAccountId] = useState('');
 
   const threshold = preferences.largeExpenseThreshold;
 
@@ -86,6 +88,18 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
       return;
     }
 
+    const isTransfer = category.toLowerCase() === 'transfer';
+    if (isTransfer) {
+      if (!targetAccountId) {
+        setErrorMsg('Please select a target account for the transfer.');
+        return;
+      }
+      if (targetAccountId === accountId) {
+        setErrorMsg('Source account and target account must be different.');
+        return;
+      }
+    }
+
     // Deduct from bank or add to credit card outstanding amount
     const updatedAccounts = accounts.map(a => {
       if (a.id === accountId) {
@@ -93,6 +107,13 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
           return { ...a, balance: a.balance - amt }; // bank balance reduces
         } else {
           return { ...a, balance: a.balance + amt }; // outstanding debt on cards increases
+        }
+      }
+      if (isTransfer && a.id === targetAccountId) {
+        if (a.type === 'bank') {
+          return { ...a, balance: a.balance + amt }; // bank balance increases
+        } else {
+          return { ...a, balance: Math.max(0, a.balance - amt) }; // outstanding debt on cards decreases
         }
       }
       return a;
@@ -128,19 +149,35 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
       accountId,
       isRecurring: false,
       savingGoalId: selectedGoalId || undefined,
+      targetAccountId: isTransfer ? targetAccountId : undefined,
     };
 
     let newCcTx = null;
-    if (sourceAcc && sourceAcc.type === 'credit_card') {
-      newCcTx = {
-        id: `tx_${newExpense.id}`,
-        cardId: accountId,
-        type: 'purchase' as const,
-        description: description.trim(),
-        amount: amt,
-        date,
-        category,
-      };
+    if (isTransfer) {
+      const targetAcc = accounts.find(a => a.id === targetAccountId);
+      if (targetAcc && targetAcc.type === 'credit_card') {
+        newCcTx = {
+          id: `tx_${newExpense.id}`,
+          cardId: targetAccountId,
+          type: 'bill_payment' as const,
+          description: description.trim(),
+          amount: amt,
+          date,
+          category: 'Transfer',
+        };
+      }
+    } else {
+      if (sourceAcc && sourceAcc.type === 'credit_card') {
+        newCcTx = {
+          id: `tx_${newExpense.id}`,
+          cardId: accountId,
+          type: 'purchase' as const,
+          description: description.trim(),
+          amount: amt,
+          date,
+          category,
+        };
+      }
     }
 
     setFinanceData(prev => ({
@@ -154,6 +191,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
     setDescription('');
     setAmount('');
     setSelectedGoalId('');
+    setTargetAccountId('');
     setSuccessMsg(`Logged: "${newExpense.description}" for ${formatCurrency(amt, preferences)}. Balance and target milestone updated.`);
     setTimeout(() => setSuccessMsg(''), 4000);
   };
@@ -172,19 +210,39 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
     if (!expenseToDelete) return;
     const { id, amount: amountToRefund, accountId: connectedAccountId } = expenseToDelete;
 
+    const targetExpense = expenses.find(e => e.id === id);
+    const isTransfer = targetExpense?.category.toLowerCase() === 'transfer';
+    const targetAccountIdForRefund = targetExpense?.targetAccountId;
+
     // Refund balance
     const refundedAccounts = accounts.map(a => {
-      if (a.id === connectedAccountId) {
-        if (a.type === 'bank') {
-          return { ...a, balance: a.balance + amountToRefund }; // bank gets money back
-        } else {
-          return { ...a, balance: Math.max(0, a.balance - amountToRefund) }; // credit card debt goes down
+      if (isTransfer) {
+        if (a.id === connectedAccountId) {
+          if (a.type === 'bank') {
+            return { ...a, balance: a.balance + amountToRefund }; // bank gets transfer source money back
+          } else {
+            return { ...a, balance: Math.max(0, a.balance - amountToRefund) }; // credit card debt goes down
+          }
+        }
+        if (targetAccountIdForRefund && a.id === targetAccountIdForRefund) {
+          if (a.type === 'bank') {
+            return { ...a, balance: Math.max(0, a.balance - amountToRefund) }; // bank gets transfer target money subtracted
+          } else {
+            return { ...a, balance: a.balance + amountToRefund }; // credit card debt outstanding goes back up
+          }
+        }
+      } else {
+        if (a.id === connectedAccountId) {
+          if (a.type === 'bank') {
+            return { ...a, balance: a.balance + amountToRefund }; // bank gets money back
+          } else {
+            return { ...a, balance: Math.max(0, a.balance - amountToRefund) }; // credit card debt goes down
+          }
         }
       }
       return a;
     });
 
-    const targetExpense = expenses.find(e => e.id === id);
     const linkedGoalId = targetExpense?.savingGoalId;
 
     const updatedGoals = linkedGoalId
@@ -208,18 +266,33 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
         })
       : savingGoals;
 
-    const connectedAcc = accounts.find(a => a.id === connectedAccountId);
-    const isCc = connectedAcc?.type === 'credit_card';
     let filteredCcTransactions = data.ccTransactions || [];
-    if (isCc && targetExpense) {
-      filteredCcTransactions = filteredCcTransactions.filter(t => 
-        t.id !== `tx_${targetExpense.id}` && 
-        !(t.cardId === connectedAccountId &&
-          t.type === 'purchase' &&
-          Math.abs(t.amount - targetExpense.amount) < 0.01 &&
-          t.description === targetExpense.description &&
-          t.date === targetExpense.date)
-      );
+    if (targetExpense) {
+      if (isTransfer) {
+        if (targetAccountIdForRefund) {
+          filteredCcTransactions = filteredCcTransactions.filter(t => 
+            t.id !== `tx_${targetExpense.id}` && 
+            !(t.cardId === targetAccountIdForRefund &&
+              t.type === 'bill_payment' &&
+              Math.abs(t.amount - targetExpense.amount) < 0.01 &&
+              t.description === targetExpense.description &&
+              t.date === targetExpense.date)
+          );
+        }
+      } else {
+        const connectedAcc = accounts.find(a => a.id === connectedAccountId);
+        const isCc = connectedAcc?.type === 'credit_card';
+        if (isCc) {
+          filteredCcTransactions = filteredCcTransactions.filter(t => 
+            t.id !== `tx_${targetExpense.id}` && 
+            !(t.cardId === connectedAccountId &&
+              t.type === 'purchase' &&
+              Math.abs(t.amount - targetExpense.amount) < 0.01 &&
+              t.description === targetExpense.description &&
+              t.date === targetExpense.date)
+          );
+        }
+      }
     }
 
     setFinanceData(prev => ({
@@ -266,27 +339,75 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
     // 1. Revert effect of the old expense amount from the old account
     const oldAccountId = editingExpense.accountId;
     const oldAmount = editingExpense.amount;
+    const oldIsTransfer = editingExpense.category.toLowerCase() === 'transfer';
+    const oldTargetAccountId = editingExpense.targetAccountId;
 
     const revertedAccounts = accounts.map(a => {
       let balance = a.balance;
-      if (a.id === oldAccountId) {
-        if (a.type === 'bank') {
-          balance += oldAmount; // bank gets money back
-        } else {
-          balance = Math.max(0, balance - oldAmount); // credit card debt goes down
+      if (oldIsTransfer) {
+        if (a.id === oldAccountId) {
+          if (a.type === 'bank') {
+            balance += oldAmount;
+          } else {
+            balance = Math.max(0, balance - oldAmount);
+          }
+        }
+        if (oldTargetAccountId && a.id === oldTargetAccountId) {
+          if (a.type === 'bank') {
+            balance = Math.max(0, balance - oldAmount);
+          } else {
+            balance += oldAmount;
+          }
+        }
+      } else {
+        if (a.id === oldAccountId) {
+          if (a.type === 'bank') {
+            balance += oldAmount; // bank gets money back
+          } else {
+            balance = Math.max(0, balance - oldAmount); // credit card debt goes down
+          }
         }
       }
       return { ...a, balance };
     });
 
     // 2. Apply new expense effect to the new account
+    const newIsTransfer = editCategory.toLowerCase() === 'transfer';
+    if (newIsTransfer) {
+      if (!editTargetAccountId) {
+        alert('Please select a target account for the transfer.');
+        return;
+      }
+      if (editTargetAccountId === editAccountId) {
+        alert('Source account and target account must be different.');
+        return;
+      }
+    }
+
     const updatedAccounts = revertedAccounts.map(a => {
       let balance = a.balance;
-      if (a.id === editAccountId) {
-        if (a.type === 'bank') {
-          balance -= amt; // bank balance reduces
-        } else {
-          balance += amt; // credit card debt outstanding increases
+      if (newIsTransfer) {
+        if (a.id === editAccountId) {
+          if (a.type === 'bank') {
+            balance -= amt;
+          } else {
+            balance += amt;
+          }
+        }
+        if (a.id === editTargetAccountId) {
+          if (a.type === 'bank') {
+            balance += amt;
+          } else {
+            balance = Math.max(0, balance - amt);
+          }
+        }
+      } else {
+        if (a.id === editAccountId) {
+          if (a.type === 'bank') {
+            balance -= amt; // bank balance reduces
+          } else {
+            balance += amt; // credit card debt outstanding increases
+          }
         }
       }
       return { ...a, balance };
@@ -346,77 +467,43 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
           category: editCategory,
           date: editDate,
           accountId: editAccountId,
-          savingGoalId: editGoalId || undefined
+          savingGoalId: editGoalId || undefined,
+          targetAccountId: newIsTransfer ? editTargetAccountId : undefined
         };
       }
       return exp;
     });
 
     // Sync ccTransactions
-    let nextCcTransactions = [...(data.ccTransactions || [])];
     const wasCc = accounts.find(a => a.id === oldAccountId)?.type === 'credit_card';
     const isCc = targetAcc.type === 'credit_card';
 
-    if (wasCc) {
-      if (isCc) {
-        // Was CC, still CC: Update matching transaction (by ID or field fallback)
-        let found = false;
-        nextCcTransactions = nextCcTransactions.map(t => {
-          const isMatch = t.id === `tx_${editingExpense.id}` ||
-            (t.cardId === oldAccountId &&
-             t.type === 'purchase' &&
-             Math.abs(t.amount - oldAmount) < 0.01 &&
-             (
-               t.date === editingExpense.date ||
-               t.description.toLowerCase().trim() === editingExpense.description.toLowerCase().trim() ||
-               t.description.toLowerCase().trim().includes(editingExpense.description.toLowerCase().trim()) ||
-               editingExpense.description.toLowerCase().trim().includes(t.description.toLowerCase().trim())
-             ));
-          if (isMatch) {
-            found = true;
-            return {
-              ...t,
-              id: t.id || `tx_${editingExpense.id}`,
-              cardId: editAccountId,
-              amount: amt,
-              description: editDescription.trim(),
-              date: editDate,
-              category: editCategory,
-            };
-          }
-          return t;
-        });
+    let nextCcTransactions = (data.ccTransactions || []).filter(t => {
+      if (t.id === `tx_${editingExpense.id}`) return false;
+      if (wasCc && !oldIsTransfer && t.cardId === oldAccountId && t.type === 'purchase' && Math.abs(t.amount - oldAmount) < 0.01 && t.date === editingExpense.date) {
+        return false;
+      }
+      if (oldIsTransfer && oldTargetAccountId && t.cardId === oldTargetAccountId && t.type === 'bill_payment' && Math.abs(t.amount - oldAmount) < 0.01 && t.date === editingExpense.date) {
+        return false;
+      }
+      return true;
+    });
 
-        if (!found) {
-          nextCcTransactions.push({
-            id: `tx_${editingExpense.id}`,
-            cardId: editAccountId,
-            type: 'purchase' as const,
-            description: editDescription.trim(),
-            amount: amt,
-            date: editDate,
-            category: editCategory,
-          });
-        }
-      } else {
-        // Was CC, now Bank: Delete the matching transaction
-        nextCcTransactions = nextCcTransactions.filter(t => {
-          const isMatch = t.id === `tx_${editingExpense.id}` ||
-            (t.cardId === oldAccountId &&
-             t.type === 'purchase' &&
-             Math.abs(t.amount - oldAmount) < 0.01 &&
-             (
-               t.date === editingExpense.date ||
-               t.description.toLowerCase().trim() === editingExpense.description.toLowerCase().trim() ||
-               t.description.toLowerCase().trim().includes(editingExpense.description.toLowerCase().trim()) ||
-               editingExpense.description.toLowerCase().trim().includes(t.description.toLowerCase().trim())
-             ));
-          return !isMatch;
+    if (newIsTransfer) {
+      const editTargetAcc = accounts.find(a => a.id === editTargetAccountId);
+      if (editTargetAcc && editTargetAcc.type === 'credit_card') {
+        nextCcTransactions.push({
+          id: `tx_${editingExpense.id}`,
+          cardId: editTargetAccountId,
+          type: 'bill_payment' as const,
+          description: editDescription.trim(),
+          amount: amt,
+          date: editDate,
+          category: 'Transfer',
         });
       }
     } else {
       if (isCc) {
-        // Was Bank, now CC: Create a new credit card transaction
         nextCcTransactions.push({
           id: `tx_${editingExpense.id}`,
           cardId: editAccountId,
@@ -464,6 +551,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
 
     setEditingExpense(null);
     setEditGoalId('');
+    setEditTargetAccountId('');
     setSuccessMsg(`Updated: "${editDescription.trim()}" for ${formatCurrency(amt, preferences)}. Balance and HUD updated.`);
     setTimeout(() => setSuccessMsg(''), 4000);
   };
@@ -586,15 +674,18 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                   {budgets.map(b => (
                     <option key={b.category} value={b.category} className="dark:bg-slate-900">{b.category}</option>
                   ))}
+                  <option value="Transfer" className="dark:bg-slate-900">Transfer (Internal Movement)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">Charged on</label>
+                <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">
+                  {category.toLowerCase() === 'transfer' ? 'Source Account (From)' : 'Charged on'}
+                </label>
                 <select
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
-                  className="w-full text-xs border border-slate-205 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-900/60 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 dark:text-slate-200"
+                  className="w-full text-xs border border-slate-250 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-900/60 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 dark:text-slate-200"
                 >
                   <option value="" className="dark:bg-slate-905">-- Select Channel --</option>
                   {accounts.map(acc => (
@@ -605,6 +696,24 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                 </select>
               </div>
             </div>
+
+            {category.toLowerCase() === 'transfer' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">Target Account (To)</label>
+                <select
+                  value={targetAccountId}
+                  onChange={(e) => setTargetAccountId(e.target.value)}
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-900/60 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 dark:text-slate-200"
+                >
+                  <option value="" className="dark:bg-slate-900">-- Select Target --</option>
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id} className="dark:bg-slate-900">
+                      {acc.name} ({acc.type === 'bank' ? 'Liquid' : 'Debt'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">Transaction Date</label>
@@ -720,6 +829,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                 {budgets.map(b => (
                   <option key={b.category} value={b.category} className="dark:bg-[#0b1329]">{b.category}</option>
                 ))}
+                <option value="Transfer" className="dark:bg-[#0b1329]">Transfer (Internal Movement)</option>
               </select>
             </div>
 
@@ -841,7 +951,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
         {/* LEDGER EXPENSE LIST */}
         <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
           {sortedExpenses.map((exp, index) => {
-            const isLarge = exp.amount >= threshold;
+            const isLarge = exp.amount >= threshold && exp.category.toLowerCase() !== 'transfer';
             const connectedAcc = accounts.find(a => a.id === exp.accountId);
             
             return (
@@ -898,6 +1008,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                       setEditAccountId(exp.accountId);
                       setEditDate(exp.date);
                       setEditGoalId(exp.savingGoalId || '');
+                      setEditTargetAccountId(exp.targetAccountId || '');
                     }}
                     className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800/50 rounded-lg transition cursor-pointer"
                     title="Edit expense entry"
@@ -1011,11 +1122,14 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                     {budgets.map(b => (
                       <option key={b.category} value={b.category} className="dark:bg-[#0b1329]">{b.category}</option>
                     ))}
+                    <option value="Transfer" className="dark:bg-[#0b1329]">Transfer (Internal Movement)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1 font-sans">Payment Channel</label>
+                  <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1 font-sans">
+                    {editCategory.toLowerCase() === 'transfer' ? 'Source Account (From)' : 'Payment Channel'}
+                  </label>
                   <select
                     value={editAccountId}
                     onChange={(e) => setEditAccountId(e.target.value)}
@@ -1029,6 +1143,24 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                   </select>
                 </div>
               </div>
+
+              {editCategory.toLowerCase() === 'transfer' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">Target Account (To)</label>
+                  <select
+                    value={editTargetAccountId}
+                    onChange={(e) => setEditTargetAccountId(e.target.value)}
+                    className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-900/60 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 dark:text-slate-200"
+                  >
+                    <option value="" className="dark:bg-[#0b1329]">-- Select Target --</option>
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.id} className="dark:bg-[#0b1329]">
+                        {acc.name} ({acc.type === 'bank' ? 'Liquid' : 'Debt'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">Transaction Date</label>

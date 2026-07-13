@@ -15,6 +15,7 @@ export interface Expense {
   isRecurring: boolean;
   recurringId?: string; // Links to subscription if created automatically
   savingGoalId?: string; // Links to a savings goal if it represents a goal contribution
+  targetAccountId?: string; // ID of target bank or card for transfers
 }
 
 export interface RecurringSpend {

@@ -63,7 +63,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
     .reduce((sum, inc) => sum + inc.amount, 0);
 
   const totalExpenses = expenses
-    .filter(exp => exp.date.startsWith(activeMonthPrefix))
+    .filter(exp => exp.date.startsWith(activeMonthPrefix) && exp.category.toLowerCase() !== 'transfer')
     .reduce((sum, exp) => sum + exp.amount, 0);
 
   const totalRecurring = recurringSpends
@@ -105,7 +105,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
   // Spends by Account / Card filtered to active month
   const accountSpends = accounts.map(acc => {
     const amount = expenses
-      .filter(e => e.accountId === acc.id && e.date.startsWith(activeMonthPrefix))
+      .filter(e => e.accountId === acc.id && e.date.startsWith(activeMonthPrefix) && e.category.toLowerCase() !== 'transfer')
       .reduce((sum, exp) => sum + exp.amount, 0) +
       recurringSpends
       .filter(r => r.isActive && r.accountId === acc.id)
@@ -135,7 +135,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
 
   // Large Expenses calculations filtered to active month
   const threshold = preferences.largeExpenseThreshold || 20000;
-  const largeExpenses = expenses.filter(e => e.amount >= threshold && e.date.startsWith(activeMonthPrefix));
+  const largeExpenses = expenses.filter(e => e.amount >= threshold && e.date.startsWith(activeMonthPrefix) && e.category.toLowerCase() !== 'transfer');
   const totalLargeExpenses = largeExpenses.reduce((sum, e) => sum + e.amount, 0);
   const totalStandardExpenses = totalExpenses - totalLargeExpenses;
 
