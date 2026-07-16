@@ -33,7 +33,9 @@ import {
   GripVertical,
   ArrowUp,
   ArrowDown,
-  LayoutGrid
+  LayoutGrid,
+  Compass,
+  ShoppingBag
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -51,6 +53,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
   const [currency, setCurrency] = useState(preferences.currencySymbol);
   const [threshold, setThreshold] = useState(preferences.largeExpenseThreshold.toString());
   const [newCategory, setNewCategory] = useState('');
+  const [newStore, setNewStore] = useState('');
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(preferences.themeMode || 'light');
   const [accentColor, setAccentColor] = useState<'blue' | 'emerald' | 'yellow' | 'rose' | 'violet' | 'silver' | 'purple' | 'pink' | 'neon_green' | 'sky_blue'>(preferences.accentColor || 'blue');
 
@@ -71,6 +74,7 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
     'budget',
     'portability',
     'assets',
+    'online_stores',
     'maintenance',
     'github'
   ];
@@ -620,6 +624,72 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
     setTimeout(() => setAlertOk(''), 3000);
   };
 
+  const currentStores = preferences.onlineStores || [
+    'Amazon Now',
+    'Flipkart',
+    'Uber',
+    'Zomato',
+    'Swiggy',
+    'Myntra'
+  ];
+
+  const handleAddStore = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAlertOk('');
+    setAlertErr('');
+
+    const cleanStoreName = newStore.trim();
+    if (!cleanStoreName) {
+      setAlertErr('Please enter a valid store/app name.');
+      return;
+    }
+
+    if (currentStores.some(s => s.toLowerCase() === cleanStoreName.toLowerCase())) {
+      setAlertErr(`Store "${cleanStoreName}" already exists!`);
+      return;
+    }
+
+    const updatedStores = [...currentStores, cleanStoreName];
+
+    setFinanceData(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        onlineStores: updatedStores
+      }
+    }));
+
+    setNewStore('');
+    setAlertOk(`Store "${cleanStoreName}" successfully registered!`);
+    setTimeout(() => setAlertOk(''), 3000);
+  };
+
+  const handleDeleteStore = (storeToDelete: string) => {
+    setAlertOk('');
+    setAlertErr('');
+
+    // Warn or guard if expenses are using this store
+    const isUsed = expenses.some(exp => exp.store?.toLowerCase() === storeToDelete.toLowerCase() || exp.store === storeToDelete);
+    if (isUsed) {
+      setAlertErr(`Cannot delete "${storeToDelete}" because some tracked expenses are categorized under it.`);
+      setTimeout(() => setAlertErr(''), 4000);
+      return;
+    }
+
+    const updatedStores = currentStores.filter(s => s !== storeToDelete);
+
+    setFinanceData(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        onlineStores: updatedStores
+      }
+    }));
+
+    setAlertOk(`Store "${storeToDelete}" successfully removed.`);
+    setTimeout(() => setAlertOk(''), 3000);
+  };
+
   const handleAddBudgetCategory = (e: React.FormEvent) => {
     e.preventDefault();
     setBudgetSuccess('');
@@ -1088,6 +1158,60 @@ export default function SettingsSection({ data, setFinanceData, userEmail }: Set
                         onClick={() => handleDeleteCategory(cat)}
                         className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition cursor-pointer"
                         title={`Delete "${cat}"`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'online_stores':
+        return (
+          <div id="settings-online-stores-card" className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm h-full flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
+              {renderCardHeader('online_stores', Compass, 'Online Stores & Apps', 'Register specific apps/shops (e.g. Amazon Now, Swiggy) to track merchant-specific spends.')}
+              
+              {/* ADD STORE FORM */}
+              <form onSubmit={handleAddStore} className="flex gap-2 mb-4 shrink-0">
+                <input
+                  type="text"
+                  placeholder="e.g. Amazon Now, Swiggy, Uber"
+                  value={newStore}
+                  onChange={(e) => setNewStore(e.target.value)}
+                  className="flex-1 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus:border-indigo-600 dark:focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-950 rounded-xl py-2.5 px-3.5 outline-none transition text-slate-800 dark:text-slate-200"
+                />
+                <button
+                  type="submit"
+                  className="text-white bg-indigo-600 hover:bg-indigo-700 transition font-extrabold text-xs px-4 rounded-xl flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </form>
+
+              {/* LIST CURRENT STORES */}
+              <div className="space-y-2 mt-4 overflow-y-auto pr-1 flex-1 min-h-[220px] max-h-[480px]">
+                {currentStores.map(store => {
+                  const count = expenses.filter(exp => exp.store?.toLowerCase() === store.toLowerCase() || exp.store === store).length;
+                  
+                  return (
+                    <div key={store} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-600 dark:bg-violet-450"></span>
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300">{store}</span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400">
+                          {count} {count === 1 ? 'transaction' : 'transactions'}
+                        </span>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteStore(store)}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition cursor-pointer"
+                        title={`Delete "${store}"`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

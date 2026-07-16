@@ -53,8 +53,8 @@ export default function NetWorthSummary({ data, setCurrentTab, className = '' }:
         <div className="space-y-4 flex-1 flex flex-col justify-between">
           <div className="space-y-2 flex-1 flex flex-col">
             <h3 className="text-[9px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest shrink-0">Asset Investment Index</h3>
-            <div className="max-h-[160px] overflow-y-auto pr-1 space-y-2 flex-1">
-              {investments.slice(0, 3).map(inv => {
+            <div className="max-h-[280px] lg:max-h-none lg:h-0 overflow-y-auto pr-1 space-y-2 flex-1 min-h-0">
+              {investments.slice(0, 6).map(inv => {
                 const pct = totalInvestmentsValuation > 0 ? (inv.totalInvested / totalInvestmentsValuation) * 100 : 0;
                 return (
                   <div key={inv.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100/70 dark:border-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700 transition-colors flex items-center justify-between text-xs font-sans">
@@ -77,7 +77,7 @@ export default function NetWorthSummary({ data, setCurrentTab, className = '' }:
           <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-850 shrink-0">
             <h3 className="text-[9px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest">Allocation</h3>
             <div className="space-y-2">
-              {groupedInvestments.slice(0, 3).map(group => (
+              {groupedInvestments.slice(0, 5).map(group => (
                 <div key={group.category} className="space-y-1">
                   <div className="flex justify-between items-center text-[10px]">
                     <span className="font-bold text-slate-600 dark:text-slate-400">{group.category}</span>

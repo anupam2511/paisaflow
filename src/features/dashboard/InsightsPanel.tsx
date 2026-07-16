@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { 
   CreditCard, 
@@ -11,7 +11,8 @@ import {
   CalendarClock, 
   AlertTriangle, 
   Target, 
-  Info 
+  Info,
+  X
 } from 'lucide-react';
 
 import { FinancialInsight } from '../insights/insight.types';
@@ -22,11 +23,39 @@ interface InsightsPanelProps {
 }
 
 export default function InsightsPanel({ insights, setCurrentTab }: InsightsPanelProps) {
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('paisaflow_dismissed_alerts');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const activeInsights = useMemo(() => {
+    return insights.filter(i => !dismissedIds.includes(i.id));
+  }, [insights, dismissedIds]);
+
+  const activeDismissedCount = useMemo(() => {
+    return insights.filter(i => dismissedIds.includes(i.id)).length;
+  }, [insights, dismissedIds]);
+
+  const handleDismiss = (id: string) => {
+    const updated = [...dismissedIds, id];
+    setDismissedIds(updated);
+    localStorage.setItem('paisaflow_dismissed_alerts', JSON.stringify(updated));
+  };
+
+  const handleRestore = () => {
+    setDismissedIds([]);
+    localStorage.removeItem('paisaflow_dismissed_alerts');
+  };
+
   return (
     <>
-      {insights.length > 0 ? (
+      {activeInsights.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {insights.map((alert) => {
+          {activeInsights.map((alert) => {
             const borderStyle = 
               alert.type === 'critical' 
                 ? 'border-rose-100 bg-rose-50/30 dark:border-rose-950/40 dark:bg-rose-950/15' 
@@ -90,8 +119,20 @@ export default function InsightsPanel({ insights, setCurrentTab }: InsightsPanel
                     <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 rounded border ${badgeStyle}`}>
                       {categoryLabel}
                     </span>
-                    <div className="p-1.5 bg-white dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800 shadow-2xs">
-                      {iconElement}
+                    <div className="flex items-center gap-1.5">
+                      <div className="p-1.5 bg-white dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800 shadow-2xs">
+                        {iconElement}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDismiss(alert.id);
+                        }}
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                        title="Dismiss Alert"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                   <div>
@@ -115,6 +156,16 @@ export default function InsightsPanel({ insights, setCurrentTab }: InsightsPanel
               </motion.div>
             );
           })}
+          {activeDismissedCount > 0 && (
+            <div className="col-span-full flex justify-end">
+              <button 
+                onClick={handleRestore}
+                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                🔄 Restore {activeDismissedCount} dismissed alert{activeDismissedCount > 1 ? 's' : ''}
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-slate-50/45 dark:bg-slate-900/30 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-6 text-center space-y-2.5">
@@ -126,6 +177,14 @@ export default function InsightsPanel({ insights, setCurrentTab }: InsightsPanel
             <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-0.5 leading-relaxed">
               No high card utilization, overspent category budgets, upcoming overdue installments, or lagging savings goals detected. Excellent job maintaining your ledger!
             </p>
+            {activeDismissedCount > 0 && (
+              <button 
+                onClick={handleRestore}
+                className="mt-3 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+              >
+                Restore {activeDismissedCount} dismissed alert{activeDismissedCount > 1 ? 's' : ''}
+              </button>
+            )}
           </div>
         </div>
       )}

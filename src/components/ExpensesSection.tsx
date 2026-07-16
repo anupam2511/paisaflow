@@ -27,8 +27,17 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedGoalId, setSelectedGoalId] = useState('');
   const [targetAccountId, setTargetAccountId] = useState('');
+  const [selectedStore, setSelectedStore] = useState('');
 
   const allocatedEmergency = preferences.emergencyAllocated || 0;
+  const currentStores = preferences.onlineStores || [
+    'Amazon Now',
+    'Flipkart',
+    'Uber',
+    'Zomato',
+    'Swiggy',
+    'Myntra'
+  ];
 
   // Search/Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +62,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
   const [editDate, setEditDate] = useState('');
   const [editGoalId, setEditGoalId] = useState('');
   const [editTargetAccountId, setEditTargetAccountId] = useState('');
+  const [editStore, setEditStore] = useState('');
 
   const threshold = preferences.largeExpenseThreshold;
 
@@ -150,6 +160,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
       isRecurring: false,
       savingGoalId: selectedGoalId || undefined,
       targetAccountId: isTransfer ? targetAccountId : undefined,
+      store: selectedStore || undefined,
     };
 
     let newCcTx = null;
@@ -192,6 +203,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
     setAmount('');
     setSelectedGoalId('');
     setTargetAccountId('');
+    setSelectedStore('');
     setSuccessMsg(`Logged: "${newExpense.description}" for ${formatCurrency(amt, preferences)}. Balance and target milestone updated.`);
     setTimeout(() => setSuccessMsg(''), 4000);
   };
@@ -468,7 +480,8 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
           date: editDate,
           accountId: editAccountId,
           savingGoalId: editGoalId || undefined,
-          targetAccountId: newIsTransfer ? editTargetAccountId : undefined
+          targetAccountId: newIsTransfer ? editTargetAccountId : undefined,
+          store: editStore || undefined
         };
       }
       return exp;
@@ -741,6 +754,22 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
               </select>
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">Online Store/App (Optional)</label>
+              <select
+                value={selectedStore}
+                onChange={(e) => setSelectedStore(e.target.value)}
+                className="w-full text-xs border border-slate-202 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-900/60 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <option value="" className="dark:bg-[#0b1329]">-- No Linked Store --</option>
+                {currentStores.map(storeName => (
+                  <option key={storeName} value={storeName} className="dark:bg-[#0b1329]">
+                    {storeName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* LIVE EMERGENCY RESERVE CUSHION NOTE */}
             {allocatedEmergency > 0 && (
               (() => {
@@ -976,6 +1005,14 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                       <span>{exp.category}</span>
                       <span>•</span>
                       <span className="text-slate-500 truncate max-w-[120px]" title={connectedAcc?.name}>Chnl: {connectedAcc ? connectedAcc.name : 'Direct Direct'}</span>
+                      {exp.store && (
+                        <>
+                          <span>•</span>
+                          <span className="text-violet-600 dark:text-violet-400 font-extrabold bg-violet-50 dark:bg-violet-950/20 px-1.5 py-0.5 rounded text-[9px] border border-violet-150/40" title={`Purchased via ${exp.store}`}>
+                            Store: {exp.store}
+                          </span>
+                        </>
+                      )}
                       {exp.isRecurring && (
                         <>
                           <span>•</span>
@@ -1009,6 +1046,7 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                       setEditDate(exp.date);
                       setEditGoalId(exp.savingGoalId || '');
                       setEditTargetAccountId(exp.targetAccountId || '');
+                      setEditStore(exp.store || '');
                     }}
                     className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800/50 rounded-lg transition cursor-pointer"
                     title="Edit expense entry"
@@ -1184,6 +1222,22 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
                   {savingGoals.map(g => (
                     <option key={g.id} value={g.id} className="dark:bg-[#0b1329]">
                       {g.name} (Current: {formatCurrency(g.currentAmount, preferences)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 uppercase mb-1">Online Store/App (Optional)</label>
+                <select
+                  value={editStore}
+                  onChange={(e) => setEditStore(e.target.value)}
+                  className="w-full text-xs border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-900/60 focus:outline-none focus:border-indigo-500 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
+                >
+                  <option value="" className="dark:bg-[#0b1329]">-- No Linked Store --</option>
+                  {currentStores.map(storeName => (
+                    <option key={storeName} value={storeName} className="dark:bg-[#0b1329]">
+                      {storeName}
                     </option>
                   ))}
                 </select>

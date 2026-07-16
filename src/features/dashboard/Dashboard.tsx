@@ -146,7 +146,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
                 <p className="text-[10px] text-slate-400 font-medium">Monthly cash transactions, overhead subscriptions, and variable budgets</p>
               </div>
             </div>
-            <MonthlyCashFlow data={data} setCurrentTab={setCurrentTab} />
+            <MonthlyCashFlow data={data} setCurrentTab={setCurrentTab} className="h-full flex-1 flex flex-col justify-between" />
           </div>
         </div>
 
@@ -179,7 +179,7 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
       </div>
 
       {/* SECTION 4: Upcoming commitments & savings targets (Full Width Bottom row) */}
-      <div className="space-y-4 pt-6 border-t border-slate-150/60 dark:border-slate-850">
+      <div className="space-y-4 pt-6">
         <div className="flex items-center gap-2">
           <span className="w-1 h-5 rounded-full bg-indigo-500"></span>
           <div>

@@ -121,18 +121,25 @@ export default function ExpenditureTrendCurve({ data }: ExpenditureTrendCurvePro
             <option value="Last 6 months">Last 6 months</option>
             <option value="Last 3 months">Last 3 months</option>
             <option value="Last 30 days">Last 30 days</option>
+            <option value="Last 7 days">Last 7 days</option>
           </select>
         </div>
       </div>
 
-      <div className="mt-4 w-full h-[240px]">
+      <div className="mt-4 w-full h-64 sm:h-72 md:h-80 lg:h-96">
         {(() => {
           const filteredExpensesByTime = (() => {
-            if (trendTimeFilter === 'All time') return expenses;
+            const nonTransferExpenses = expenses.filter(e => {
+              return !e.category || e.category.toLowerCase() !== 'transfer';
+            });
+
+            if (trendTimeFilter === 'All time') return nonTransferExpenses;
             const now = new Date();
             now.setHours(0, 0, 0, 0);
             const timeThreshold = new Date(now);
-            if (trendTimeFilter === 'Last 30 days') {
+            if (trendTimeFilter === 'Last 7 days') {
+              timeThreshold.setDate(now.getDate() - 7);
+            } else if (trendTimeFilter === 'Last 30 days') {
               timeThreshold.setDate(now.getDate() - 30);
             } else if (trendTimeFilter === 'Last 3 months') {
               timeThreshold.setMonth(now.getMonth() - 3);
@@ -141,8 +148,7 @@ export default function ExpenditureTrendCurve({ data }: ExpenditureTrendCurvePro
             } else if (trendTimeFilter === 'Last 1 year') {
               timeThreshold.setFullYear(now.getFullYear() - 1);
             }
-            return expenses.filter(e => {
-              if (e.category && e.category.toLowerCase() === 'transfer') return false;
+            return nonTransferExpenses.filter(e => {
               const expDate = new Date(e.date);
               if (isNaN(expDate.getTime())) return false;
               return expDate >= timeThreshold;

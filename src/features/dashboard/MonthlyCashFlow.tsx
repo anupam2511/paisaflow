@@ -29,9 +29,10 @@ import { getCategoryColor } from './dashboard.utils';
 interface MonthlyCashFlowProps {
   data: FinanceData;
   setCurrentTab: (tab: string) => void;
+  className?: string;
 }
 
-export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlowProps) {
+export default function MonthlyCashFlow({ data, setCurrentTab, className = '' }: MonthlyCashFlowProps) {
   const { 
     accounts = [], 
     incomes = [], 
@@ -44,7 +45,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
   } = data;
 
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const [breakdownType, setBreakdownType] = useState<'category' | 'account'>('category');
+  const [breakdownType, setBreakdownType] = useState<'category' | 'account' | 'store'>('category');
 
   // Find the active month prefix (e.g. "2026-07"). Falls back to latest expense if current calendar month has no data.
   const today = new Date();
@@ -133,6 +134,63 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
       };
     });
 
+  // Online Stores spending calculations
+  const currentStores = preferences?.onlineStores || [
+    'Amazon Now',
+    'Flipkart',
+    'Uber',
+    'Zomato',
+    'Swiggy',
+    'Myntra'
+  ];
+
+  const storeSpends = currentStores.map(storeName => {
+    const amount = expenses
+      .filter(e => e.store?.toLowerCase() === storeName.toLowerCase() && e.date.startsWith(activeMonthPrefix) && e.category.toLowerCase() !== 'transfer')
+      .reduce((sum, exp) => sum + exp.amount, 0);
+    return {
+      store: storeName,
+      amount
+    };
+  });
+
+  const totalStoreSpendsAmount = storeSpends.reduce((sum, s) => sum + s.amount, 0);
+  const otherExpensesAmount = Math.max(0, totalExpenses - totalStoreSpendsAmount);
+
+  const storeDonutRaw = [
+    ...storeSpends.filter(s => s.amount > 0),
+    ...(otherExpensesAmount > 0 ? [{ store: 'Other / Direct', amount: otherExpensesAmount }] : [])
+  ];
+
+  const totalSpendForStoreChart = storeDonutRaw.reduce((sum, s) => sum + s.amount, 0);
+
+  let cumulativeStorePercent = 0;
+  const storeDonutData = storeDonutRaw.map((s, idx) => {
+    const percentage = totalSpendForStoreChart > 0 ? (s.amount / totalSpendForStoreChart) * 100 : 0;
+    const startPercent = cumulativeStorePercent;
+    cumulativeStorePercent += percentage;
+
+    const colors = [
+      '#7c3aed', // violet-600
+      '#db2777', // pink-600
+      '#e11d48', // rose-600
+      '#ea580c', // orange-650
+      '#ca8a04', // yellow-650
+      '#16a34a', // green-650
+      '#2563eb', // blue-650
+      '#059669', // emerald-650
+    ];
+    const color = s.store === 'Other / Direct' ? '#94a3b8' : colors[idx % colors.length];
+
+    return {
+      category: s.store, // Mapped for compatibility with hoveredCategory
+      amount: s.amount,
+      percentage,
+      startPercent,
+      color
+    };
+  });
+
   // Large Expenses calculations filtered to active month
   const threshold = preferences.largeExpenseThreshold || 20000;
   const largeExpenses = expenses.filter(e => e.amount >= threshold && e.date.startsWith(activeMonthPrefix) && e.category.toLowerCase() !== 'transfer');
@@ -140,7 +198,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
   const totalStandardExpenses = totalExpenses - totalLargeExpenses;
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${className}`}>
       {/* COMPACT ACTIVE MONTHLY GRID */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         {/* INCOME */}
@@ -194,10 +252,10 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
       </div>
 
       {/* DONUT SPEND CHART & LARGE EXPENSE MODULES */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
         {/* DONUT SPEND CHART */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm lg:col-span-7 flex flex-col justify-between">
-          <div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm lg:col-span-7 flex flex-col justify-between overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0">
             <div className="flex justify-between items-center pb-2 border-b border-slate-50">
               <h2 className="text-sm font-bold text-slate-800">Visual Spend Breakdown</h2>
               <div className="flex bg-slate-50 p-0.5 rounded-lg border border-slate-100">
@@ -210,6 +268,13 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                 </button>
                 <button
                   type="button"
+                  onClick={() => setBreakdownType('store')}
+                  className={`text-[10px] font-bold px-2.5 py-1 rounded-md transition duration-200 ${breakdownType === 'store' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                  By Store / App
+                </button>
+                <button
+                  type="button"
                   onClick={() => setBreakdownType('account')}
                   className={`text-[10px] font-bold px-2.5 py-1 rounded-md transition duration-200 ${breakdownType === 'account' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                 >
@@ -219,7 +284,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
             </div>
 
             {breakdownType === 'category' ? (
-              <div className="block sm:grid sm:grid-cols-12 gap-4 items-center mt-6">
+              <div className="block sm:grid sm:grid-cols-12 gap-4 items-center mt-6 flex-1 min-h-0">
                 {/* DONUT SVG CHART */}
                 <div className="col-span-5 flex justify-center py-4 sm:py-0 relative">
                   {totalSpendForChart === 0 ? (
@@ -269,7 +334,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                 </div>
 
                 {/* DETAILED LEGEND */}
-                <div className="col-span-7 space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                <div className="col-span-7 space-y-2 max-h-[280px] lg:max-h-[340px] overflow-y-auto pr-1 flex-1 min-h-0">
                   {donutData.map((slice) => (
                     <div 
                       key={slice.category}
@@ -289,10 +354,81 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                   ))}
                 </div>
               </div>
+            ) : breakdownType === 'store' ? (
+              <div className="block sm:grid sm:grid-cols-12 gap-4 items-center mt-6 flex-1 min-h-0">
+                {/* DONUT SVG CHART */}
+                <div className="col-span-5 flex justify-center py-4 sm:py-0 relative">
+                  {totalSpendForStoreChart === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-200 rounded-full w-40 h-40">
+                      <HelpCircle className="w-6 h-6 text-slate-300" />
+                      <span className="text-[10px] text-slate-400 text-center mt-1 font-semibold">No store spends</span>
+                    </div>
+                  ) : (
+                    <div className="relative w-40 h-40 flex items-center justify-center">
+                      <svg width="100%" height="100%" viewBox="0 0 42 42" className="transform -rotate-90">
+                        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f1f5f9" strokeWidth="4"></circle>
+                        {storeDonutData.map((slice, idx) => {
+                          const strokeDash = `${slice.percentage} ${100 - slice.percentage}`;
+                          const strokeOffset = 100 - slice.startPercent;
+                          return (
+                            <circle
+                              key={slice.category}
+                              cx="21"
+                              cy="21"
+                              r="15.915"
+                              fill="transparent"
+                              stroke={slice.color}
+                              strokeWidth="4.2"
+                              strokeDasharray={strokeDash}
+                              strokeDashoffset={strokeOffset}
+                              onMouseEnter={() => setHoveredCategory(slice.category)}
+                              onMouseLeave={() => setHoveredCategory(null)}
+                              className="transition-all duration-300 hover:stroke-[5] cursor-pointer"
+                            ></circle>
+                          );
+                        })}
+                      </svg>
+                      {/* DONUT CENTER TEXT */}
+                      <div className="absolute flex flex-col items-center bg-white rounded-full p-2 text-center pointer-events-none">
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                          {hoveredCategory ? hoveredCategory : 'Store Spends'}
+                        </span>
+                        <span className="text-xs font-extrabold text-slate-800">
+                          {hoveredCategory 
+                            ? formatCurrency(storeDonutData.find(d => d.category === hoveredCategory)?.amount || 0, preferences)
+                            : formatCurrency(totalSpendForStoreChart, preferences)
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* DETAILED LEGEND */}
+                <div className="col-span-7 space-y-2 max-h-[280px] lg:max-h-[340px] overflow-y-auto pr-1 flex-1 min-h-0">
+                  {storeDonutData.map((slice) => (
+                    <div 
+                      key={slice.category}
+                      onMouseEnter={() => setHoveredCategory(slice.category)}
+                      onMouseLeave={() => setHoveredCategory(null)}
+                      className={`flex justify-between items-center py-1 px-1.5 rounded-lg transition-colors ${hoveredCategory === slice.category ? 'bg-slate-50' : ''}`}
+                    >
+                      <div className="flex items-center gap-1.5 truncate" title={slice.category}>
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: slice.color }}></span>
+                        <span className="text-xs text-slate-655 font-medium truncate" title={slice.category}>{slice.category}</span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-semibold text-slate-800 block">{formatCurrency(slice.amount, preferences)}</span>
+                        <span className="text-[9px] text-slate-400 block font-bold">{slice.percentage.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               /* ACCOUNT / CREDIT CARD BREAKDOWN VIZ */
-              <div className="mt-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[180px] overflow-y-auto pr-1">
+              <div className="mt-6 space-y-4 flex-1 flex flex-col min-h-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[280px] lg:max-h-[340px] overflow-y-auto pr-1 flex-1 min-h-0">
                   {accountSpends.map(acc => {
                     const icon = acc.type === 'bank' ? <Building className="w-4 h-4 text-slate-500" /> : <CreditCard className="w-4 h-4 text-slate-500" />;
                     return (
@@ -336,8 +472,8 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
                           key={acc.id}
                           className="h-full transition-all duration-300"
                           style={{ 
-                            width: `${width}%`, 
-                            backgroundColor: acc.color,
+                             width: `${width}%`, 
+                             backgroundColor: acc.color,
                           }}
                           title={`${acc.name}: ${formatCurrency(acc.amount, preferences)}`}
                         ></div>
@@ -364,8 +500,8 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm lg:col-span-5 flex flex-col justify-between overflow-hidden relative">
           <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-indigo-600 rounded-full opacity-[0.04] pointer-events-none"></div>
 
-          <div className="relative z-10">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-50">
+          <div className="relative z-10 flex-1 flex flex-col min-h-0">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-50 shrink-0">
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                 <ShieldAlert className="w-4 h-4 text-amber-500" />
                 Large Expense Tracker
@@ -376,7 +512,7 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
             </div>
 
             {/* Threshold ratio display */}
-            <div className="my-3.5 bg-slate-50/55 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
+            <div className="my-3.5 bg-slate-50/55 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 shrink-0">
               <div className="flex justify-between text-[10px] font-semibold text-slate-550 dark:text-slate-300 mb-1.5">
                 <span>Large Spends ({largeExpenses.length} items)</span>
                 <span className="font-mono text-indigo-600">{totalOutflow > 0 ? ((totalLargeExpenses / totalOutflow) * 100).toFixed(0) : 0}% of flow</span>
@@ -398,14 +534,14 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
             </div>
 
             {/* Highlighting list of large expenses */}
-            <div className="space-y-1.5 mt-2 max-h-[120px] overflow-y-auto pr-1">
+            <div className="space-y-1.5 mt-2 max-h-[280px] lg:max-h-none lg:h-0 overflow-y-auto pr-1 flex-1 min-h-0">
               {largeExpenses.length === 0 ? (
                 <div className="text-center py-5 border border-dashed border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/30 dark:bg-slate-900/20">
                   <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" />
                   <p className="text-[10px] text-slate-500 mt-1 font-medium">No transactions cross cap threshold.</p>
                 </div>
               ) : (
-                largeExpenses.slice(0, 4).map((exp, index) => {
+                largeExpenses.map((exp, index) => {
                   const connectedAccName = accounts.find(a => a.id === exp.accountId)?.name || 'Direct';
                   return (
                     <div 
@@ -427,11 +563,11 @@ export default function MonthlyCashFlow({ data, setCurrentTab }: MonthlyCashFlow
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 relative z-10">
+          <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 relative z-10 shrink-0">
             <span>Automatic large outflow flags active.</span>
             <button 
               onClick={() => setCurrentTab('transactions')}
-              className="text-indigo-600 hover:underline font-bold"
+              className="text-indigo-600 hover:underline font-bold cursor-pointer"
             >
               Full Ledger &rarr;
             </button>

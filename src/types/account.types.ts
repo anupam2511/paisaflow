@@ -41,6 +41,7 @@ export interface Preferences {
   currencySymbol: string;     // default "₹"
   largeExpenseThreshold: number; // default 4000
   investmentCategories?: string[]; // user-defined investment holding categories
+  onlineStores?: string[]; // user-defined online stores/apps
   themeMode?: 'light' | 'dark' | 'system'; // default "light"
   accentColor?: 'blue' | 'emerald' | 'yellow' | 'rose' | 'violet' | 'silver' | 'purple' | 'pink' | 'neon_green' | 'sky_blue'; // default "blue"
   emergencyAllocated?: number; // persistent allocated reserve for emergency fund
