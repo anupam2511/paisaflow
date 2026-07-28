@@ -16,6 +16,7 @@ import AttentionRequired from './AttentionRequired';
 import NetWorthSummary from './NetWorthSummary';
 import UpcomingCommitments from './UpcomingCommitments';
 import ExpenditureTrendCurve from './ExpenditureTrendCurve';
+import OnlineStoreTrendCurve from './OnlineStoreTrendCurve';
 
 interface DashboardProps {
   data: FinanceData;
@@ -176,6 +177,18 @@ export default function Dashboard({ data, setFinanceData, setCurrentTab }: Dashb
           </div>
         </div>
         <ExpenditureTrendCurve data={data} />
+      </div>
+
+      {/* SECTION 7: Online Store Spend Curve (Full Width) */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="w-1 h-5 rounded-full bg-violet-500"></span>
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">Online Store Spending Trends</h2>
+            <p className="text-[10px] text-slate-400 font-medium">Merchant spending curves and active digital store transactions</p>
+          </div>
+        </div>
+        <OnlineStoreTrendCurve data={data} />
       </div>
 
       {/* SECTION 4: Upcoming commitments & savings targets (Full Width Bottom row) */}

@@ -5,7 +5,7 @@
 
 import { SavingGoal } from './goal.types';
 import { Income } from './income.types';
-import { Expense, RecurringSpend } from './expense.types';
+import { Expense, RecurringSpend, ProposedExpense } from './expense.types';
 import { CategoryBudget } from './budget.types';
 import { Investment } from './investment.types';
 import { EmiItem, CreditCardEmiMaster } from './emi.types';
@@ -62,4 +62,5 @@ export interface FinanceData {
   emis?: EmiItem[]; // Equated Monthly Installments registry
   ccEmis?: CreditCardEmiMaster[]; // Credit Card EMI management registry
   ccTransactions?: CcTransaction[]; // Credit Card transaction tracking registry
+  proposedExpenses?: ProposedExpense[]; // Proposed / Future expenses to-do list
 }

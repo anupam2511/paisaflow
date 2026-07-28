@@ -8,7 +8,7 @@ import { FinanceData, Expense, FinancialAccount } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { CurrencyValue } from './finance/CurrencyValue';
 import { getActiveBillingCycleForDate } from '../utils/billing';
-import { ShieldAlert, Plus, Trash2, Pencil, Search, Filter, SlidersHorizontal, Settings, Info, CheckCircle, ArrowDownRight } from 'lucide-react';
+import { ShieldAlert, Plus, Trash2, Pencil, Search, Filter, SlidersHorizontal, Settings, Info, CheckCircle, ArrowDownRight, ListTodo } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ExpensesSectionProps {
@@ -643,6 +643,28 @@ export default function ExpensesSection({ data, setFinanceData }: ExpensesSectio
       {/* LEFT: LOG FORM & THRESHOLD BOX */}
       <div className="lg:col-span-4 space-y-6">
         
+        {/* PROPOSED EXPENSES TO-DO BANNER */}
+        <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/20 p-4 rounded-3xl flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-500/20 text-indigo-500 dark:text-indigo-400 rounded-2xl shrink-0">
+              <ListTodo className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                Proposed Expenses To-Do
+                {(data.proposedExpenses?.filter(p => !p.isPaid).length || 0) > 0 && (
+                  <span className="bg-indigo-600 text-white text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+                    {data.proposedExpenses?.filter(p => !p.isPaid).length}
+                  </span>
+                )}
+              </h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                Add proposed expenses without paying. Tap to Pay when ready.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* FORM: LOG EXPENSE */}
         <div className="bg-white dark:bg-[#0b1329] p-6 md:p-8 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-sm">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-50 dark:border-slate-800/50 mb-4 font-sans">

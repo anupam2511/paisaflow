@@ -20,7 +20,8 @@ import {
   Settings,
   Wallet,
   LucideIcon,
-  Award
+  Award,
+  ListTodo
 } from 'lucide-react';
 
 // Component Imports
@@ -33,6 +34,7 @@ import BudgetsSection from '../components/BudgetsSection';
 import RecurringSpendsSection from '../components/RecurringSpendsSection';
 import EmisSection from '../components/EmisSection';
 import ExpensesSection from '../components/ExpensesSection';
+import ProposedExpensesSection from '../components/ProposedExpensesSection';
 import SavingsGoalsSection from '../components/SavingsGoalsSection';
 import InvestmentsSection from '../components/InvestmentsSection';
 import ForecastingSection from '../components/ForecastingSection';
@@ -57,6 +59,7 @@ export const featureRegistry: FeatureModule[] = [
   { id: 'subscriptions', label: 'Subscriptions', icon: Repeat, component: RecurringSpendsSection },
   { id: 'emis', label: 'EMI Trackers', icon: CalendarClock, component: EmisSection },
   { id: 'transactions', label: 'Expense Ledger', icon: ArrowDownRight, component: ExpensesSection },
+  { id: 'proposed_expenses', label: 'Proposed Expenses To-Do', icon: ListTodo, component: ProposedExpensesSection },
   { id: 'savings', label: 'Savings Milestones', icon: Target, component: SavingsGoalsSection },
   { id: 'investments', label: 'Investments Portfolio', icon: Coins, component: InvestmentsSection },
   { id: 'forecasting', label: 'Wealth Forecast', icon: TrendingUp, component: ForecastingSection },

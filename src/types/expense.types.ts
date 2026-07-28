@@ -33,3 +33,20 @@ export interface RecurringSpend {
   isVariableDate?: boolean; // If true, the billing date and account are variable and the user manually triggers payments
   isAutoDebit?: boolean; // If true, automatically logs expense and advances date when due
 }
+
+export interface ProposedExpense {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;       // e.g., "Shopping", "Food & Dining", "Rent & Utilities", "Travel", "Entertainment", "Groceries", "Miscellaneous"
+  createdAt: string;      // YYYY-MM-DD
+  dueDate?: string;       // YYYY-MM-DD target date
+  notes?: string;
+  isPaid: boolean;
+  paidExpenseId?: string; // ID of Expense created in expenses list
+  paidAt?: string;       // YYYY-MM-DD date when paid
+  paidAccountId?: string; // ID of bank/card charged
+  paidStore?: string;     // Online store/app used when paid
+}
+
+

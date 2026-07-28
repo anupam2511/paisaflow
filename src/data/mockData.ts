@@ -394,5 +394,37 @@ export const INITIAL_FINANCE_DATA: FinanceData = {
       date: '2026-06-05',
       category: 'Rent & Utilities',
     },
+  ],
+  proposedExpenses: [
+    {
+      id: 'prop-1',
+      description: 'Ergonomic Mesh Office Chair',
+      amount: 12500,
+      category: 'Shopping',
+      createdAt: '2026-07-20',
+      dueDate: '2026-08-10',
+      notes: 'Required for home office posture support.',
+      isPaid: false
+    },
+    {
+      id: 'prop-2',
+      description: 'Annual Comprehensive Car Insurance Premium',
+      amount: 18400,
+      category: 'Rent & Utilities',
+      createdAt: '2026-07-22',
+      dueDate: '2026-08-15',
+      notes: 'HDFC Ergo policy renewal due next month.',
+      isPaid: false
+    },
+    {
+      id: 'prop-3',
+      description: 'Weekend Getaway Resort Advance Booking',
+      amount: 7500,
+      category: 'Travel',
+      createdAt: '2026-07-25',
+      dueDate: '2026-08-28',
+      notes: 'Coorg monsoon stay booking.',
+      isPaid: false
+    }
   ]
 };

@@ -30,6 +30,7 @@ const friendlyLabels: Record<string, { title: string; subtitle: string }> = {
   accounts: { title: 'Bank & Cash', subtitle: 'Liquid bank balances & cash' },
   income: { title: 'Income Streams', subtitle: 'Wage, rent, and passive credits' },
   transactions: { title: 'Spend Ledger', subtitle: 'Itemized transaction records' },
+  proposed_expenses: { title: 'Proposed Expenses To-Do', subtitle: 'Planned future expenses & tap-to-pay queue' },
   budgets: { title: 'Spending Limits', subtitle: 'Monthly envelope budget caps' },
   subscriptions: { title: 'Subscriptions', subtitle: 'Recurring bill commitments' },
   credit_cards: { title: 'Credit Cards', subtitle: 'Borrowing lines & statements' },
@@ -61,7 +62,7 @@ const navCategories = [
     label: 'Daily Trackers',
     icon: ArrowDownRight,
     description: 'Daily ledger, budget limits, subscriptions',
-    items: ['transactions', 'budgets', 'subscriptions']
+    items: ['transactions', 'proposed_expenses', 'budgets', 'subscriptions']
   },
   {
     id: 'debt_cards',

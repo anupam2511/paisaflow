@@ -18,6 +18,9 @@ export type { ToastMessage } from './SettingsContext';
 const sanitizeFinanceData = (data: FinanceData): FinanceData => {
   if (!data) return data;
   const cleanData = { ...data };
+  if (!Array.isArray(cleanData.proposedExpenses)) {
+    cleanData.proposedExpenses = INITIAL_FINANCE_DATA.proposedExpenses || [];
+  }
   if (Array.isArray(cleanData.expenses)) {
     const seen = new Set<string>();
     cleanData.expenses = cleanData.expenses.filter(e => {
