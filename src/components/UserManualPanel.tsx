@@ -66,7 +66,8 @@ interface GuidePage {
 }
 
 export default function UserManualPanel({ isOpen, onClose, currentTab, isInline = false }: UserManualPanelProps) {
-  const { preferences, showToast } = useFinance();
+  const { financeData, showToast } = useFinance();
+  const preferences = financeData?.preferences;
   const [searchQuery, setSearchQuery] = useState('');
   const [activePageId, setActivePageId] = useState('welcome');
   const [isMaximized, setIsMaximized] = useState(false);

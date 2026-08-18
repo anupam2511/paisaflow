@@ -201,19 +201,19 @@ export default function OnlineStoreTrendCurve({ data }: OnlineStoreTrendCurvePro
   };
 
   return (
-    <div id="online-store-trend-card" className="bg-[#050814] dark:bg-[#030611] border border-slate-850 rounded-3xl p-6 shadow-xl text-left text-slate-100">
+    <div id="online-store-trend-card" className="bg-white dark:bg-slate-950 border border-slate-100/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-2xs text-left text-slate-900 dark:text-slate-100">
       
       {/* HEADER ROW */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-start gap-3">
-          <div className="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20 shrink-0">
+          <div className="p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100 dark:border-indigo-500/20 shrink-0">
             <ShoppingBag className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
               Online Store Merchant Trend HUD
             </h3>
-            <p className="text-[11px] text-slate-450 dark:text-slate-500 font-medium mt-0.5">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
               Tracks shopping, food, grocery, and ride-hailing merchant spend distribution curves
             </p>
           </div>
@@ -224,17 +224,17 @@ export default function OnlineStoreTrendCurve({ data }: OnlineStoreTrendCurvePro
           <select
             value={timeframe}
             onChange={(e) => setTimeframe(e.target.value as OnlineStoreTimeframe)}
-            className="appearance-none bg-[#0a0f24] hover:bg-[#0e1635] text-slate-200 hover:text-white font-extrabold text-xs px-4 py-2.5 pr-10 rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer shadow-md shadow-black/40 text-left"
+            className="appearance-none bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 font-extrabold text-xs px-3.5 py-2 pr-9 rounded-xl border border-slate-200 dark:border-slate-800 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer shadow-2xs text-left"
           >
-            <option value="All time" className="bg-[#050814]">All time</option>
-            <option value="Last 1 year" className="bg-[#050814]">Last 1 year</option>
-            <option value="Last 6 months" className="bg-[#050814]">Last 6 months</option>
-            <option value="Last 3 months" className="bg-[#050814]">Last 3 months</option>
-            <option value="Last 30 days" className="bg-[#050814]">Last 30 days</option>
-            <option value="Last 7 days" className="bg-[#050814]">Last 7 days</option>
+            <option value="All time" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">All time</option>
+            <option value="Last 1 year" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Last 1 year</option>
+            <option value="Last 6 months" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Last 6 months</option>
+            <option value="Last 3 months" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Last 3 months</option>
+            <option value="Last 30 days" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Last 30 days</option>
+            <option value="Last 7 days" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">Last 7 days</option>
           </select>
           {/* Custom chevron indicator */}
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 dark:text-slate-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path>
             </svg>
@@ -248,10 +248,10 @@ export default function OnlineStoreTrendCurve({ data }: OnlineStoreTrendCurvePro
         {/* CHART PORT */}
         <div className="lg:col-span-3 h-[340px] w-full">
           {!hasSpendData ? (
-            <div className="flex flex-col items-center justify-center h-full border border-dashed border-slate-800 rounded-2xl bg-slate-950/20 p-6 text-center">
-              <HelpCircle className="w-8 h-8 text-slate-700 animate-bounce" />
-              <p className="text-xs text-slate-400 mt-2 font-black uppercase">No Merchant Spends Logged</p>
-              <p className="text-[10px] text-slate-550 max-w-xs mt-1">
+            <div className="flex flex-col items-center justify-center h-full border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 p-6 text-center">
+              <HelpCircle className="w-8 h-8 text-slate-400 dark:text-slate-600 animate-bounce" />
+              <p className="text-xs text-slate-700 dark:text-slate-300 mt-2 font-black uppercase">No Merchant Spends Logged</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 max-w-xs mt-1">
                 Assign an "Online Store/App" when logging or editing expenses to plot beautiful merchant analytics here.
               </p>
             </div>
@@ -261,7 +261,7 @@ export default function OnlineStoreTrendCurve({ data }: OnlineStoreTrendCurvePro
                 <defs>
                   {/* Total Store Spends Gradient */}
                   <linearGradient id="totalStoreGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.2} />
+                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
                   </linearGradient>
                   
@@ -270,46 +270,50 @@ export default function OnlineStoreTrendCurve({ data }: OnlineStoreTrendCurvePro
                     const color = getStoreColor(store, idx);
                     return (
                       <linearGradient key={`grad-${store}`} id={`grad-${store}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={color} stopOpacity={0.15} />
+                        <stop offset="5%" stopColor={color} stopOpacity={0.2} />
                         <stop offset="95%" stopColor={color} stopOpacity={0} />
                       </linearGradient>
                     );
                   })}
                 </defs>
 
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#111827" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-850" />
                 <XAxis 
                   dataKey="month" 
+                  stroke="#94a3b8"
                   tick={{ fontSize: 9, fontWeight: 'bold', fill: '#64748b' }}
                   axisLine={false}
                   tickLine={false}
+                  className="font-bold font-sans dark:fill-slate-400"
                 />
                 <YAxis 
+                  stroke="#94a3b8"
                   tick={{ fontSize: 9, fontWeight: 'bold', fill: '#64748b' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => formatCompactCurrency(v, preferences)}
+                  className="font-bold font-mono dark:fill-slate-400"
                 />
                 <RechartsTooltip 
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-slate-950 border border-slate-800 text-white p-4 rounded-2xl shadow-2xl text-[11px] font-sans min-w-[220px] space-y-2 text-left">
-                          <p className="font-extrabold text-slate-400 border-b border-slate-850 pb-1.5 mb-1.5">{label}</p>
+                        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white p-3.5 rounded-xl shadow-xl text-[11px] font-sans min-w-[220px] space-y-2 text-left">
+                          <p className="font-extrabold text-slate-600 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-1.5 mb-1.5">{label}</p>
                           <div className="space-y-1.5 font-mono">
                             {payload.map((p: any, idx: number) => {
                               if (p.value === undefined || p.value === null) return null;
                               const isTotal = p.name === 'Total Store Spends';
                               return (
-                                <div key={idx} className={`flex items-center justify-between gap-4 ${isTotal ? 'border-t border-slate-850 pt-1.5 mt-1 text-indigo-300 font-extrabold' : ''}`}>
+                                <div key={idx} className={`flex items-center justify-between gap-4 ${isTotal ? 'border-t border-slate-100 dark:border-slate-800 pt-1.5 mt-1 text-indigo-600 dark:text-indigo-300 font-extrabold' : ''}`}>
                                   <div className="flex items-center gap-1.5">
                                     <span 
                                       className="w-1.5 h-1.5 rounded-full" 
-                                      style={{ backgroundColor: p.color || '#fff' }}
+                                      style={{ backgroundColor: p.color || '#4f46e5' }}
                                     ></span>
-                                    <span className="text-slate-350">{p.name}</span>
+                                    <span className="text-slate-600 dark:text-slate-350">{p.name}</span>
                                   </div>
-                                  <span className="text-white">{formatCurrency(p.value, preferences)}</span>
+                                  <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(p.value, preferences)}</span>
                                 </div>
                               );
                             })}
@@ -355,8 +359,8 @@ export default function OnlineStoreTrendCurve({ data }: OnlineStoreTrendCurvePro
         </div>
 
         {/* LEGEND SEGMENTS PANEL */}
-        <div className="flex flex-col gap-2 bg-slate-900/30 p-4 rounded-2xl border border-slate-850 h-full max-h-[340px] overflow-y-auto">
-          <p className="text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">
+        <div className="flex flex-col gap-2 bg-slate-50/70 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800 h-full max-h-[340px] overflow-y-auto">
+          <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-1">
             Store Legend & Filter
           </p>
           {currentStores.map((store, idx) => {
@@ -373,23 +377,23 @@ export default function OnlineStoreTrendCurve({ data }: OnlineStoreTrendCurvePro
                 onClick={() => toggleStoreVisibility(store)}
                 className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition duration-200 cursor-pointer ${
                   isHidden 
-                    ? 'border-transparent bg-slate-950/20 opacity-40 hover:opacity-60' 
-                    : 'border-slate-850 bg-slate-950/40 hover:bg-slate-950/70 hover:border-slate-800'
+                    ? 'border-transparent bg-slate-200/40 dark:bg-slate-950/20 opacity-40 hover:opacity-60' 
+                    : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950/60 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-center gap-2 truncate">
                   <span className="w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: color }}></span>
                   <div className="truncate">
-                    <p className="text-xs font-bold text-slate-200 truncate">{store}</p>
-                    <p className="text-[9px] text-slate-400 font-mono mt-0.5">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{store}</p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                       Total: {formatCurrency(storeSum, preferences)}
                     </p>
                   </div>
                 </div>
                 {isHidden ? (
-                  <EyeOff className="w-3.5 h-3.5 text-slate-500 shrink-0 ml-2" />
+                  <EyeOff className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0 ml-2" />
                 ) : (
-                  <Eye className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-2" />
+                  <Eye className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0 ml-2" />
                 )}
               </button>
             );

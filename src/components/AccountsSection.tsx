@@ -308,12 +308,12 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
     setDragOverIndex(index);
@@ -323,12 +323,12 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
     setDragOverIndex(null);
   };
 
-  const handleDragEnd = (e: React.DragEvent) => {
+  const handleDragEnd = () => {
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
 
-  const handleDrop = (e: React.DragEvent, index: number) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
 
@@ -592,10 +592,10 @@ export default function AccountsSection({ data, setFinanceData }: AccountsSectio
                 key={acc.id}
                 layout
                 draggable
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                onDrop={(e) => handleDrop(e, index)}
+                onDragStart={(e: any) => handleDragStart(e, index)}
+                onDragOver={(e: any) => handleDragOver(e, index)}
+                onDragEnd={() => handleDragEnd()}
+                onDrop={(e: any) => handleDrop(e, index)}
                 onDragLeave={handleDragLeave}
                 className={`relative text-white rounded-2xl p-5 shadow-sm overflow-hidden flex flex-col justify-between min-h-[210px] cursor-grab active:cursor-grabbing transition-all duration-300 ${
                   draggedIndex === index ? 'opacity-30 scale-95 border-2 border-dashed border-indigo-400' : ''

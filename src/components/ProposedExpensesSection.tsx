@@ -588,7 +588,7 @@ export default function ProposedExpensesSection({ data, setFinanceData }: Propos
             className={`flex-1 md:flex-initial px-4 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
               statusFilter === 'pending'
                 ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 shadow-none'
             }`}
           >
             Pending To-Do ({stats.pendingCount})
@@ -598,7 +598,7 @@ export default function ProposedExpensesSection({ data, setFinanceData }: Propos
             className={`flex-1 md:flex-initial px-4 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
               statusFilter === 'paid'
                 ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 shadow-none'
             }`}
           >
             Completed / Paid ({stats.paidCount})
@@ -608,7 +608,7 @@ export default function ProposedExpensesSection({ data, setFinanceData }: Propos
             className={`flex-1 md:flex-initial px-4 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
               statusFilter === 'all'
                 ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 shadow-none'
             }`}
           >
             All Items ({proposedExpenses.length})

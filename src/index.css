@@ -309,26 +309,65 @@ button.bg-primary:active {
 }
 
 /* General secondary buttons */
-button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]) {
+button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):not([class*="shadow-none"]):not([class*="shadow-xs"]):not(.tab-btn) {
   box-shadow: 4px 4px 10px rgba(163, 177, 198, 0.3), -4px -4px 10px rgba(255, 255, 255, 0.8) !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
-.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]) {
+.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):not([class*="shadow-none"]):not([class*="shadow-xs"]):not(.tab-btn) {
   box-shadow: 4px 4px 10px rgba(1, 2, 6, 0.6), -4px -4px 10px rgba(99, 102, 241, 0.1) !important;
 }
-button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):hover {
+button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):not([class*="shadow-none"]):not([class*="shadow-xs"]):not(.tab-btn):hover {
   transform: translateY(-1px) !important;
   box-shadow: 5px 5px 12px rgba(163, 177, 198, 0.4), -5px -5px 12px rgba(255, 255, 255, 0.9) !important;
 }
-.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):hover {
+.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):not([class*="shadow-none"]):not([class*="shadow-xs"]):not(.tab-btn):hover {
   box-shadow: 5px 5px 12px rgba(1, 2, 6, 0.8), -5px -5px 12px rgba(99, 102, 241, 0.15) !important;
 }
-button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):active {
+button:not(.bg-indigo-600):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):not([class*="shadow-none"]):not([class*="shadow-xs"]):not(.tab-btn):active {
   transform: translateY(1px) !important;
-  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.8) !important;
+  box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.3), inset -3px -3px 6px rgba(255, 255, 255, 0.8) !important;
 }
-.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):active {
+.dark button:not(.bg-indigo-600):not(.dark\:bg-indigo-50):not(.bg-indigo-500):not(.bg-primary):not([class*="p-0"]):not([class*="h-auto"]):not([class*="shadow-none"]):not([class*="shadow-xs"]):not(.tab-btn):active {
   box-shadow: inset 4px 4px 10px rgba(1, 2, 6, 0.95), inset -4px -4px 10px rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Reset button shadows for segmented tab containers and shadow-none buttons */
+button[class*="shadow-none"],
+[class*="shadow-none"] button,
+.tab-btn,
+.tab-container button,
+div[class*="bg-slate-100"] > button,
+div[class*="bg-slate-200"] > button,
+div[class*="bg-slate-900"] > button {
+  box-shadow: none !important;
+}
+
+button[class*="shadow-none"]:hover,
+[class*="shadow-none"] button:hover,
+.tab-container button:hover,
+div[class*="bg-slate-100"] > button:hover,
+div[class*="bg-slate-200"] > button:hover,
+div[class*="bg-slate-900"] > button:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Active tab button shadow - clean indigo focus without top-left white bleed */
+button.bg-indigo-600[class*="shadow-xs"],
+button.bg-indigo-600[class*="shadow-sm"],
+.tab-container button.bg-indigo-600,
+div[class*="bg-slate-100"] > button.bg-indigo-600,
+div[class*="bg-slate-200"] > button.bg-indigo-600,
+div[class*="bg-slate-900"] > button.bg-indigo-600 {
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35) !important;
+}
+.dark button.bg-indigo-600[class*="shadow-xs"],
+.dark button.bg-indigo-600[class*="shadow-sm"],
+.dark .tab-container button.bg-indigo-600,
+.dark div[class*="bg-slate-100"] > button.bg-indigo-600,
+.dark div[class*="bg-slate-200"] > button.bg-indigo-600,
+.dark div[class*="bg-slate-900"] > button.bg-indigo-600 {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Reset neumorphic button shadows inside colored/dark cards and translucent components */

@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { useFinance } from '../../context/FinanceContext';
+import { Preferences } from '../../types';
 import { formatCurrency, formatCompactCurrency } from '../../utils/formatters';
 
 export interface CurrencyValueProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -30,7 +31,14 @@ export function CurrencyValue({
   const { financeData } = useFinance();
   const [revealed, setRevealed] = useState(false);
 
-  const preferences = financeData?.preferences || { currencySymbol: '₹' };
+  const defaultPreferences: Preferences = {
+    currencySymbol: '₹',
+    largeExpenseThreshold: 4000,
+    themeMode: 'light',
+    accentColor: 'blue'
+  };
+
+  const preferences: Preferences = financeData?.preferences || defaultPreferences;
   
   const spanId = id || `currency_${Math.random().toString(36).substring(2, 9)}`;
 

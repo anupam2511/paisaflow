@@ -275,10 +275,10 @@ export default function AnalyticsSection({ data, setCurrentTab, initialSubTab }:
 
     // Top category and its 3-month average
     const currentCatSpends = current.categorySpends || {};
-    const sortedCats = Object.entries(currentCatSpends).sort((a, b) => (b[1] as number) - (a[1] as number));
-    const topCategory = sortedCats.length > 0 ? sortedCats[0][0] : '';
-    const topCategoryAmt = sortedCats.length > 0 ? sortedCats[0][1] : 0;
-    const topCategoryAvg = (prevs.length > 0 && topCategory) ? prevs.reduce((sum, p) => sum + (p.categorySpends[topCategory] || 0), 0) / prevs.length : 0;
+    const sortedCats = Object.entries(currentCatSpends).sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0));
+    const topCategory: string = sortedCats.length > 0 ? sortedCats[0][0] : '';
+    const topCategoryAmt: number = sortedCats.length > 0 ? (Number(sortedCats[0][1]) || 0) : 0;
+    const topCategoryAvg: number = (prevs.length > 0 && topCategory) ? prevs.reduce((sum, p) => sum + (Number(p.categorySpends?.[topCategory]) || 0), 0) / prevs.length : 0;
 
     return {
       current,
@@ -657,19 +657,19 @@ export default function AnalyticsSection({ data, setCurrentTab, initialSubTab }:
           </div>
 
           {/* PRESERVED AUDIT REPORT CARD SHARE BUTTON */}
-          <div className="bg-[#0b1329] p-5 rounded-2xl border border-indigo-950/60 flex flex-col md:flex-row justify-between items-center gap-4 text-left">
+          <div className="bg-indigo-50/70 dark:bg-[#0b1329] p-5 rounded-2xl border border-indigo-100 dark:border-indigo-950/60 flex flex-col md:flex-row justify-between items-center gap-4 text-left">
             <div>
-              <span className="text-[10px] bg-indigo-950 text-indigo-400 font-extrabold px-2 py-0.5 rounded border border-indigo-900 uppercase">
+              <span className="text-[10px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 font-extrabold px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-900 uppercase">
                 PaisaFlow Capital Grade Card
               </span>
-              <h3 className="text-base font-black text-white mt-1">Audit Ledger Share Ready</h3>
-              <p className="text-xs text-slate-400">Share your anonymized, premium fiscal health score cards with advisors.</p>
+              <h3 className="text-base font-black text-slate-900 dark:text-white mt-1">Audit Ledger Share Ready</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Share your anonymized, premium fiscal health score cards with advisors.</p>
             </div>
             <button
               onClick={handleCopySummary}
-              className="px-4 py-2 bg-[#ffffff] hover:bg-[#f1f5f9] text-[#0f172a] hover:text-[#0f172a] font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition shadow-xs"
+              className="px-4 py-2 bg-indigo-600 dark:bg-[#ffffff] hover:bg-indigo-700 dark:hover:bg-[#f1f5f9] text-white dark:text-[#0f172a] font-black text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition shadow-xs"
             >
-              {copySuccess ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              {copySuccess ? <Check className="w-4 h-4 text-emerald-300 dark:text-emerald-600" /> : <Copy className="w-4 h-4" />}
               {copySuccess ? 'Copied summary!' : 'Share Portfolio Grade'}
             </button>
           </div>

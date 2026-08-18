@@ -397,7 +397,7 @@ export default function EmisSection({ data, setFinanceData }: EmisSectionProps) 
       if (emiIndex === -1) return prev;
 
       const emi = baseCcEmis[emiIndex];
-      const nextStatus = currentStatus === 'paid' ? 'unpaid' : 'paid';
+      const nextStatus: 'paid' | 'unpaid' = currentStatus === 'paid' ? 'unpaid' : 'paid';
 
       // Update installments list
       const updatedInstallments = emi.installments.map(inst => {

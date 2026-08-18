@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { useFinance } from './FinanceContext';
 
 export interface ThemeContextType {
@@ -61,6 +63,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const mode = pref.themeMode || 'light';
   const accent = pref.accentColor || 'blue';
 
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+
   // Apply Theme Mode and Color Palette
   useEffect(() => {
     const root = document.documentElement;
@@ -71,7 +75,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     };
 
-    if (resolveMode()) {
+    const isDark = resolveMode();
+    setIsDarkMode(isDark);
+
+    if (isDark) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
@@ -85,6 +92,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (mode === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {
+        setIsDarkMode(e.matches);
         if (e.matches) {
           root.classList.add('dark');
         } else {
@@ -96,9 +104,102 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [mode, accent]);
 
+  // Material UI v9.3.0 Dynamic Theme Configuration
+  const muiTheme = useMemo(() => {
+    const palette = colorPalettes[accent as keyof typeof colorPalettes] || colorPalettes.blue;
+    const primaryMain = palette['500'] || palette['600'] || '#4f46e5';
+
+    return createTheme({
+      palette: {
+        mode: isDarkMode ? 'dark' : 'light',
+        primary: {
+          main: primaryMain,
+          light: palette['300'] || '#818cf8',
+          dark: palette['700'] || '#4338ca',
+          contrastText: '#ffffff',
+        },
+        secondary: {
+          main: '#10b981',
+          light: '#34d399',
+          dark: '#059669',
+          contrastText: '#ffffff',
+        },
+        background: {
+          default: isDarkMode ? '#04051a' : '#eef2f6',
+          paper: isDarkMode ? '#0c0e2a' : '#ffffff',
+        },
+        text: {
+          primary: isDarkMode ? '#ebebeb' : '#1e293b',
+          secondary: isDarkMode ? '#cbd5e1' : '#475569',
+        },
+      },
+      typography: {
+        fontFamily: "'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        button: {
+          textTransform: 'none',
+          fontWeight: 700,
+        },
+      },
+      shape: {
+        borderRadius: 16,
+      },
+      components: {
+        MuiButton: {
+          styleOverrides: {
+            root: {
+              borderRadius: '14px',
+              textTransform: 'none',
+              fontWeight: 700,
+              boxShadow: 'none',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
+              },
+            },
+          },
+        },
+        MuiChip: {
+          styleOverrides: {
+            root: {
+              borderRadius: '10px',
+              fontWeight: 700,
+            },
+          },
+        },
+        MuiDialog: {
+          styleOverrides: {
+            paper: {
+              borderRadius: '24px',
+              backgroundImage: 'none',
+            },
+          },
+        },
+        MuiPaper: {
+          styleOverrides: {
+            root: {
+              backgroundImage: 'none',
+            },
+          },
+        },
+        MuiTooltip: {
+          styleOverrides: {
+            tooltip: {
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '6px 12px',
+            },
+          },
+        },
+      },
+    });
+  }, [isDarkMode, accent]);
+
   return (
     <ThemeContext.Provider value={{ colorPalettes }}>
-      {children}
+      <MuiThemeProvider theme={muiTheme}>
+        <CssBaseline enableColorScheme />
+        {children}
+      </MuiThemeProvider>
     </ThemeContext.Provider>
   );
 }
